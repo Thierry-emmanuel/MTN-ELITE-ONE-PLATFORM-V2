@@ -46,4 +46,4 @@ jobs:
       - name: Run backend tests
         run: |
           cd backend
-          npm run test
+          npm run start:dev
