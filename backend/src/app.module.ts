@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { ClubsModule } from './clubs/clubs.module';
 import { PlayersModule } from './players/players.module';
 import { MatchesModule } from './matches/matches.module';
+import { SeasonsModule } from './seasons/seasons.module';
 import { StandingsModule } from './standings/standings.module';
 import { StatsModule } from './stats/stats.module';
 import { AwardsModule } from './awards/awards.module';
@@ -59,6 +60,7 @@ import { WebsocketModule } from './websocket/websocket.module';
     ClubsModule,
     PlayersModule,
     MatchesModule,
+    SeasonsModule,
     StandingsModule,
     StatsModule,
     AwardsModule,
