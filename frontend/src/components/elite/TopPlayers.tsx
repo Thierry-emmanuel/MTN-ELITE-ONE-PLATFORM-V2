@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { Goal, HandHeart, ArrowRight } from "lucide-react";
+import { Goal, HandHeart, ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { scorers, assistLeaders } from "./data";
 import { ClubBadge } from "./ClubBadge";
 import { SectionHeader } from "./SectionHeader";
+import { Link } from "react-router-dom";
 
 import p1 from "@/assets/images/youngtalents/NathanDouala.png";
 import p2 from "@/assets/images/players/DavidNgondo.png";
@@ -13,141 +14,137 @@ const imgMap: Record<string, string> = { p1, p2, p3 };
 
 type StatType = "scorers" | "assists";
 
-const MAX: Record<StatType, number> = { scorers: 14, assists: 9 };
+const RANK_COLORS = [
+  "from-accent/20 border-accent/40",
+  "from-primary/15 border-primary/30",
+  "from-white/5 border-white/10",
+];
 
-const PlayerRow = ({ player, idx, type, inView }: { player: any; idx: number; type: StatType; inView: boolean }) => {
-  const max = MAX[type];
-  const pct = (player.val / max) * 100;
-
+// ─── Player Card (carousel) ───────────────────────────────────────────────────
+const PlayerCard = ({ player, idx, type, inView }: { player: any; idx: number; type: StatType; inView: boolean }) => {
+  const isFirst = idx === 0;
   return (
     <motion.div
-      initial={{ opacity: 0, x: -16 }}
-      animate={inView ? { opacity: 1, x: 0 } : {}}
-      transition={{ duration: 0.45, delay: idx * 0.07, ease: [0.22, 1, 0.36, 1] }}
-      className="group flex items-center gap-3 p-3 rounded-xl hover:bg-surface-elevated/50 transition-colors cursor-default"
+      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ duration: 0.45, delay: idx * 0.06, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -6, scale: 1.02 }}
+      className={`snap-start shrink-0 w-[150px] sm:w-[165px] group relative rounded-2xl border bg-gradient-to-b overflow-hidden cursor-pointer transition-all duration-300 ${
+        RANK_COLORS[Math.min(idx, 2)]
+      } ${isFirst ? "hover:shadow-[0_12px_40px_rgba(252,209,22,0.3)]" : "hover:shadow-elegant"}`}
     >
       {/* Rank */}
-      <div className={`font-display text-xl tabular-nums shrink-0 w-6 text-center transition-colors ${
-        idx === 0 ? "text-accent" : "text-muted-foreground/40"
+      <div className={`absolute top-2.5 right-2.5 z-10 h-6 w-6 rounded-full grid place-items-center text-[10px] font-bold ${
+        isFirst ? "bg-accent text-accent-foreground" : "bg-surface-elevated/80 backdrop-blur text-muted-foreground"
       }`}>
-        {idx + 1}
+        {isFirst ? <Star className="h-3 w-3 fill-current" /> : idx + 1}
       </div>
 
-      {/* Avatar */}
-      <div className="relative shrink-0">
+      {/* Image */}
+      <div className="relative aspect-[3/4] overflow-hidden">
         <img
-          src={imgMap[player.imgKey]}
+          src={imgMap[player.imgKey] ?? imgMap.p2}
           alt={player.name}
           loading="lazy"
-          className={`h-11 w-11 rounded-xl object-cover transition-all ${
-            idx === 0 ? "ring-2 ring-accent/60" : "ring-1 ring-border"
-          }`}
+          className="w-full h-full object-cover object-top group-hover:scale-107 transition-transform duration-700"
         />
-        {idx === 0 && (
-          <div className="absolute -top-1 -right-1 h-4 w-4 bg-accent rounded-full grid place-items-center">
-            <span className="text-[7px] font-bold text-accent-foreground">1</span>
+        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(168,50%,6%)] via-[hsl(168,50%,6%)/0.2] to-transparent" />
+
+        {/* Stat badge */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
+          <div className={`flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur border text-[11px] font-bold ${
+            isFirst ? "bg-accent/20 border-accent/50 text-accent" : "bg-black/50 border-white/10 text-white"
+          }`}>
+            {type === "scorers" ? <Goal className="h-3 w-3" /> : <HandHeart className="h-3 w-3" />}
+            {player.val} {type === "scorers" ? "buts" : "passes"}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Info + bar */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="font-medium text-sm truncate">{player.name}</span>
-          <span className={`font-display text-lg tabular-nums ml-2 ${idx === 0 ? "text-accent" : "text-foreground"}`}>
-            {player.val}
-            <span className="text-[11px] text-muted-foreground font-sans ml-0.5">{type === "scorers" ? "b" : "p"}</span>
-          </span>
+      {/* Info */}
+      <div className="p-3 pt-2.5">
+        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5 truncate">
+          {type === "scorers" ? "Buteur" : "Passeur"}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="font-display text-sm leading-tight truncate">{player.name}</div>
+        <div className="flex items-center gap-1.5 mt-1.5">
           <ClubBadge club={player.club} size={14} />
-          <span className="text-[11px] text-muted-foreground truncate">{player.club.name}</span>
-        </div>
-        {/* Progress bar */}
-        <div className="mt-2 h-1 bg-surface-elevated rounded-full overflow-hidden">
-          <motion.div
-            className={`h-full rounded-full ${idx === 0 ? "bg-accent" : "bg-primary/60"}`}
-            initial={{ width: 0 }}
-            animate={inView ? { width: `${pct}%` } : { width: 0 }}
-            transition={{ duration: 0.8, delay: idx * 0.07 + 0.3, ease: [0.22, 1, 0.36, 1] }}
-          />
+          <span className="text-[10px] text-muted-foreground truncate">{player.club.short}</span>
         </div>
       </div>
     </motion.div>
   );
 };
 
+// ─── Main TopPlayers ──────────────────────────────────────────────────────────
 export const TopPlayers = () => {
   const ref = useRef(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [tab, setTab] = useState<StatType>("scorers");
 
   const data = tab === "scorers" ? scorers : assistLeaders;
 
+  const scroll = (dir: "left" | "right") =>
+    carouselRef.current?.scrollBy({ left: dir === "right" ? 340 : -340, behavior: "smooth" });
+
   return (
-    <section ref={ref} className="container py-10 lg:py-14">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+    <section ref={ref} className="container py-8 lg:py-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
         <SectionHeader eyebrow="Statistiques" title="Meilleurs Joueurs" />
-        <div className="flex gap-1 bg-surface-elevated rounded-xl p-1 shrink-0">
-          {([
-            { id: "scorers" as const,  label: "Buteurs",  icon: <Goal className="h-3.5 w-3.5" /> },
-            { id: "assists" as const,  label: "Passeurs", icon: <HandHeart className="h-3.5 w-3.5" /> },
-          ] as const).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide transition-all ${
-                tab === t.id
-                  ? "bg-accent text-accent-foreground shadow-gold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={tab}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="bg-gradient-card border border-border rounded-2xl divide-y divide-border/50 overflow-hidden"
-        >
-          {/* Header row */}
-          <div className="grid grid-cols-2 px-4 pt-4 pb-2 gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                {tab === "scorers"
-                  ? <Goal className="h-4 w-4 text-accent" />
-                  : <HandHeart className="h-4 w-4 text-accent" />}
-                <span className="font-display text-base uppercase">
-                  {tab === "scorers" ? "Meilleurs Buteurs" : "Meilleurs Passeurs"}
-                </span>
-              </div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                Saison 24/25 · J18
-              </div>
-            </div>
-          </div>
-
-          <div className="p-3">
-            {data.map((p, i) => (
-              <PlayerRow key={p.name} player={p} idx={i} type={tab} inView={inView} />
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Tabs */}
+          <div className="flex gap-1 bg-surface-elevated rounded-xl p-1">
+            {([
+              { id: "scorers" as const,  label: "Buteurs",  icon: <Goal className="h-3.5 w-3.5" /> },
+              { id: "assists" as const,  label: "Passeurs", icon: <HandHeart className="h-3.5 w-3.5" /> },
+            ] as const).map((t) => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
+                  tab === t.id ? "bg-accent text-accent-foreground shadow-gold" : "text-muted-foreground hover:text-foreground"
+                }`}>
+                {t.icon} <span className="hidden sm:inline">{t.label}</span>
+              </button>
             ))}
           </div>
 
-          <div className="px-5 py-3">
-            <a href="#" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors group">
-              Voir toutes les statistiques
-              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </a>
+          {/* Scroll arrows */}
+          <div className="flex gap-1">
+            <button onClick={() => scroll("left")}
+              className="h-8 w-8 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button onClick={() => scroll("right")}
+              className="h-8 w-8 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Carousel */}
+      <AnimatePresence mode="wait">
+        <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+          <div
+            ref={carouselRef}
+            className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1"
+          >
+            {data.map((p, i) => (
+              <PlayerCard key={p.name} player={p} idx={i} type={tab} inView={inView} />
+            ))}
           </div>
         </motion.div>
       </AnimatePresence>
+
+      {/* CTA */}
+      <div className="mt-4">
+        <Link to="/players"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-accent transition-colors group">
+          Voir tous les joueurs
+          <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      </div>
     </section>
   );
 };
