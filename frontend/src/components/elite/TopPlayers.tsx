@@ -20,24 +20,29 @@ const RANK_COLORS = [
   "from-white/5 border-white/10",
 ];
 
-// ─── Player Card (carousel) ───────────────────────────────────────────────────
-const PlayerCard = ({ player, idx, type, inView }: { player: any; idx: number; type: StatType; inView: boolean }) => {
+const PlayerCard = ({
+  player, idx, type, inView,
+}: { player: any; idx: number; type: StatType; inView: boolean }) => {
   const isFirst = idx === 0;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      initial={{ opacity: 0, y: 16, scale: 0.96 }}
       animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
-      transition={{ duration: 0.45, delay: idx * 0.06, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -6, scale: 1.02 }}
-      className={`snap-start shrink-0 w-[150px] sm:w-[165px] group relative rounded-2xl border bg-gradient-to-b overflow-hidden cursor-pointer transition-all duration-300 ${
+      transition={{ duration: 0.4, delay: idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -4, scale: 1.02 }}
+      className={`snap-start shrink-0 w-[138px] sm:w-[150px] group relative rounded-xl border bg-gradient-to-b overflow-hidden cursor-pointer transition-all duration-300 ${
         RANK_COLORS[Math.min(idx, 2)]
       } ${isFirst ? "hover:shadow-[0_12px_40px_rgba(252,209,22,0.3)]" : "hover:shadow-elegant"}`}
     >
       {/* Rank */}
-      <div className={`absolute top-2.5 right-2.5 z-10 h-6 w-6 rounded-full grid place-items-center text-[10px] font-bold ${
-        isFirst ? "bg-accent text-accent-foreground" : "bg-surface-elevated/80 backdrop-blur text-muted-foreground"
-      }`}>
-        {isFirst ? <Star className="h-3 w-3 fill-current" /> : idx + 1}
+      <div
+        className={`absolute top-2 right-2 z-10 h-5 w-5 rounded-full grid place-items-center text-[10px] font-bold ${
+          isFirst
+            ? "bg-accent text-accent-foreground"
+            : "bg-surface-elevated/80 backdrop-blur text-muted-foreground"
+        }`}
+      >
+        {isFirst ? <Star className="h-2.5 w-2.5 fill-current" /> : idx + 1}
       </div>
 
       {/* Image */}
@@ -46,29 +51,33 @@ const PlayerCard = ({ player, idx, type, inView }: { player: any; idx: number; t
           src={imgMap[player.imgKey] ?? imgMap.p2}
           alt={player.name}
           loading="lazy"
-          className="w-full h-full object-cover object-top group-hover:scale-107 transition-transform duration-700"
+          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[hsl(168,50%,6%)] via-[hsl(168,50%,6%)/0.2] to-transparent" />
 
         {/* Stat badge */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-          <div className={`flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur border text-[11px] font-bold ${
-            isFirst ? "bg-accent/20 border-accent/50 text-accent" : "bg-black/50 border-white/10 text-white"
-          }`}>
-            {type === "scorers" ? <Goal className="h-3 w-3" /> : <HandHeart className="h-3 w-3" />}
+          <div
+            className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full backdrop-blur border text-[10px] font-bold ${
+              isFirst
+                ? "bg-accent/20 border-accent/50 text-accent"
+                : "bg-black/50 border-white/10 text-white"
+            }`}
+          >
+            {type === "scorers" ? <Goal className="h-2.5 w-2.5" /> : <HandHeart className="h-2.5 w-2.5" />}
             {player.val} {type === "scorers" ? "buts" : "passes"}
           </div>
         </div>
       </div>
 
       {/* Info */}
-      <div className="p-3 pt-2.5">
+      <div className="p-2.5 pt-2">
         <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5 truncate">
           {type === "scorers" ? "Buteur" : "Passeur"}
         </div>
         <div className="font-display text-sm leading-tight truncate">{player.name}</div>
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <ClubBadge club={player.club} size={14} />
+        <div className="flex items-center gap-1 mt-1">
+          <ClubBadge club={player.club} size={12} />
           <span className="text-[10px] text-muted-foreground truncate">{player.club.short}</span>
         </div>
       </div>
@@ -76,48 +85,55 @@ const PlayerCard = ({ player, idx, type, inView }: { player: any; idx: number; t
   );
 };
 
-// ─── Main TopPlayers ──────────────────────────────────────────────────────────
 export const TopPlayers = () => {
   const ref = useRef(null);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   const [tab, setTab] = useState<StatType>("scorers");
 
   const data = tab === "scorers" ? scorers : assistLeaders;
 
   const scroll = (dir: "left" | "right") =>
-    carouselRef.current?.scrollBy({ left: dir === "right" ? 340 : -340, behavior: "smooth" });
+    carouselRef.current?.scrollBy({ left: dir === "right" ? 320 : -320, behavior: "smooth" });
 
   return (
-    <section ref={ref} className="container py-8 lg:py-12">
+    <div ref={ref}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
-        <SectionHeader eyebrow="Statistiques" title="Meilleurs Joueurs" />
-        <div className="flex items-center gap-3 shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
+        <SectionHeader eyebrow="Statistiques" title="Meilleurs Joueurs" size="compact" />
+        <div className="flex items-center gap-2 shrink-0">
           {/* Tabs */}
-          <div className="flex gap-1 bg-surface-elevated rounded-xl p-1">
+          <div className="flex gap-0.5 bg-surface-elevated rounded-lg p-0.5">
             {([
-              { id: "scorers" as const,  label: "Buteurs",  icon: <Goal className="h-3.5 w-3.5" /> },
-              { id: "assists" as const,  label: "Passeurs", icon: <HandHeart className="h-3.5 w-3.5" /> },
+              { id: "scorers" as const, label: "Buteurs",  icon: <Goal className="h-3 w-3" /> },
+              { id: "assists" as const, label: "Passeurs", icon: <HandHeart className="h-3 w-3" /> },
             ] as const).map((t) => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
-                  tab === t.id ? "bg-accent text-accent-foreground shadow-gold" : "text-muted-foreground hover:text-foreground"
-                }`}>
-                {t.icon} <span className="hidden sm:inline">{t.label}</span>
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${
+                  tab === t.id
+                    ? "bg-accent text-accent-foreground shadow-gold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.icon}
+                <span className="hidden sm:inline">{t.label}</span>
               </button>
             ))}
           </div>
-
-          {/* Scroll arrows */}
           <div className="flex gap-1">
-            <button onClick={() => scroll("left")}
-              className="h-8 w-8 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
-              <ChevronLeft className="h-4 w-4" />
+            <button
+              onClick={() => scroll("left")}
+              className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            <button onClick={() => scroll("right")}
-              className="h-8 w-8 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
-              <ChevronRight className="h-4 w-4" />
+            <button
+              onClick={() => scroll("right")}
+              className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -125,10 +141,16 @@ export const TopPlayers = () => {
 
       {/* Carousel */}
       <AnimatePresence mode="wait">
-        <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
           <div
             ref={carouselRef}
-            className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1"
+            className="flex gap-2.5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1"
           >
             {data.map((p, i) => (
               <PlayerCard key={p.name} player={p} idx={i} type={tab} inView={inView} />
@@ -138,13 +160,15 @@ export const TopPlayers = () => {
       </AnimatePresence>
 
       {/* CTA */}
-      <div className="mt-4">
-        <Link to="/players"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-accent transition-colors group">
+      <div className="mt-3">
+        <Link
+          to="/players"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors group"
+        >
           Voir tous les joueurs
-          <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
-    </section>
+    </div>
   );
 };

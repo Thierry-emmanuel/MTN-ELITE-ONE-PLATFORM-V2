@@ -18,18 +18,44 @@ const Index = () => {
       <Navbar />
       <main>
         <h1 className="sr-only">MTN Elite One — Championnat de football professionnel du Cameroun</h1>
+
+        {/* ① Full-bleed hero */}
         <Hero />
-        <QuickStats />
-        <Fixtures />
-        <Results />
+
+        {/* ② Live Zone: stats bar + fixtures + results — visually unified, tight spacing */}
+        <div className="border-b border-border/60 bg-gradient-to-b from-[hsl(168,45%,10%)] to-background">
+          <QuickStats />
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border/40">
+            <Fixtures />
+            <Results />
+          </div>
+        </div>
+
+        {/* ③ Standings — full width, own identity */}
         <Standings />
+
+        {/* ④ Editorial break: Road to Lions */}
         <RoadToLions />
-        <TopPlayers />
+
+        {/* ⑤ Players zone: top scorers + young talents side by side on lg */}
+        <div className="border-y border-border/40">
+          <div className="container py-8 lg:py-10 grid lg:grid-cols-2 gap-6 lg:gap-10 items-start">
+            <TopPlayers />
+            <YoungTalents />
+          </div>
+        </div>
+
+        {/* ⑥ Awards — full-width section */}
         <Awards />
-        <News />
-        <YoungTalents />
+
+        {/* ⑦ News + ClubStories — editorial pair */}
+        <div className="border-t border-border/40">
+          <News />
+          <ClubStories />
+        </div>
+
+        {/* ⑧ Hall of Fame — cinematic closer before footer */}
         <HallOfFame />
-        <ClubStories />
       </main>
       <Footer />
     </div>
