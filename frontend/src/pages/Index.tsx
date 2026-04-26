@@ -6,6 +6,7 @@ import { Results } from "@/components/elite/Results";
 import { Standings } from "@/components/elite/Standings";
 import { RoadToLions } from "@/components/elite/RoadToLions";
 import { TopPlayers } from "@/components/elite/TopPlayers";
+import { YoungTalents, ClubStories } from "@/components/elite/YoungTalents";
 import { News } from "@/components/elite/News";
 import { Awards } from "@/components/elite/Awards";
 import { HallOfFame } from "@/components/elite/HallOfFame";
@@ -24,9 +25,11 @@ const Index = () => {
         <Standings />
         <RoadToLions />
         <TopPlayers />
-        <News />
         <Awards />
+        <News />
+        <YoungTalents />
         <HallOfFame />
+        <ClubStories />
       </main>
       <Footer />
     </div>
