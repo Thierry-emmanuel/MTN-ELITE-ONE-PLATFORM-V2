@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Play, ArrowRight, Radio, LogIn, Zap, ChevronRight } from "lucide-react";
-import { heroSlides, tickerItems } from "./data";
+import { heroSlides } from "./data";
 import { ClubBadge } from "./ClubBadge";
 import { Link } from "react-router-dom";
 import heroImg from "@/assets/hero-stadium.jpg";

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/elite/Navbar";
 import { Hero } from "@/components/elite/Hero";
 import { QuickStats } from "@/components/elite/QuickStats";
@@ -11,14 +12,31 @@ import { News } from "@/components/elite/News";
 import { Awards } from "@/components/elite/Awards";
 import { HallOfFame } from "@/components/elite/HallOfFame";
 import { Footer } from "@/components/elite/Footer";
-
-// ─── ClubStories removed per UX brief (carousel fatigue) ─────────────────────
-// Max 2 carousels allowed: Awards + TopPlayers
+import { CommandPalette } from "@/components/elite/CommandPalette";
 
 const Index = () => {
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Global ⌘K / Ctrl+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(v => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
+      {/* Command Palette — full-screen overlay */}
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* Navbar — sticky, integrated ticker, search trigger */}
+      <Navbar onSearchOpen={() => setSearchOpen(true)} />
+
       <main>
         <h1 className="sr-only">MTN Elite One — Championnat de football professionnel du Cameroun</h1>
 
@@ -40,7 +58,7 @@ const Index = () => {
         {/* ④ Editorial break: Road to Lions */}
         <RoadToLions />
 
-        {/* ⑤ Players zone — carousel (1 of 2 allowed) + Young Talents grid */}
+        {/* ⑤ Players zone */}
         <div className="border-y border-border/40">
           <div className="container py-8 lg:py-10 grid lg:grid-cols-2 gap-6 lg:gap-10 items-start">
             <TopPlayers />
@@ -48,18 +66,19 @@ const Index = () => {
           </div>
         </div>
 
-        {/* ⑥ Awards — carousel (2 of 2 allowed) */}
+        {/* ⑥ Awards with voting countdown + vote share */}
         <Awards />
 
-        {/* ⑦ News — grid layout (no carousel) */}
+        {/* ⑦ News — tag filter pills + reading progress rings */}
         <div className="border-t border-border/40">
           <News />
-          {/* ClubStories removed — replaced by richer News grid */}
         </div>
 
-        {/* ⑧ Hall of Fame — cinematic closer before footer */}
+        {/* ⑧ Hall of Fame — era filters + quote overlay */}
         <HallOfFame />
       </main>
+
+      {/* Footer — club badges strip + full footer */}
       <Footer />
     </div>
   );

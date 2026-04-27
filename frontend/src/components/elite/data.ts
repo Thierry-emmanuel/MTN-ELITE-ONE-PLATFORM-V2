@@ -274,7 +274,7 @@ export const matchInsights = {
 };
 
 // ─── Live Ticker ──────────────────────────────────────────────────────────────
-export const tickerItems = [
+export const extendedTickerItems = [
   "⚽ 62' — PWD Bamenda 1-1 Union Douala · But de Souaibou (pen.)",
   "🔴 58' — Canon Yaoundé vs Colombe FC · Expulsion Fouda (2J)",
   "📋 J19 · Coton Sport vs Canon Yaoundé · Sam 26 Avr · 16:00",
@@ -282,6 +282,9 @@ export const tickerItems = [
   "🇨🇲 Lions Indomptables · 5 joueurs Elite One convoqués · CAN 2025",
   "📈 Salomon Mbarga atteint les 14 buts — record de la saison",
   "🌟 Nathan Douala · Jeune talent du mois · Victoria United",
+  "💊 Blessure — Vincent Aboubakar incertain pour J19 · Coton Sport",
+  "🔄 Mercato — Idrissou Yaya (Victoria) sur les tablettes de Coton Sport",
+  "📊 Statistique — 2.4 buts par match en moyenne cette saison",
 ];
 
 // ─── Hall of Fame ─────────────────────────────────────────────────────────────

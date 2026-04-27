@@ -20,17 +20,74 @@ const RANK_COLORS = [
   "from-white/5 border-white/10",
 ];
 
+// ─── Sparkline chart (pure SVG, no libraries) ─────────────────────────────────
+// Each player gets 5 match data points (goals or impact score)
+const SPARKLINE_DATA: Record<string, number[]> = {
+  "S. Mbarga":   [3, 1, 2, 4, 2],
+  "I. Yaya":     [1, 2, 3, 2, 2],
+  "J.P. Etame":  [2, 0, 3, 1, 2],
+  "A. Souaibou": [1, 2, 1, 2, 2],
+  "C. Bassogog": [2, 1, 0, 3, 1],
+  "V. Aboubakar":[1, 2, 1, 1, 1],
+  "D. Ngondo":   [2, 1, 1, 0, 1],
+};
+
+const getSparkData = (name: string): number[] =>
+  SPARKLINE_DATA[name] ?? [1, 0, 1, 1, 2];
+
+const Sparkline = ({
+  data, color = "#FCD116", size = { w: 80, h: 28 },
+}: {
+  data: number[];
+  color?: string;
+  size?: { w: number; h: number };
+}) => {
+  if (!data.length) return null;
+  const { w, h } = size;
+  const max = Math.max(...data, 1);
+  const pad = 3;
+
+  const points = data.map((v, i) => ({
+    x: pad + (i / (data.length - 1)) * (w - pad * 2),
+    y: h - pad - ((v / max) * (h - pad * 2)),
+  }));
+
+  const pathD = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .join(" ");
+
+  const areaD = `${pathD} L ${points[points.length - 1].x} ${h} L ${points[0].x} ${h} Z`;
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
+      {/* Area fill */}
+      <path d={areaD} fill={`${color}18`} />
+      {/* Line */}
+      <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Dots */}
+      {points.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={i === points.length - 1 ? 2.5 : 1.5}
+          fill={i === points.length - 1 ? color : `${color}80`} />
+      ))}
+    </svg>
+  );
+};
+
+// ─── Player Card ──────────────────────────────────────────────────────────────
 const PlayerCard = ({
   player, idx, type, inView,
 }: { player: any; idx: number; type: StatType; inView: boolean }) => {
   const isFirst = idx === 0;
+  const sparkData = getSparkData(player.name);
+  const sparkColor = isFirst ? "#FCD116" : "#008751";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.96 }}
       animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
       transition={{ duration: 0.4, delay: idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -4, scale: 1.02 }}
-      className={`snap-start shrink-0 w-[138px] sm:w-[150px] group relative rounded-xl border bg-gradient-to-b overflow-hidden cursor-pointer transition-all duration-300 ${
+      className={`snap-start shrink-0 w-[155px] sm:w-[165px] group relative rounded-xl border bg-gradient-to-b overflow-hidden cursor-pointer transition-all duration-300 ${
         RANK_COLORS[Math.min(idx, 2)]
       } ${isFirst ? "hover:shadow-[0_12px_40px_rgba(252,209,22,0.3)]" : "hover:shadow-elegant"}`}
     >
@@ -58,7 +115,7 @@ const PlayerCard = ({
         {/* Stat badge */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
           <div
-            className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full backdrop-blur border text-[10px] font-bold ${
+            className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full backdrop-blur border text-[10px] font-bold whitespace-nowrap ${
               isFirst
                 ? "bg-accent/20 border-accent/50 text-accent"
                 : "bg-black/50 border-white/10 text-white"
@@ -80,11 +137,30 @@ const PlayerCard = ({
           <ClubBadge club={player.club} size={12} />
           <span className="text-[10px] text-muted-foreground truncate">{player.club.short}</span>
         </div>
+
+        {/* ── Sparkline: 5-match performance ── */}
+        <div className="mt-3 pt-2.5 border-t border-white/6">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">5 derniers matchs</span>
+          </div>
+          <Sparkline
+            data={sparkData}
+            color={sparkColor}
+            size={{ w: 100, h: 30 }}
+          />
+          {/* Match labels */}
+          <div className="flex justify-between mt-1">
+            {["J15","J16","J17","J18","J19"].map(j => (
+              <span key={j} className="text-[7px] text-muted-foreground/30">{j}</span>
+            ))}
+          </div>
+        </div>
       </div>
     </motion.div>
   );
 };
 
+// ─── Main TopPlayers ──────────────────────────────────────────────────────────
 export const TopPlayers = () => {
   const ref = useRef(null);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -102,7 +178,6 @@ export const TopPlayers = () => {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
         <SectionHeader eyebrow="Statistiques" title="Meilleurs Joueurs" size="compact" />
         <div className="flex items-center gap-2 shrink-0">
-          {/* Tabs */}
           <div className="flex gap-0.5 bg-surface-elevated rounded-lg p-0.5">
             {([
               { id: "scorers" as const, label: "Buteurs",  icon: <Goal className="h-3 w-3" /> },
@@ -123,16 +198,12 @@ export const TopPlayers = () => {
             ))}
           </div>
           <div className="flex gap-1">
-            <button
-              onClick={() => scroll("left")}
-              className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors"
-            >
+            <button onClick={() => scroll("left")}
+              className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
-            <button
-              onClick={() => scroll("right")}
-              className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors"
-            >
+            <button onClick={() => scroll("right")}
+              className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>

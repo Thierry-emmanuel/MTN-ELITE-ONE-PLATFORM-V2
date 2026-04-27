@@ -1,264 +1,83 @@
-import {
-  Search, Menu, X, ChevronDown,
-  Trophy, BookOpen, ArrowLeftRight, Activity,
-  Archive, History, Gamepad2, Star, Layers, Vote,
-  LogIn, LogOut, User, ChevronRight, Radio,
-  Users, Newspaper, Calendar, Command,
-} from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { tickerItems, fixtures, scorers, news, clubs } from "./data";
+import {
+  Search, LogIn, Menu, X, ChevronDown, Radio,
+  Trophy, Calendar, Users, Newspaper,
+} from "lucide-react";
+import { extendedTickerItems } from "./data";
+import { Link, useLocation } from "react-router-dom";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type DropdownItem = { label: string; href: string; icon?: React.ReactNode; desc?: string };
-type NavItem =
-  | { label: string; href: string; dropdown?: never }
-  | { label: string; href?: string; dropdown: DropdownItem[] };
+// ─── Season progress (matchday 19 of 34) ─────────────────────────────────────
+const CURRENT_MATCHDAY = 19;
+const TOTAL_MATCHDAYS = 34;
+const SEASON_PROGRESS = (CURRENT_MATCHDAY / TOTAL_MATCHDAYS) * 100;
 
-// ─── Nav data ─────────────────────────────────────────────────────────────────
-const AWARDS_ITEMS: DropdownItem[] = [
-  { label: "Ballon d'Or",         href: "/awards/ballon-dor", icon: <Trophy className="h-3.5 w-3.5" />,  desc: "Joueur de l'année" },
-  { label: "Player of the Month", href: "/awards/potm",       icon: <Star className="h-3.5 w-3.5" />,   desc: "POTM" },
-  { label: "Player of the Season",href: "/awards/pots",       icon: <Star className="h-3.5 w-3.5" />,   desc: "POTS" },
-  { label: "Player of the Week",  href: "/awards/potw",       icon: <Star className="h-3.5 w-3.5" />,   desc: "POTW" },
-  { label: "Team of the Week",    href: "/awards/totw",       icon: <Layers className="h-3.5 w-3.5" />, desc: "TOTW" },
-  { label: "Team of the Season",  href: "/awards/tots",       icon: <Layers className="h-3.5 w-3.5" />, desc: "TOTS" },
-  { label: "Vote des Fans",       href: "/awards/vote",       icon: <Vote className="h-3.5 w-3.5" />,   desc: "Votez maintenant" },
+// ─── Nav links ────────────────────────────────────────────────────────────────
+const NAV_LINKS = [
+  {
+    label: "Championnat",
+    icon: <Trophy className="h-3.5 w-3.5" />,
+    children: [
+      { label: "Classement", href: "/standings" },
+      { label: "Résultats",  href: "/results" },
+      { label: "Calendrier", href: "/fixtures" },
+      { label: "Statistiques", href: "/stats" },
+    ],
+  },
+  {
+    label: "Clubs & Joueurs",
+    icon: <Users className="h-3.5 w-3.5" />,
+    children: [
+      { label: "Tous les clubs", href: "/clubs" },
+      { label: "Joueurs",       href: "/players" },
+      { label: "Transferts",    href: "/transfers" },
+      { label: "Road to Lions", href: "/lions" },
+    ],
+  },
+  {
+    label: "Matchs",
+    icon: <Calendar className="h-3.5 w-3.5" />,
+    href: "/matches",
+  },
+  {
+    label: "Actualités",
+    icon: <Newspaper className="h-3.5 w-3.5" />,
+    href: "/news",
+  },
 ];
 
-const COMMUNITY_ITEMS: DropdownItem[] = [
-  { label: "Hall of Fame", href: "/community/hall-of-fame", icon: <Trophy className="h-3.5 w-3.5" />,       desc: "Légendes du foot camerounais" },
-  { label: "Actualités",  href: "/community/news",          icon: <BookOpen className="h-3.5 w-3.5" />,     desc: "News & analyses" },
-  { label: "Transferts",  href: "/community/transfers",     icon: <ArrowLeftRight className="h-3.5 w-3.5" />,desc: "Mercato Elite One" },
-  { label: "Blessures",   href: "/community/injuries",      icon: <Activity className="h-3.5 w-3.5" />,     desc: "Suivi médical" },
-  { label: "Archives",    href: "/community/archives",      icon: <Archive className="h-3.5 w-3.5" />,      desc: "Saisons précédentes" },
-  { label: "Histoire",    href: "/community/history",       icon: <History className="h-3.5 w-3.5" />,      desc: "Histoire du championnat" },
-  { label: "Jeux",        href: "/community/games",         icon: <Gamepad2 className="h-3.5 w-3.5" />,     desc: "Fantasy & pronostics" },
-];
-
-const NAV: NavItem[] = [
-  { label: "Matchs",     href: "/matches" },
-  { label: "Classement", href: "/standings" },
-  { label: "Stats",      href: "/stats" },
-  { label: "Joueurs",    href: "/players" },
-  { label: "Awards",     dropdown: AWARDS_ITEMS },
-  { label: "Clubs",      href: "/clubs" },
-  { label: "Communauté", dropdown: COMMUNITY_ITEMS },
-];
-
-// ─── Season progress (matchday 18 / 34) ──────────────────────────────────────
-const CURRENT_MD = 18;
-const TOTAL_MD   = 34;
-const SEASON_PCT = (CURRENT_MD / TOTAL_MD) * 100;
-
-// ─── Search data ──────────────────────────────────────────────────────────────
-const SEARCH_DATA = [
-  // players
-  ...scorers.map(p => ({ id: `p-${p.name}`, cat: "Joueurs" as const, label: p.name, sub: p.club.name, href: "/players" })),
-  // clubs
-  ...Object.values(clubs).map(c => ({ id: `c-${c.id}`, cat: "Clubs" as const, label: c.name, sub: c.city, href: "/clubs" })),
-  // matches
-  ...fixtures.map((f, i) => ({ id: `m-${i}`, cat: "Matchs" as const, label: `${f.home.name} vs ${f.away.name}`, sub: f.date, href: "/matches" })),
-  // news
-  { id: "n1", cat: "Actualités" as const, label: "Coton Sport — Canon : duel de titans", sub: "22 Avr", href: "/community/news" },
-  { id: "n2", cat: "Actualités" as const, label: "Comment PWD a réinventé son jeu", sub: "21 Avr", href: "/community/news" },
-];
-
-const CAT_ICONS: Record<string, React.ReactNode> = {
-  Joueurs:    <Users className="h-3.5 w-3.5" />,
-  Clubs:      <Trophy className="h-3.5 w-3.5" />,
-  Matchs:     <Calendar className="h-3.5 w-3.5" />,
-  Actualités: <Newspaper className="h-3.5 w-3.5" />,
-};
-
-// ─── Auth helpers ─────────────────────────────────────────────────────────────
-const getUser = () => {
-  try { return JSON.parse(localStorage.getItem("mtn_user") ?? "null"); } catch { return null; }
-};
-const logout = () => { localStorage.removeItem("mtn_user"); window.location.href = "/"; };
-
-// ─── Season Progress Bar ──────────────────────────────────────────────────────
-const SeasonBar = () => (
-  <div className="h-[2px] bg-white/5 relative overflow-hidden" title={`J${CURRENT_MD} / J${TOTAL_MD}`}>
-    <motion.div
-      className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#008751]"
-      initial={{ width: "0%" }}
-      animate={{ width: `${SEASON_PCT}%` }}
-      transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-    />
-  </div>
-);
-
-// ─── Live Ticker Strip ────────────────────────────────────────────────────────
-const TickerStrip = () => {
-  const doubled = [...tickerItems, ...tickerItems];
+// ─── Live Ticker ──────────────────────────────────────────────────────────────
+const LiveTicker = () => {
+  // Duplicate items for seamless loop
+  const doubled = [...extendedTickerItems, ...extendedTickerItems];
   return (
-    <div className="overflow-hidden flex-1 mx-3">
-      <div className="flex gap-10 animate-[ticker_35s_linear_infinite] whitespace-nowrap">
-        {doubled.map((item, i) => {
-          const isLive = item.includes("62'") || item.includes("58'");
-          return (
-            <span key={i} className={`text-[10px] shrink-0 font-medium ${isLive ? "text-[#FCD116]" : "text-white/50"}`}>
+    <div className="flex-1 overflow-hidden min-w-0 flex items-center gap-3 relative">
+      {/* Live badge */}
+      <div className="shrink-0 flex items-center gap-1.5 pr-3 border-r border-white/10">
+        <Radio className="h-3 w-3 text-[#CE1126] animate-pulse" />
+        <span className="text-[9px] font-bold uppercase tracking-[.2em] text-[#CE1126]">Live</span>
+      </div>
+      {/* Scrolling ticker */}
+      <div className="flex-1 overflow-hidden">
+        <motion.div
+          className="flex gap-8 whitespace-nowrap"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 40, ease: "linear", repeat: Infinity }}
+        >
+          {doubled.map((item, i) => (
+            <span key={i} className="text-[11px] text-white/50 shrink-0">
               {item}
+              <span className="mx-4 text-white/15">·</span>
             </span>
-          );
-        })}
+          ))}
+        </motion.div>
       </div>
     </div>
   );
 };
 
-// ─── Search Overlay ───────────────────────────────────────────────────────────
-const SearchOverlay = ({ onClose }: { onClose: () => void }) => {
-  const [query, setQuery] = useState("");
-  const [cursor, setCursor] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
-
-  const results = query.trim().length > 0
-    ? SEARCH_DATA.filter(d =>
-        d.label.toLowerCase().includes(query.toLowerCase()) ||
-        d.sub.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8)
-    : SEARCH_DATA.slice(0, 6);
-
-  const grouped = results.reduce<Record<string, typeof results>>((acc, r) => {
-    (acc[r.cat] ??= []).push(r);
-    return acc;
-  }, {});
-  const flat = Object.values(grouped).flat();
-
-  useEffect(() => { inputRef.current?.focus(); }, []);
-  useEffect(() => { setCursor(0); }, [query]);
-
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") { e.preventDefault(); setCursor(c => Math.min(c + 1, flat.length - 1)); }
-    if (e.key === "ArrowUp")   { e.preventDefault(); setCursor(c => Math.max(c - 1, 0)); }
-    if (e.key === "Enter" && flat[cursor]) { navigate(flat[cursor].href); onClose(); }
-    if (e.key === "Escape") onClose();
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.18 }}
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-[hsl(168,50%,5%)/0.88] backdrop-blur-md" />
-
-      <motion.div
-        initial={{ opacity: 0, y: -24, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -12, scale: 0.97 }}
-        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-lg bg-[hsl(168,45%,9%)] border border-border rounded-2xl shadow-[0_32px_80px_-10px_hsl(168_80%_5%/0.9)] overflow-hidden"
-        onClick={e => e.stopPropagation()}
-        onKeyDown={handleKey}
-      >
-        {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Rechercher joueur, club, match..."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
-          />
-          <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] text-muted-foreground/40 font-mono bg-surface-elevated px-1.5 py-0.5 rounded border border-border">
-            ESC
-          </kbd>
-        </div>
-
-        {/* Results */}
-        <div className="max-h-[420px] overflow-y-auto p-2">
-          {flat.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-sm">Aucun résultat pour « {query} »</div>
-          ) : (
-            Object.entries(grouped).map(([cat, items]) => (
-              <div key={cat} className="mb-1">
-                <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground/60">
-                  {CAT_ICONS[cat]}
-                  {cat}
-                </div>
-                {items.map(item => {
-                  const globalIdx = flat.indexOf(item);
-                  return (
-                    <Link
-                      key={item.id}
-                      to={item.href}
-                      onClick={onClose}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                        globalIdx === cursor
-                          ? "bg-accent/10 text-accent"
-                          : "hover:bg-surface-elevated text-foreground"
-                      }`}
-                      onMouseEnter={() => setCursor(globalIdx)}
-                    >
-                      <div className="h-7 w-7 rounded-lg bg-surface-elevated border border-border grid place-items-center text-muted-foreground shrink-0">
-                        {CAT_ICONS[cat]}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium leading-none truncate">{item.label}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.sub}</div>
-                      </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
-                    </Link>
-                  );
-                })}
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Footer hint */}
-        <div className="border-t border-border px-4 py-2 flex items-center gap-4 text-[10px] text-muted-foreground/40">
-          <span className="flex items-center gap-1"><kbd className="font-mono bg-surface-elevated border border-border px-1 rounded">↑↓</kbd> Naviguer</span>
-          <span className="flex items-center gap-1"><kbd className="font-mono bg-surface-elevated border border-border px-1 rounded">↵</kbd> Sélectionner</span>
-          <span className="flex items-center gap-1"><kbd className="font-mono bg-surface-elevated border border-border px-1 rounded">esc</kbd> Fermer</span>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ─── Dropdown Panel ───────────────────────────────────────────────────────────
-const DropdownPanel = ({ items, onClose }: { items: DropdownItem[]; onClose: () => void }) => (
-  <motion.div
-    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 rounded-xl border border-border bg-[hsl(var(--background-deep))] shadow-[0_20px_60px_-10px_hsl(168_80%_5%/0.85)] z-50 overflow-hidden"
-  >
-    <div className="p-1.5 grid gap-0.5">
-      {items.map((item) => (
-        <Link
-          key={item.label}
-          to={item.href}
-          onClick={onClose}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-elevated group transition-colors"
-        >
-          {item.icon && (
-            <span className="text-muted-foreground group-hover:text-accent transition-colors shrink-0">{item.icon}</span>
-          )}
-          <div className="min-w-0">
-            <div className="text-sm font-medium text-foreground leading-none mb-0.5">{item.label}</div>
-            {item.desc && <div className="text-[11px] text-muted-foreground leading-none truncate">{item.desc}</div>}
-          </div>
-        </Link>
-      ))}
-    </div>
-  </motion.div>
-);
-
-// ─── Desktop Nav Item ─────────────────────────────────────────────────────────
-const NavItemComp = ({ item, active }: { item: NavItem; active: boolean }) => {
+// ─── Dropdown menu ────────────────────────────────────────────────────────────
+const NavDropdown = ({ link }: { link: typeof NAV_LINKS[0] }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -270,15 +89,14 @@ const NavItemComp = ({ item, active }: { item: NavItem; active: boolean }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  if (!item.dropdown) {
+  if (!link.children) {
     return (
       <Link
-        to={item.href!}
-        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-accent hover:bg-surface-elevated/50 ${
-          active ? "text-accent" : "text-muted-foreground"
-        }`}
+        to={link.href!}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/55 hover:text-white hover:bg-white/6 transition-all"
       >
-        {item.label}
+        {link.icon}
+        {link.label}
       </Link>
     );
   }
@@ -286,75 +104,35 @@ const NavItemComp = ({ item, active }: { item: NavItem; active: boolean }) => {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:text-accent hover:bg-surface-elevated/50 ${
-          open ? "text-accent bg-surface-elevated/50" : "text-muted-foreground"
+        onClick={() => setOpen(v => !v)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all ${
+          open ? "text-white bg-white/8" : "text-white/55 hover:text-white hover:bg-white/6"
         }`}
       >
-        {item.label}
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-      </button>
-      <AnimatePresence>
-        {open && <DropdownPanel items={item.dropdown} onClose={() => setOpen(false)} />}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-// ─── User Menu ────────────────────────────────────────────────────────────────
-const UserMenu = ({ user }: { user: any }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 h-9 px-3 rounded-full bg-surface-elevated border border-border hover:border-accent/50 transition-all"
-      >
-        <div className="h-5 w-5 rounded-full bg-accent/20 grid place-items-center">
-          <User className="h-3 w-3 text-accent" />
-        </div>
-        <span className="text-sm font-medium text-foreground hidden sm:block max-w-[100px] truncate">
-          {user.name?.split(" ")[0]}
-        </span>
-        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        {link.icon}
+        {link.label}
+        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            initial={{ opacity: 0, y: 6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.18 }}
-            className="absolute right-0 top-full mt-2 w-52 rounded-xl border border-border bg-[hsl(var(--background-deep))] shadow-[0_20px_60px_-10px_hsl(168_80%_5%/0.85)] z-50 overflow-hidden p-1.5"
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute top-full left-0 mt-2 min-w-[160px] bg-[hsl(168,50%,8%)] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
           >
-            <div className="px-3 py-2.5 border-b border-border mb-1">
-              <div className="text-sm font-semibold text-foreground truncate">{user.name}</div>
-              <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
-              {user.role && (
-                <span className="mt-1.5 inline-block text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
-                  {user.role}
-                </span>
-              )}
-            </div>
-            <Link to="/profile" onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-surface-elevated transition-colors">
-              <User className="h-3.5 w-3.5" /> Mon profil
-            </Link>
-            <button onClick={logout}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors">
-              <LogOut className="h-3.5 w-3.5" /> Déconnexion
-            </button>
+            {link.children.map((child, i) => (
+              <Link
+                key={i}
+                to={child.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center px-4 py-2.5 text-[12px] text-white/55 hover:text-white hover:bg-white/6 transition-all border-b border-white/5 last:border-0"
+              >
+                {child.label}
+              </Link>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
@@ -362,242 +140,188 @@ const UserMenu = ({ user }: { user: any }) => {
   );
 };
 
-// ─── Mobile Menu ──────────────────────────────────────────────────────────────
-const MobileMenu = ({ onClose, user }: { onClose: () => void; user: any }) => {
-  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-  return (
-    <motion.nav
-      initial={{ opacity: 0, y: -8, height: 0 }}
-      animate={{ opacity: 1, y: 0, height: "auto" }}
-      exit={{ opacity: 0, y: -8, height: 0 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="xl:hidden border-t border-border bg-[hsl(168,50%,7%)/0.98] overflow-hidden"
-    >
-      <div className="container py-4 flex flex-col gap-1 max-h-[80svh] overflow-y-auto">
-        {!user ? (
-          <div className="flex gap-2 mb-3">
+// ─── Mobile menu ──────────────────────────────────────────────────────────────
+const MobileMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) => (
+  <AnimatePresence>
+    {open && (
+      <>
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={onClose}
+        />
+        <motion.div
+          initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+          transition={{ type: "spring", damping: 28, stiffness: 300 }}
+          className="fixed top-0 right-0 bottom-0 w-[280px] bg-[hsl(168,50%,7%)] border-l border-white/10 z-50 lg:hidden flex flex-col"
+        >
+          <div className="flex items-center justify-between p-5 border-b border-white/8">
+            <span className="font-display text-sm tracking-widest">MENU</span>
+            <button onClick={onClose} className="h-8 w-8 grid place-items-center rounded-lg hover:bg-white/8 transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            {NAV_LINKS.map((link, i) => (
+              <div key={i}>
+                {link.children ? (
+                  <div>
+                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] uppercase tracking-widest text-accent font-bold mt-3 mb-1">
+                      {link.icon}{link.label}
+                    </div>
+                    {link.children.map((child, j) => (
+                      <Link key={j} to={child.href} onClick={onClose}
+                        className="flex items-center px-5 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <Link to={link.href!} onClick={onClose}
+                    className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                    {link.icon}{link.label}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </nav>
+          <div className="p-4 border-t border-white/8 space-y-2">
             <Link to="/login" onClick={onClose}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-white/15 text-sm text-white/70 hover:bg-white/5 transition-all">
               <LogIn className="h-4 w-4" /> Connexion
             </Link>
             <Link to="/register" onClick={onClose}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent text-accent-foreground text-sm font-semibold">
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity">
               S'inscrire
             </Link>
           </div>
-        ) : (
-          <div className="flex items-center gap-3 mb-3 p-3 bg-surface-elevated rounded-xl">
-            <div className="h-8 w-8 rounded-full bg-accent/20 grid place-items-center">
-              <User className="h-4 w-4 text-accent" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold truncate">{user.name}</div>
-              <div className="text-[11px] text-muted-foreground truncate">{user.email}</div>
-            </div>
-          </div>
-        )}
-
-        {NAV.map((item, i) => (
-          <div key={item.label}>
-            {item.dropdown ? (
-              <>
-                <button
-                  onClick={() => setExpandedIdx(expandedIdx === i ? null : i)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-accent hover:bg-surface-elevated transition-colors"
-                >
-                  <span>{item.label}</span>
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedIdx === i ? "rotate-180 text-accent" : ""}`} />
-                </button>
-                <AnimatePresence>
-                  {expandedIdx === i && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="ml-3 flex flex-col gap-0.5 border-l border-border pl-3 pb-1 overflow-hidden"
-                    >
-                      {item.dropdown.map((sub) => (
-                        <Link key={sub.label} to={sub.href} onClick={onClose}
-                          className="flex items-center gap-2 px-2 py-2 rounded-md text-sm text-muted-foreground hover:text-accent transition-colors">
-                          {sub.icon && <span className="opacity-60">{sub.icon}</span>}
-                          {sub.label}
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </>
-            ) : (
-              <Link to={item.href!} onClick={onClose}
-                className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-accent hover:bg-surface-elevated transition-colors">
-                {item.label}
-              </Link>
-            )}
-          </div>
-        ))}
-      </div>
-    </motion.nav>
-  );
-};
-
-// ─── Logo ─────────────────────────────────────────────────────────────────────
-const Logo = () => (
-  <Link to="/" className="flex items-center gap-3 group shrink-0">
-    <div className="relative h-9 w-9 rounded-xl overflow-hidden bg-surface-elevated border border-border flex items-center justify-center shadow-[var(--shadow-glow)]">
-      <img src="/assets/images/logo/logo.png" alt="MTN Elite One" className="h-7 w-7 object-contain"
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-          const fb = document.createElement("span");
-          fb.className = "font-display font-bold text-accent text-base";
-          fb.textContent = "M1";
-          e.currentTarget.parentElement?.appendChild(fb);
-        }}
-      />
-    </div>
-    <div className="hidden sm:flex flex-col leading-none gap-0.5">
-      <span className="font-display text-sm tracking-widest text-foreground">MTN ELITE ONE</span>
-      <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-        Cameroon · <span className="text-accent/80">J{CURRENT_MD}/{TOTAL_MD}</span>
-      </span>
-    </div>
-  </Link>
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
 );
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
-export const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+// ─── Main Navbar ──────────────────────────────────────────────────────────────
+interface NavbarProps {
+  onSearchOpen?: () => void;
+}
+
+export const Navbar = ({ onSearchOpen }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(false);
-  const [user, setUser] = useState(getUser());
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
-  // Scroll listener
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => window.removeEventListener("scroll", handler);
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Watch localStorage
-  useEffect(() => {
-    const handler = () => setUser(getUser());
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
-  }, []);
-
-  // Close mobile menu on resize
-  useEffect(() => {
-    const handler = () => { if (window.innerWidth >= 1280) setMenuOpen(false); };
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
-
-  // Cmd+K / Ctrl+K shortcut
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen(v => !v);
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, []);
+  // Close mobile menu on route change
+  useEffect(() => { setMobileOpen(false); }, [location]);
 
   return (
     <>
-      {/* ── Search Overlay ── */}
-      <AnimatePresence>
-        {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
-      </AnimatePresence>
+      {/* ── Season progress bar (very top, 2px) ── */}
+      <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-white/5">
+        <motion.div
+          className="h-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]"
+          initial={{ width: "0%" }}
+          animate={{ width: `${SEASON_PROGRESS}%` }}
+          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
+        />
+      </div>
 
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-[hsl(168,50%,6%)/0.97] backdrop-blur-xl border-b border-border shadow-[0_4px_30px_rgba(0,0,0,0.4)]"
-          : "glass"
-      }`}>
-        {/* Season progress bar */}
-        <SeasonBar />
-
+      <header
+        className={`fixed top-[2px] left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "glass shadow-[0_2px_40px_rgba(0,0,0,0.4)]"
+            : "bg-transparent border-b border-transparent"
+        }`}
+      >
         {/* ── Main nav row ── */}
-        <div className="container flex h-13 items-center justify-between gap-3 py-1.5">
-          <Logo />
+        <div className="container flex items-center gap-4 h-14">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="h-8 w-8 rounded-lg bg-gradient-primary grid place-items-center shadow-glow shrink-0 group-hover:scale-105 transition-transform">
+              <span className="font-display font-bold text-white text-sm">M1</span>
+            </div>
+            <div className="hidden sm:block">
+              <div className="font-display text-xs tracking-widest leading-none">MTN ELITE ONE</div>
+              <div className="text-[9px] uppercase tracking-[.18em] text-muted-foreground/60 mt-0.5">Saison 24/25</div>
+            </div>
+          </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden xl:flex items-center gap-0.5 text-sm flex-1 justify-center" aria-label="Navigation principale">
-            {NAV.map((item, i) => (
-              <NavItemComp key={item.label} item={item} active={i === 0} />
+          <nav className="hidden lg:flex items-center gap-0.5 ml-2">
+            {NAV_LINKS.map((link, i) => (
+              <NavDropdown key={i} link={link} />
             ))}
           </nav>
 
-          {/* Live ticker — desktop only, between nav and actions */}
-          <div className="hidden xl:flex items-center flex-1 max-w-xs overflow-hidden">
-            <div className="flex items-center gap-2 text-[10px] bg-[#CE1126]/15 border border-[#CE1126]/20 rounded-full px-2 py-1 shrink-0">
-              <Radio className="h-2.5 w-2.5 text-[#CE1126] animate-pulse shrink-0" />
-              <span className="text-[#CE1126] font-bold uppercase tracking-widest">Live</span>
-            </div>
-            <TickerStrip />
+          {/* Live ticker — fills remaining space */}
+          <div className="flex-1 hidden md:flex items-center min-w-0 mx-4 bg-white/4 border border-white/6 rounded-full px-3 py-1.5 overflow-hidden">
+            <LiveTicker />
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Search button */}
+          {/* Right actions */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
+            {/* Search ⌘K */}
             <button
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 h-8 px-2.5 rounded-full hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground group border border-transparent hover:border-border"
-              aria-label="Recherche (⌘K)"
+              onClick={onSearchOpen}
+              className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-lg bg-white/5 border border-white/8 text-white/40 hover:text-white hover:bg-white/8 hover:border-white/15 transition-all text-[11px] group"
+              title="Rechercher (⌘K)"
             >
-              <Search className="h-4 w-4" />
-              <kbd className="hidden sm:flex items-center gap-0.5 text-[9px] text-muted-foreground/40 font-mono">
-                <Command className="h-2.5 w-2.5" />K
-              </kbd>
+              <Search className="h-3.5 w-3.5" />
+              <span className="hidden lg:inline">Rechercher</span>
+              <kbd className="hidden lg:inline px-1.5 py-0.5 rounded bg-white/8 text-[9px] font-mono text-white/30 group-hover:text-white/50 transition-colors">⌘K</kbd>
             </button>
 
-            {user ? (
-              <UserMenu user={user} />
-            ) : (
-              <div className="hidden sm:flex items-center gap-2">
-                <Link to="/login"
-                  className="h-8 px-3.5 flex items-center gap-1.5 rounded-full border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-white/20 transition-all">
-                  <LogIn className="h-3.5 w-3.5" />
-                  Connexion
-                </Link>
-                <Link to="/register"
-                  className="h-8 px-3.5 flex items-center gap-1.5 rounded-full bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity shadow-gold">
-                  S'inscrire
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            )}
-
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="xl:hidden h-8 w-8 grid place-items-center rounded-full hover:bg-surface-elevated transition-colors text-foreground"
-              aria-expanded={menuOpen}
+            {/* Auth buttons */}
+            <Link
+              to="/login"
+              className="hidden sm:flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[11px] font-medium text-white/55 hover:text-white border border-transparent hover:border-white/10 hover:bg-white/5 transition-all"
             >
-              <AnimatePresence mode="wait">
-                {menuOpen
-                  ? <motion.span key="x"   initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}><X className="h-5 w-5" /></motion.span>
-                  : <motion.span key="men" initial={{ rotate: 90, opacity: 0 }}  animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}><Menu className="h-5 w-5" /></motion.span>
-                }
-              </AnimatePresence>
+              <LogIn className="h-3.5 w-3.5" />
+              Connexion
+            </Link>
+            <Link
+              to="/register"
+              className="hidden sm:flex items-center h-8 px-4 rounded-lg bg-accent text-accent-foreground text-[11px] font-bold hover:opacity-90 transition-opacity"
+            >
+              S'inscrire
+            </Link>
+
+            {/* Mobile search */}
+            <button
+              onClick={onSearchOpen}
+              className="sm:hidden h-8 w-8 grid place-items-center rounded-lg bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
+            >
+              <Search className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMobileOpen(v => !v)}
+              className="lg:hidden h-8 w-8 grid place-items-center rounded-lg bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
+              aria-label="Menu"
+            >
+              <Menu className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* Mobile ticker */}
-        <div className="xl:hidden h-7 flex items-center border-t border-border/30 bg-black/20 overflow-hidden">
-          <div className="flex items-center gap-2 px-3 shrink-0">
-            <Radio className="h-2.5 w-2.5 text-[#CE1126] animate-pulse" />
-            <span className="text-[9px] text-[#CE1126] font-bold uppercase tracking-widest">Live</span>
-          </div>
-          <TickerStrip />
+        {/* ── Ticker row on mobile ── */}
+        <div className="md:hidden flex items-center overflow-hidden border-t border-white/5 bg-white/3 px-4 py-1.5">
+          <LiveTicker />
         </div>
-
-        <AnimatePresence>
-          {menuOpen && <MobileMenu onClose={() => setMenuOpen(false)} user={user} />}
-        </AnimatePresence>
       </header>
+
+      {/* Spacer so content doesn't hide under fixed header */}
+      <div className="h-[58px]" />
+
+      {/* Mobile menu drawer */}
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </>
   );
 };

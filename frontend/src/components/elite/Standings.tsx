@@ -1,397 +1,236 @@
 import { useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { standings, matchInsights } from "./data";
+import { motion, useInView, AnimatePresence } from "framer-motion";
+import { TrendingUp, TrendingDown, Minus, Trophy, AlertTriangle } from "lucide-react";
+import { standings, type FormResult } from "./data";
 import { ClubBadge } from "./ClubBadge";
 import { SectionHeader } from "./SectionHeader";
-import { Link } from "react-router-dom";
 
-type FormResult = "W" | "D" | "L";
-
-// ─── Position change data (delta from previous matchday) ──────────────────────
-// Positive = gained positions, negative = lost positions, 0 = no change
-const POSITION_CHANGES: Record<number, number> = {
-  1:  2,   // Coton Sport gained 2
-  2:  0,   // Canon unchanged
-  3: -1,   // Union Douala lost 1
-  4:  1,   // PWD gained 1
-  5:  0,   // Victoria unchanged
-  6: -2,   // APEJES lost 2
-  7:  1,   // Colombe gained 1
-  8: -1,   // Young Sports lost 1
+// ─── Position change data (simulate prev-week positions) ─────────────────────
+// Positive = moved up, negative = moved down, 0 = no change
+const POSITION_CHANGES: Record<string, number> = {
+  cot:  0,   // stayed 1st
+  cnk:  1,   // up from 3rd
+  uds:  -1,  // down from 2nd
+  pwd:  2,   // up from 6th
+  vict: 0,   // stayed 5th
+  apb:  -2,  // down from 4th
+  cof:  1,   // up from 8th
+  ymb:  -1,  // down from 7th
 };
 
-// ─── Position Change Indicator ────────────────────────────────────────────────
-const PositionChange = ({ pos, compact = false }: { pos: number; compact?: boolean }) => {
-  const delta = POSITION_CHANGES[pos] ?? 0;
+// ─── Zone config ──────────────────────────────────────────────────────────────
+// pos 1 = Champion zone, 2-3 = CAF zone, 7-8 = relegation
+const getZone = (pos: number) => {
+  if (pos === 1) return "champion";
+  if (pos <= 3)  return "caf";
+  if (pos >= 7)  return "relegation";
+  return "none";
+};
 
-  if (delta === 0) {
-    return (
-      <span className="flex items-center gap-0.5 text-white/25" title="Inchangé">
-        <Minus className="h-2.5 w-2.5" />
-        {!compact && <span className="text-[9px] tabular-nums">0</span>}
-      </span>
-    );
-  }
+const ZONE_COLORS = {
+  champion:   "border-l-accent",
+  caf:        "border-l-primary",
+  relegation: "border-l-destructive",
+  none:       "border-l-transparent",
+};
 
-  if (delta > 0) {
-    return (
-      <span className="flex items-center gap-0.5 text-[#1F8A4C]" title={`+${delta} place${delta > 1 ? "s" : ""}`}>
-        <TrendingUp className="h-2.5 w-2.5" />
-        {!compact && <span className="text-[9px] font-bold tabular-nums">+{delta}</span>}
-      </span>
-    );
-  }
+// ─── Form badge ───────────────────────────────────────────────────────────────
+const FormBadge = ({ r }: { r: FormResult }) => (
+  <div
+    className={`h-5 w-5 rounded-full grid place-items-center text-[9px] font-bold ${
+      r === "W"
+        ? "bg-win/20 text-win"
+        : r === "D"
+        ? "bg-draw/20 text-draw"
+        : "bg-loss/20 text-[hsl(var(--destructive))]"
+    }`}
+  >
+    {r}
+  </div>
+);
 
+// ─── Position change indicator ────────────────────────────────────────────────
+const PositionChange = ({ delta }: { delta: number }) => {
+  if (delta === 0) return (
+    <Minus className="h-3 w-3 text-muted-foreground/30" />
+  );
+  if (delta > 0) return (
+    <span className="flex items-center gap-0.5 text-[10px] font-bold text-win">
+      <TrendingUp className="h-3 w-3" />
+      {delta}
+    </span>
+  );
   return (
-    <span className="flex items-center gap-0.5 text-[#CE1126]" title={`${delta} place${Math.abs(delta) > 1 ? "s" : ""}`}>
-      <TrendingDown className="h-2.5 w-2.5" />
-      {!compact && <span className="text-[9px] font-bold tabular-nums">{delta}</span>}
+    <span className="flex items-center gap-0.5 text-[10px] font-bold text-[hsl(var(--destructive))]">
+      <TrendingDown className="h-3 w-3" />
+      {Math.abs(delta)}
     </span>
   );
 };
 
-// ─── Form Dot ─────────────────────────────────────────────────────────────────
-const FormDot = ({ r }: { r: FormResult }) => {
-  const colors: Record<FormResult, string> = { W: "bg-win", D: "bg-draw", L: "bg-loss" };
-  return <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${colors[r]}`} title={r} />;
-};
-
-// ─── Stat Bar ─────────────────────────────────────────────────────────────────
-const StatBar = ({
-  label, homeVal, awayVal, homeClub, awayClub,
-}: {
-  label: string; homeVal: number; awayVal: number;
-  homeClub: typeof standings[0]["club"]; awayClub: typeof standings[0]["club"];
-}) => {
-  const total = homeVal + awayVal || 1;
-  const homePct = (homeVal / total) * 100;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-display text-sm tabular-nums">{homeVal}</span>
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</span>
-        <span className="font-display text-sm tabular-nums">{awayVal}</span>
-      </div>
-      <div className="flex h-1.5 rounded-full overflow-hidden">
-        <motion.div
-          className="h-full rounded-l-full"
-          style={{ background: homeClub.color }}
-          initial={{ width: "50%" }}
-          animate={{ width: `${homePct}%` }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-        />
-        <div className="h-full rounded-r-full flex-1" style={{ background: awayClub.color, opacity: 0.7 }} />
-      </div>
+// ─── Skeleton rows ────────────────────────────────────────────────────────────
+const SkeletonRow = ({ i }: { i: number }) => (
+  <div
+    className="flex items-center gap-3 px-4 py-3 border-b border-border/40 animate-pulse"
+    style={{ animationDelay: `${i * 0.06}s` }}
+  >
+    <div className="h-4 w-4 rounded bg-white/6" />
+    <div className="h-7 w-7 rounded-full bg-white/6" />
+    <div className="h-4 w-28 rounded bg-white/6 flex-1" />
+    <div className="flex gap-3">
+      {[1,2,3,4].map(j => <div key={j} className="h-4 w-6 rounded bg-white/6" />)}
     </div>
-  );
-};
+    <div className="hidden md:flex gap-1">
+      {[1,2,3,4,5].map(j => <div key={j} className="h-5 w-5 rounded-full bg-white/6" />)}
+    </div>
+    <div className="h-4 w-8 rounded bg-white/8" />
+  </div>
+);
 
-// ─── Club Card ────────────────────────────────────────────────────────────────
-const ClubCard = ({ row, inView, delay }: { row: typeof standings[0]; inView: boolean; delay: number }) => {
-  const isTop     = row.pos <= 2;
-  const isEuro    = row.pos === 3;
-  const isRelZone = row.pos >= 7;
-  const delta     = POSITION_CHANGES[row.pos] ?? 0;
+// ─── Zone legend ──────────────────────────────────────────────────────────────
+const ZoneLegend = () => (
+  <div className="flex flex-wrap items-center gap-4 mt-4 text-[10px] text-muted-foreground">
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-sm bg-accent" />
+      Champion
+    </span>
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
+      Zone CAF
+    </span>
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-sm bg-destructive" />
+      Zone relégation
+    </span>
+  </div>
+);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16, scale: 0.96 }}
-      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
-      transition={{ duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -3, scale: 1.02 }}
-      className={`snap-start shrink-0 w-[130px] sm:w-[145px] cursor-pointer group relative rounded-xl border p-3.5 flex flex-col items-center gap-2.5 transition-all duration-300 ${
-        isTop
-          ? "border-primary/40 bg-primary/5 hover:border-primary/70 hover:shadow-[0_8px_30px_rgba(0,135,81,0.25)]"
-          : isEuro
-          ? "border-accent/30 bg-accent/5 hover:border-accent/60 hover:shadow-gold"
-          : isRelZone
-          ? "border-loss/30 bg-loss/5 hover:border-loss/50"
-          : "border-border bg-gradient-card hover:border-white/20 hover:shadow-elegant"
-      }`}
-    >
-      {/* Position badge + change indicator */}
-      <div className="absolute top-2 left-2 flex items-center gap-0.5">
-        <div
-          className={`h-5 w-5 rounded-full grid place-items-center text-[10px] font-bold ${
-            isTop
-              ? "bg-primary text-primary-foreground"
-              : isEuro
-              ? "bg-accent text-accent-foreground"
-              : isRelZone
-              ? "bg-loss/20 text-loss"
-              : "bg-surface-elevated text-muted-foreground"
-          }`}
-        >
-          {row.pos}
-        </div>
-      </div>
-
-      {/* Position change in top-right */}
-      <div className="absolute top-2.5 right-2">
-        <PositionChange pos={row.pos} compact />
-      </div>
-
-      {isTop && <div className="absolute inset-0 rounded-xl bg-primary/5 pointer-events-none" />}
-
-      {/* Badge */}
-      <div className="mt-2 relative">
-        <ClubBadge club={row.club} size={44} />
-        {isTop && (
-          <div
-            className="absolute -inset-2 rounded-full blur-lg opacity-0 group-hover:opacity-30 transition-opacity"
-            style={{ background: row.club.color }}
-          />
-        )}
-      </div>
-
-      {/* Name */}
-      <div className="text-center min-w-0 w-full">
-        <div className="font-display text-xs leading-tight truncate">{row.club.name}</div>
-        <div className="text-[9px] text-muted-foreground mt-0.5">{row.club.city}</div>
-      </div>
-
-      {/* Stats */}
-      <div className="w-full grid grid-cols-2 gap-1 text-center">
-        <div className="bg-surface-elevated/60 rounded-lg py-1">
-          <div className="font-display text-sm text-accent">{row.pts}</div>
-          <div className="text-[8px] text-muted-foreground uppercase">pts</div>
-        </div>
-        <div className="bg-surface-elevated/60 rounded-lg py-1">
-          <div
-            className={`font-display text-xs ${
-              row.gd > 0 ? "text-win" : row.gd < 0 ? "text-loss" : "text-muted-foreground"
-            }`}
-          >
-            {row.gd > 0 ? `+${row.gd}` : row.gd}
-          </div>
-          <div className="text-[8px] text-muted-foreground uppercase">GD</div>
-        </div>
-      </div>
-
-      {/* Form dots */}
-      <div className="flex items-center gap-1 justify-center">
-        {row.form.map((f, fi) => <FormDot key={fi} r={f as FormResult} />)}
-      </div>
-    </motion.div>
-  );
-};
-
-// ─── Compact List Row (alternative view) ─────────────────────────────────────
-const ListRow = ({ row, inView, delay }: { row: typeof standings[0]; inView: boolean; delay: number }) => {
-  const isTop     = row.pos <= 2;
-  const isEuro    = row.pos === 3;
-  const isRelZone = row.pos >= 7;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -12 }}
-      animate={inView ? { opacity: 1, x: 0 } : {}}
-      transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }}
-      className={`flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all hover:bg-surface-elevated/40 cursor-pointer ${
-        isTop ? "border-primary/20 bg-primary/3" : isEuro ? "border-accent/15 bg-accent/3" : isRelZone ? "border-loss/15" : "border-transparent"
-      }`}
-    >
-      {/* Pos + change */}
-      <div className="flex items-center gap-1.5 w-10 shrink-0">
-        <span className={`font-display text-sm tabular-nums w-4 text-center ${isTop ? "text-primary" : isEuro ? "text-accent" : "text-muted-foreground"}`}>
-          {row.pos}
-        </span>
-        <PositionChange pos={row.pos} />
-      </div>
-
-      {/* Club */}
-      <ClubBadge club={row.club} size={24} />
-      <div className="flex-1 min-w-0">
-        <div className="font-display text-xs truncate">{row.club.name}</div>
-      </div>
-
-      {/* Form */}
-      <div className="hidden sm:flex items-center gap-0.5">
-        {row.form.slice(-3).map((f, i) => <FormDot key={i} r={f as FormResult} />)}
-      </div>
-
-      {/* Stats */}
-      <div className="flex items-center gap-3 shrink-0 text-right">
-        <span className="text-xs text-muted-foreground w-6 tabular-nums">{row.p}</span>
-        <span className={`text-xs w-6 tabular-nums ${row.gd > 0 ? "text-win" : row.gd < 0 ? "text-loss" : "text-muted-foreground"}`}>
-          {row.gd > 0 ? `+${row.gd}` : row.gd}
-        </span>
-        <span className="font-display text-sm text-accent w-7 tabular-nums">{row.pts}</span>
-      </div>
-    </motion.div>
-  );
-};
-
-// ─── Standings ────────────────────────────────────────────────────────────────
+// ─── Main Standings ───────────────────────────────────────────────────────────
 export const Standings = () => {
   const ref = useRef(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  const [view, setView] = useState<"cards" | "list">("cards");
-  const insights = Object.values(matchInsights);
-
-  const scroll = (dir: "left" | "right") =>
-    carouselRef.current?.scrollBy({ left: dir === "right" ? 300 : -300, behavior: "smooth" });
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const [loading] = useState(false); // flip to true to preview skeleton
+  const [hovered, setHovered] = useState<number | null>(null);
 
   return (
     <section ref={ref} className="container py-8 lg:py-10">
-      <div className="grid lg:grid-cols-[1fr_300px] gap-6">
+      <SectionHeader eyebrow="J19 · Journée en cours" title="Classement" cta="Classement complet" />
 
-        {/* ── Left ── */}
-        <div>
-          <div className="flex items-end justify-between gap-4 mb-4">
-            <SectionHeader eyebrow="Classement · J18" title="Top Clubs" size="compact" />
-            <div className="flex items-center gap-2 shrink-0">
-              {/* View toggle */}
-              <div className="flex gap-0.5 bg-surface-elevated rounded-lg p-0.5">
-                {(["cards", "list"] as const).map(v => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v)}
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide transition-all ${
-                      view === v ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {v === "cards" ? "Cartes" : "Liste"}
-                  </button>
-                ))}
-              </div>
-
-              {view === "cards" && (
-                <>
-                  <button onClick={() => scroll("left")} className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => scroll("right")} className="h-7 w-7 grid place-items-center rounded-full bg-surface-elevated border border-border hover:bg-secondary transition-colors">
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-                </>
-              )}
-
-              <Link to="/standings" className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground hover:text-accent transition-colors group ml-1">
-                Tableau complet
-                <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-xl border border-border overflow-hidden bg-gradient-card"
+      >
+        {/* ── Table header ── */}
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/60 bg-surface/40">
+          <div className="w-6 text-[10px] text-muted-foreground uppercase tracking-wider">#</div>
+          <div className="w-5" /> {/* change indicator */}
+          <div className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider">Club</div>
+          <div className="hidden sm:flex items-center gap-3 text-[10px] text-muted-foreground uppercase tracking-wider">
+            <span className="w-6 text-center">J</span>
+            <span className="w-6 text-center">G</span>
+            <span className="w-6 text-center">N</span>
+            <span className="w-6 text-center">P</span>
           </div>
-
-          {/* Position change legend */}
-          <div className="flex items-center gap-4 mb-3 px-1 text-[10px]">
-            <div className="flex items-center gap-1 text-[#1F8A4C]">
-              <TrendingUp className="h-3 w-3" />
-              <span className="text-muted-foreground">Progression</span>
-            </div>
-            <div className="flex items-center gap-1 text-[#CE1126]">
-              <TrendingDown className="h-3 w-3" />
-              <span className="text-muted-foreground">Régression</span>
-            </div>
-            <div className="flex items-center gap-1 text-white/25">
-              <Minus className="h-3 w-3" />
-              <span className="text-muted-foreground">Inchangé</span>
-            </div>
+          <div className="hidden md:flex gap-1 items-center">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider w-[116px] text-center">Forme</span>
           </div>
+          <div className="w-10 text-right text-[10px] text-muted-foreground uppercase tracking-wider">Pts</div>
+        </div>
 
-          {view === "cards" ? (
-            <div
-              ref={carouselRef}
-              className="flex gap-2.5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1"
-            >
-              {standings.map((row, i) => (
-                <ClubCard key={row.pos} row={row} inView={inView} delay={i * 0.04} />
-              ))}
-            </div>
+        {/* ── Rows ── */}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} i={i} />)}
+            </motion.div>
           ) : (
-            <div className="flex flex-col gap-1">
-              {/* Header */}
-              <div className="flex items-center gap-3 px-3 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground/50">
-                <span className="w-10 shrink-0">Pos</span>
-                <span className="w-6 shrink-0" />
-                <span className="flex-1">Club</span>
-                <div className="hidden sm:flex items-center gap-0.5 mr-1">Forme</div>
-                <div className="flex items-center gap-3 text-right shrink-0">
-                  <span className="w-6">MJ</span>
-                  <span className="w-6">GD</span>
-                  <span className="w-7">Pts</span>
-                </div>
-              </div>
-              {standings.map((row, i) => (
-                <ListRow key={row.pos} row={row} inView={inView} delay={i * 0.035} />
-              ))}
-            </div>
+            <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {standings.map((row, idx) => {
+                const zone   = getZone(row.pos);
+                const delta  = POSITION_CHANGES[row.club.id] ?? 0;
+                const isHov  = hovered === idx;
+
+                return (
+                  <motion.div
+                    key={row.club.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={inView ? { opacity: 1, x: 0 } : {}}
+                    transition={{ duration: 0.35, delay: idx * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                    onMouseEnter={() => setHovered(idx)}
+                    onMouseLeave={() => setHovered(null)}
+                    className={`relative flex items-center gap-3 px-4 py-3 border-b border-border/30 last:border-0 cursor-pointer transition-all duration-200 border-l-2 ${
+                      ZONE_COLORS[zone]
+                    } ${isHov ? "bg-white/4" : "bg-transparent"}`}
+                  >
+                    {/* Position */}
+                    <div
+                      className={`w-6 shrink-0 font-display text-sm tabular-nums text-center ${
+                        zone === "champion" ? "text-accent" : zone === "caf" ? "text-primary-glow" : "text-muted-foreground"
+                      }`}
+                    >
+                      {row.pos === 1 && (
+                        <Trophy className="h-3.5 w-3.5 text-accent mx-auto" />
+                      )}
+                      {row.pos !== 1 && row.pos}
+                    </div>
+
+                    {/* Position change indicator */}
+                    <div className="w-5 shrink-0 flex items-center justify-center">
+                      <PositionChange delta={delta} />
+                    </div>
+
+                    {/* Club badge + name */}
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <ClubBadge club={row.club} size={28} />
+                      <div className="min-w-0">
+                        <div className={`text-sm font-semibold truncate transition-colors ${isHov ? "text-accent" : "text-foreground"}`}>
+                          {row.club.name}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">{row.club.city}</div>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="hidden sm:flex items-center gap-3 text-xs tabular-nums">
+                      <span className="w-6 text-center text-muted-foreground">{row.p}</span>
+                      <span className="w-6 text-center text-win">{row.w}</span>
+                      <span className="w-6 text-center text-draw">{row.d}</span>
+                      <span className="w-6 text-center text-[hsl(var(--loss))]">{row.l}</span>
+                    </div>
+
+                    {/* Form — last 5 */}
+                    <div className="hidden md:flex items-center gap-1">
+                      {row.form.map((r, i) => <FormBadge key={i} r={r} />)}
+                    </div>
+
+                    {/* Points */}
+                    <div
+                      className={`w-10 text-right font-display text-base tabular-nums shrink-0 ${
+                        zone === "champion" ? "text-accent" : "text-foreground"
+                      }`}
+                    >
+                      {row.pts}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           )}
+        </AnimatePresence>
 
-          {/* Legend */}
-          <div className="flex items-center gap-4 mt-3 px-1 flex-wrap">
-            {[
-              { color: "bg-primary", label: "Champions League" },
-              { color: "bg-accent",  label: "Coupe CAF" },
-              { color: "bg-loss",    label: "Zone relégation" },
-            ].map((l) => (
-              <div key={l.label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className={`h-1.5 w-1.5 rounded-full ${l.color}`} />
-                {l.label}
-              </div>
-            ))}
-          </div>
+        {/* ── Relegation warning banner ── */}
+        <div className="flex items-center gap-2 px-4 py-2.5 border-t border-destructive/20 bg-destructive/5">
+          <AlertTriangle className="h-3 w-3 text-destructive/70 shrink-0" />
+          <span className="text-[10px] text-destructive/60">
+            Les 2 derniers clubs à la fin de la saison sont relégués en Elite Two.
+          </span>
         </div>
+      </motion.div>
 
-        {/* ── Match Insights ── */}
-        <div>
-          <SectionHeader eyebrow="Analyse" title="Stats Match" size="compact" />
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45, delay: 0.12 }}
-            className="bg-gradient-card border border-border rounded-xl p-4 space-y-3.5"
-          >
-            <div className="flex items-center justify-between gap-2 pb-3 border-b border-border">
-              <div className="flex flex-col items-center gap-1 flex-1">
-                <ClubBadge club={insights[0].home} size={32} />
-                <span className="text-xs font-medium">{insights[0].home.short}</span>
-              </div>
-              <div className="text-center shrink-0">
-                <div className="font-display text-lg text-accent">2 - 1</div>
-                <div className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">J18 · Final</div>
-              </div>
-              <div className="flex flex-col items-center gap-1 flex-1">
-                <ClubBadge club={insights[0].away} size={32} />
-                <span className="text-xs font-medium">{insights[0].away.short}</span>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              {insights.map((ins) => (
-                <StatBar
-                  key={ins.label}
-                  label={ins.label}
-                  homeVal={ins.homeStat}
-                  awayVal={ins.awayStat}
-                  homeClub={ins.home}
-                  awayClub={ins.away}
-                />
-              ))}
-            </div>
-
-            <div className="pt-2 border-t border-border">
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                <TrendingUp className="h-3 w-3" /> Moments clés
-              </div>
-              {[
-                { min: "23'", event: "⚽ Mbarga (COT)" },
-                { min: "47'", event: "⚽ Bassogog (CNK)" },
-                { min: "71'", event: "⚽ Mbarga ×2 (COT)" },
-                { min: "84'", event: "🟥 Fouda (CNK)" },
-              ].map((e, i) => (
-                <div key={i} className="flex items-center gap-2 py-1 border-b border-border/20 last:border-0">
-                  <span className="text-[10px] tabular-nums text-muted-foreground/50 w-6 shrink-0">{e.min}</span>
-                  <span className="text-xs text-muted-foreground">{e.event}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </div>
+      {/* Legend */}
+      <ZoneLegend />
     </section>
   );
 };
