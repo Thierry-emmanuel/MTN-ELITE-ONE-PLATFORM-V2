@@ -2,36 +2,38 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, LogIn, Menu, X, ChevronDown, Radio,
-  Trophy, Calendar, Users, Newspaper,
+  Trophy, Calendar, Users, Gamepad2, ArrowLeftRight,
+  Activity, Star, Award,
 } from "lucide-react";
-import { extendedTickerItems } from "./data";
+import { tickerItems } from "./data";
 import { Link, useLocation } from "react-router-dom";
+import logo from "@/assets/images/logo/logo.png";
 
-// ─── Season progress (matchday 19 of 34) ─────────────────────────────────────
+// ─── Season progress ──────────────────────────────────────────────────────────
 const CURRENT_MATCHDAY = 19;
-const TOTAL_MATCHDAYS = 34;
-const SEASON_PROGRESS = (CURRENT_MATCHDAY / TOTAL_MATCHDAYS) * 100;
+const TOTAL_MATCHDAYS  = 34;
+const SEASON_PROGRESS  = (CURRENT_MATCHDAY / TOTAL_MATCHDAYS) * 100;
 
-// ─── Nav links ────────────────────────────────────────────────────────────────
+// ─── Nav definition ───────────────────────────────────────────────────────────
 const NAV_LINKS = [
   {
     label: "Championnat",
     icon: <Trophy className="h-3.5 w-3.5" />,
     children: [
-      { label: "Classement", href: "/standings" },
-      { label: "Résultats",  href: "/results" },
-      { label: "Calendrier", href: "/fixtures" },
-      { label: "Statistiques", href: "/stats" },
+      { label: "Classement",   href: "/standings",  icon: <Trophy className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Résultats",    href: "/results",    icon: <Star className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Calendrier",   href: "/fixtures",   icon: <Calendar className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Statistiques", href: "/stats",      icon: <Award className="h-3.5 w-3.5 text-accent" /> },
     ],
   },
   {
     label: "Clubs & Joueurs",
     icon: <Users className="h-3.5 w-3.5" />,
     children: [
-      { label: "Tous les clubs", href: "/clubs" },
-      { label: "Joueurs",       href: "/players" },
-      { label: "Transferts",    href: "/transfers" },
-      { label: "Road to Lions", href: "/lions" },
+      { label: "Tous les clubs", href: "/clubs",     icon: <Users className="h-3.5 w-3.5 text-primary-glow" /> },
+      { label: "Joueurs",        href: "/players",   icon: <Star className="h-3.5 w-3.5 text-primary-glow" /> },
+      { label: "Transferts",     href: "/transfers", icon: <ArrowLeftRight className="h-3.5 w-3.5 text-primary-glow" /> },
+      { label: "Road to Lions",  href: "/lions",     icon: <Award className="h-3.5 w-3.5 text-primary-glow" /> },
     ],
   },
   {
@@ -39,30 +41,35 @@ const NAV_LINKS = [
     icon: <Calendar className="h-3.5 w-3.5" />,
     href: "/matches",
   },
+  // ── NEW: Communauté (replaces Actualités) ──────────────────────────────────
   {
-    label: "Actualités",
-    icon: <Newspaper className="h-3.5 w-3.5" />,
-    href: "/news",
+    label: "Communauté",
+    icon: <Users className="h-3.5 w-3.5" />,
+    accent: true, // highlight this as new
+    children: [
+      { label: "Young Talent Watch", href: "/talents",   icon: <Star className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Hall of Fame",        href: "/halloffame",icon: <Trophy className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Jeux & Pronostics",   href: "/games",    icon: <Gamepad2 className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Transferts",          href: "/transfers", icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Blessures",           href: "/injuries",  icon: <Activity className="h-3.5 w-3.5 text-[#FCD116]" /> },
+    ],
   },
-];
+] as const;
 
 // ─── Live Ticker ──────────────────────────────────────────────────────────────
 const LiveTicker = () => {
-  // Duplicate items for seamless loop
-  const doubled = [...extendedTickerItems, ...extendedTickerItems];
+  const doubled = [...tickerItems, ...tickerItems];
   return (
-    <div className="flex-1 overflow-hidden min-w-0 flex items-center gap-3 relative">
-      {/* Live badge */}
+    <div className="flex-1 overflow-hidden min-w-0 flex items-center gap-3">
       <div className="shrink-0 flex items-center gap-1.5 pr-3 border-r border-white/10">
         <Radio className="h-3 w-3 text-[#CE1126] animate-pulse" />
         <span className="text-[9px] font-bold uppercase tracking-[.2em] text-[#CE1126]">Live</span>
       </div>
-      {/* Scrolling ticker */}
       <div className="flex-1 overflow-hidden">
         <motion.div
           className="flex gap-8 whitespace-nowrap"
           animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: 40, ease: "linear", repeat: Infinity }}
+          transition={{ duration: 45, ease: "linear", repeat: Infinity }}
         >
           {doubled.map((item, i) => (
             <span key={i} className="text-[11px] text-white/50 shrink-0">
@@ -76,24 +83,24 @@ const LiveTicker = () => {
   );
 };
 
-// ─── Dropdown menu ────────────────────────────────────────────────────────────
-const NavDropdown = ({ link }: { link: typeof NAV_LINKS[0] }) => {
+// ─── Dropdown ─────────────────────────────────────────────────────────────────
+const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  if (!link.children) {
+  if (!("children" in link)) {
     return (
       <Link
-        to={link.href!}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/55 hover:text-white hover:bg-white/6 transition-all"
+        to={link.href}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/55 hover:text-white hover:bg-white/6 transition-all duration-150"
       >
         {link.icon}
         {link.label}
@@ -101,17 +108,28 @@ const NavDropdown = ({ link }: { link: typeof NAV_LINKS[0] }) => {
     );
   }
 
+  const isAccent = "accent" in link && link.accent;
+
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(v => !v)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all ${
-          open ? "text-white bg-white/8" : "text-white/55 hover:text-white hover:bg-white/6"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 ${
+          open
+            ? "text-white bg-white/8"
+            : isAccent
+            ? "text-accent/80 hover:text-accent hover:bg-accent/8"
+            : "text-white/55 hover:text-white hover:bg-white/6"
         }`}
       >
         {link.icon}
         {link.label}
-        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        {isAccent && !open && (
+          <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
+        )}
+        <ChevronDown
+          className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
@@ -121,15 +139,22 @@ const NavDropdown = ({ link }: { link: typeof NAV_LINKS[0] }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-full left-0 mt-2 min-w-[160px] bg-[hsl(168,50%,8%)] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+            className="absolute top-full left-0 mt-2 min-w-[200px] bg-[hsl(168,50%,7%)] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
           >
+            {/* Dropdown header accent bar */}
+            {isAccent && (
+              <div className="h-[2px] bg-gradient-to-r from-accent via-accent/60 to-transparent" />
+            )}
             {link.children.map((child, i) => (
               <Link
                 key={i}
                 to={child.href}
                 onClick={() => setOpen(false)}
-                className="flex items-center px-4 py-2.5 text-[12px] text-white/55 hover:text-white hover:bg-white/6 transition-all border-b border-white/5 last:border-0"
+                className="flex items-center gap-3 px-4 py-2.5 text-[12px] text-white/55 hover:text-white hover:bg-white/6 transition-all border-b border-white/5 last:border-0"
               >
+                <span className="shrink-0 h-6 w-6 grid place-items-center rounded-lg bg-white/5">
+                  {child.icon}
+                </span>
                 {child.label}
               </Link>
             ))}
@@ -140,59 +165,143 @@ const NavDropdown = ({ link }: { link: typeof NAV_LINKS[0] }) => {
   );
 };
 
-// ─── Mobile menu ──────────────────────────────────────────────────────────────
+// ─── Mobile accordion item ────────────────────────────────────────────────────
+const MobileNavItem = ({
+  link, onClose,
+}: { link: (typeof NAV_LINKS)[number]; onClose: () => void }) => {
+  const [open, setOpen] = useState(false);
+
+  if (!("children" in link)) {
+    return (
+      <Link
+        to={link.href}
+        onClick={onClose}
+        className="flex items-center gap-3 px-4 py-3 text-sm text-white/65 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+      >
+        <span className="h-7 w-7 grid place-items-center rounded-lg bg-white/5 shrink-0">
+          {link.icon}
+        </span>
+        {link.label}
+      </Link>
+    );
+  }
+
+  const isAccent = "accent" in link && link.accent;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+          open ? "bg-white/6 text-white" : "text-white/65 hover:text-white hover:bg-white/5"
+        }`}
+      >
+        <span
+          className={`h-7 w-7 grid place-items-center rounded-lg shrink-0 ${
+            isAccent ? "bg-accent/15" : "bg-white/5"
+          }`}
+        >
+          {link.icon}
+        </span>
+        <span className={`flex-1 text-sm text-left ${isAccent ? "text-accent" : ""}`}>
+          {link.label}
+        </span>
+        {isAccent && !open && (
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+        )}
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="ml-10 border-l border-white/8 pl-4 py-1 space-y-0.5">
+              {link.children.map((child, i) => (
+                <Link
+                  key={i}
+                  to={child.href}
+                  onClick={onClose}
+                  className="flex items-center gap-2.5 py-2 text-sm text-white/50 hover:text-white transition-colors"
+                >
+                  {child.icon}
+                  {child.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ─── Mobile drawer ────────────────────────────────────────────────────────────
 const MobileMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) => (
   <AnimatePresence>
     {open && (
       <>
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 bg-black/65 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
         <motion.div
           initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 28, stiffness: 300 }}
-          className="fixed top-0 right-0 bottom-0 w-[280px] bg-[hsl(168,50%,7%)] border-l border-white/10 z-50 lg:hidden flex flex-col"
+          transition={{ type: "spring", damping: 30, stiffness: 320 }}
+          className="fixed top-0 right-0 bottom-0 w-[300px] bg-[hsl(168,50%,6%)] border-l border-white/8 z-50 lg:hidden flex flex-col"
         >
-          <div className="flex items-center justify-between p-5 border-b border-white/8">
-            <span className="font-display text-sm tracking-widest">MENU</span>
-            <button onClick={onClose} className="h-8 w-8 grid place-items-center rounded-lg hover:bg-white/8 transition-colors">
+          {/* Drawer header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" />
+              <div>
+                <div className="font-display text-xs tracking-widest leading-none">MTN ELITE ONE</div>
+                <div className="text-[9px] text-muted-foreground/50 mt-0.5 uppercase tracking-wider">Saison 24/25</div>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="h-8 w-8 grid place-items-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+
+          {/* Matchday pill */}
+          <div className="mx-4 mt-4 flex items-center justify-between bg-white/4 border border-white/8 rounded-xl px-4 py-2.5">
+            <span className="text-[11px] text-muted-foreground">Journée en cours</span>
+            <span className="font-display text-sm text-accent">J{CURRENT_MATCHDAY} / {TOTAL_MATCHDAYS}</span>
+          </div>
+
+          {/* Nav items */}
+          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             {NAV_LINKS.map((link, i) => (
-              <div key={i}>
-                {link.children ? (
-                  <div>
-                    <div className="flex items-center gap-2 px-3 py-2 text-[11px] uppercase tracking-widest text-accent font-bold mt-3 mb-1">
-                      {link.icon}{link.label}
-                    </div>
-                    {link.children.map((child, j) => (
-                      <Link key={j} to={child.href} onClick={onClose}
-                        className="flex items-center px-5 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <Link to={link.href!} onClick={onClose}
-                    className="flex items-center gap-2 px-3 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all">
-                    {link.icon}{link.label}
-                  </Link>
-                )}
-              </div>
+              <MobileNavItem key={i} link={link} onClose={onClose} />
             ))}
           </nav>
-          <div className="p-4 border-t border-white/8 space-y-2">
-            <Link to="/login" onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-white/15 text-sm text-white/70 hover:bg-white/5 transition-all">
+
+          {/* Auth */}
+          <div className="px-4 pb-6 pt-3 border-t border-white/8 space-y-2.5">
+            <Link
+              to="/login" onClick={onClose}
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
+            >
               <LogIn className="h-4 w-4" /> Connexion
             </Link>
-            <Link to="/register" onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity">
-              S'inscrire
+            <Link
+              to="/register" onClick={onClose}
+              className="flex items-center justify-center w-full py-3 rounded-2xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity"
+            >
+              S'inscrire — C'est gratuit
             </Link>
           </div>
         </motion.div>
@@ -207,103 +316,124 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ onSearchOpen }: NavbarProps) => {
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onScroll = () => setScrolled(window.scrollY > 16);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => { setMobileOpen(false); }, [location]);
 
   return (
     <>
-      {/* ── Season progress bar (very top, 2px) ── */}
-      <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-white/5">
+      {/* ── Season progress bar — 2px at very top ── */}
+      <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-white/4">
         <motion.div
           className="h-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]"
           initial={{ width: "0%" }}
           animate={{ width: `${SEASON_PROGRESS}%` }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
+          transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
         />
       </div>
 
       <header
         className={`fixed top-[2px] left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "glass shadow-[0_2px_40px_rgba(0,0,0,0.4)]"
+            ? "bg-[hsl(168,50%,7%)/90] backdrop-blur-xl border-b border-white/8 shadow-[0_4px_40px_rgba(0,0,0,0.45)]"
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        {/* ── Main nav row ── */}
-        <div className="container flex items-center gap-4 h-14">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="h-8 w-8 rounded-lg bg-gradient-primary grid place-items-center shadow-glow shrink-0 group-hover:scale-105 transition-transform">
-              <span className="font-display font-bold text-white text-sm">M1</span>
+        <div className="container flex items-center gap-3 h-[60px]">
+
+          {/* ── Logo ── */}
+          <Link
+            to="/"
+            className="flex items-center gap-3 shrink-0 group mr-2"
+          >
+            <div className="relative h-9 w-9 shrink-0">
+              <img
+                src={logo}
+                alt="MTN Elite One"
+                className="h-full w-full object-contain group-hover:scale-105 transition-transform duration-200"
+              />
             </div>
-            <div className="hidden sm:block">
-              <div className="font-display text-xs tracking-widest leading-none">MTN ELITE ONE</div>
-              <div className="text-[9px] uppercase tracking-[.18em] text-muted-foreground/60 mt-0.5">Saison 24/25</div>
+            <div className="hidden sm:flex flex-col">
+              <span className="font-display text-[13px] tracking-[.12em] leading-none text-white">
+                MTN ELITE ONE
+              </span>
+              <span className="text-[9px] uppercase tracking-[.22em] text-muted-foreground/55 mt-0.5">
+                Saison 24/25
+              </span>
             </div>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-0.5 ml-2">
+          {/* ── Divider ── */}
+          <div className="hidden lg:block h-5 w-px bg-white/10 mx-1" />
+
+          {/* ── Desktop nav ── */}
+          <nav className="hidden lg:flex items-center gap-0.5">
             {NAV_LINKS.map((link, i) => (
               <NavDropdown key={i} link={link} />
             ))}
           </nav>
 
-          {/* Live ticker — fills remaining space */}
-          <div className="flex-1 hidden md:flex items-center min-w-0 mx-4 bg-white/4 border border-white/6 rounded-full px-3 py-1.5 overflow-hidden">
-            <LiveTicker />
+          {/* ── Live ticker — fills middle ── */}
+          <div className="flex-1 hidden md:flex items-center min-w-0 mx-3">
+            <div className="w-full bg-white/[0.04] border border-white/[0.07] rounded-full px-3.5 py-1.5 overflow-hidden">
+              <LiveTicker />
+            </div>
           </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
-            {/* Search ⌘K */}
+          {/* ── Right actions ── */}
+          <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
+
+            {/* Search */}
             <button
               onClick={onSearchOpen}
-              className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-lg bg-white/5 border border-white/8 text-white/40 hover:text-white hover:bg-white/8 hover:border-white/15 transition-all text-[11px] group"
-              title="Rechercher (⌘K)"
+              className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-xl bg-white/5 border border-white/8 text-white/40 hover:text-white hover:bg-white/8 hover:border-white/15 transition-all text-[11px] group"
             >
               <Search className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline">Rechercher</span>
-              <kbd className="hidden lg:inline px-1.5 py-0.5 rounded bg-white/8 text-[9px] font-mono text-white/30 group-hover:text-white/50 transition-colors">⌘K</kbd>
+              <span className="hidden xl:inline text-white/40 group-hover:text-white/70 transition-colors">
+                Rechercher
+              </span>
+              <kbd className="hidden xl:inline px-1.5 py-0.5 rounded bg-white/8 text-[9px] font-mono text-white/25 group-hover:text-white/40 transition-colors border border-white/10">
+                ⌘K
+              </kbd>
             </button>
 
-            {/* Auth buttons */}
+            {/* Login */}
             <Link
               to="/login"
-              className="hidden sm:flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[11px] font-medium text-white/55 hover:text-white border border-transparent hover:border-white/10 hover:bg-white/5 transition-all"
+              className="hidden sm:flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-[11px] font-medium text-white/55 hover:text-white border border-transparent hover:border-white/10 hover:bg-white/5 transition-all"
             >
               <LogIn className="h-3.5 w-3.5" />
-              Connexion
+              <span className="hidden md:inline">Connexion</span>
             </Link>
+
+            {/* Register CTA */}
             <Link
               to="/register"
-              className="hidden sm:flex items-center h-8 px-4 rounded-lg bg-accent text-accent-foreground text-[11px] font-bold hover:opacity-90 transition-opacity"
+              className="hidden sm:flex items-center h-8 px-4 rounded-xl bg-accent text-accent-foreground text-[11px] font-bold hover:bg-accent/90 transition-colors shadow-[0_2px_12px_rgba(252,209,22,0.25)]"
             >
               S'inscrire
             </Link>
 
-            {/* Mobile search */}
+            {/* Mobile: search icon */}
             <button
               onClick={onSearchOpen}
-              className="sm:hidden h-8 w-8 grid place-items-center rounded-lg bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
+              className="sm:hidden h-8 w-8 grid place-items-center rounded-xl bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
             >
               <Search className="h-3.5 w-3.5" />
             </button>
 
-            {/* Mobile menu toggle */}
+            {/* Mobile: hamburger */}
             <button
               onClick={() => setMobileOpen(v => !v)}
-              className="lg:hidden h-8 w-8 grid place-items-center rounded-lg bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
+              className="lg:hidden h-8 w-8 grid place-items-center rounded-xl bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
               aria-label="Menu"
             >
               <Menu className="h-4 w-4" />
@@ -311,16 +441,15 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
           </div>
         </div>
 
-        {/* ── Ticker row on mobile ── */}
-        <div className="md:hidden flex items-center overflow-hidden border-t border-white/5 bg-white/3 px-4 py-1.5">
+        {/* ── Mobile ticker row ── */}
+        <div className="md:hidden overflow-hidden border-t border-white/[0.05] bg-white/[0.025] px-4 py-1.5">
           <LiveTicker />
         </div>
       </header>
 
-      {/* Spacer so content doesn't hide under fixed header */}
-      <div className="h-[58px]" />
+      {/* Spacer below fixed header */}
+      <div className="h-[62px]" />
 
-      {/* Mobile menu drawer */}
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </>
   );

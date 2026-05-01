@@ -287,6 +287,8 @@ export const extendedTickerItems = [
   "📊 Statistique — 2.4 buts par match en moyenne cette saison",
 ];
 
+export const tickerItems = extendedTickerItems;
+
 // ─── Hall of Fame ─────────────────────────────────────────────────────────────
 export type Legend = {
   id: string; name: string; era: string;

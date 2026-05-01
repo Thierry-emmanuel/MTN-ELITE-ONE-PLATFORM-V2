@@ -1,121 +1,154 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    "Inter",  ui-sans-serif, system-ui, sans-serif;
   --font-display: "Oswald", sans-serif;
 
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-
-  --color-destructive: hsl(var(--destructive));
+  /* ── Color tokens (mapped to CSS vars) ── */
+  --color-background:          hsl(var(--background));
+  --color-foreground:          hsl(var(--foreground));
+  --color-primary:             hsl(var(--primary));
+  --color-primary-foreground:  hsl(var(--primary-foreground));
+  --color-secondary:           hsl(var(--secondary));
+  --color-secondary-foreground:hsl(var(--secondary-foreground));
+  --color-accent:              hsl(var(--accent));
+  --color-accent-foreground:   hsl(var(--accent-foreground));
+  --color-muted:               hsl(var(--muted));
+  --color-muted-foreground:    hsl(var(--muted-foreground));
+  --color-card:                hsl(var(--card));
+  --color-card-foreground:     hsl(var(--card-foreground));
+  --color-popover:             hsl(var(--popover));
+  --color-popover-foreground:  hsl(var(--popover-foreground));
+  --color-destructive:         hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
-
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  --color-border:              hsl(var(--border));
+  --color-input:               hsl(var(--input));
+  --color-ring:                hsl(var(--ring));
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --animate-pulse-live: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-ticker: ticker 30s linear infinite;
-  --animate-float-up: float-up 0.5s ease-out forwards;
+  /* ── Animations ── */
+  --animate-pulse-live:  pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-ticker:      ticker 30s linear infinite;
+  --animate-float-up:    float-up 0.5s ease-out forwards;
+  --animate-skeleton:    skeleton 1.6s ease-in-out infinite;
+  --animate-flash:       flash 0.65s ease-out;
 
   @keyframes pulse-live {
     0%, 100% { opacity: 1; box-shadow: 0 0 0 0 hsl(354 85% 50% / 0.6); }
-    50% { opacity: 0.85; box-shadow: 0 0 0 8px hsl(354 85% 50% / 0); }
+    50%       { opacity: 0.85; box-shadow: 0 0 0 8px hsl(354 85% 50% / 0); }
   }
   @keyframes ticker {
-    0% { transform: translateX(0); }
+    0%   { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
   @keyframes float-up {
-    0% { opacity: 0; transform: translateY(20px); }
+    0%   { opacity: 0; transform: translateY(20px); }
     100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes skeleton {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+  @keyframes flash {
+    0%   { background-color: hsl(49 97% 53% / 0.2); }
+    100% { background-color: transparent; }
   }
 }
 
+/* ─── Design tokens ───────────────────────────────────────────────────────── */
 :root {
   /* Cameroon-inspired premium dark palette */
-  --background: 168 45% 11%;
-  --foreground: 48 30% 96%;
+  --background:   168 45% 11%;
+  --foreground:   48 30% 96%;
 
-  --card: 168 38% 13%;
+  --card:         168 38% 13%;
   --card-foreground: 48 30% 96%;
 
-  --popover: 168 45% 9%;
+  --popover:      168 45% 9%;
   --popover-foreground: 48 30% 96%;
 
-  --primary: 153 100% 27%;
+  --primary:      153 100% 27%;
   --primary-foreground: 48 30% 98%;
 
-  --secondary: 168 30% 20%;
+  --secondary:    168 30% 20%;
   --secondary-foreground: 48 30% 96%;
 
-  --muted: 168 25% 18%;
+  --muted:        168 25% 18%;
   --muted-foreground: 168 15% 65%;
 
-  --accent: 49 97% 53%;
+  --accent:       49 97% 53%;
   --accent-foreground: 168 50% 10%;
 
-  --destructive: 354 85% 43%;
+  --destructive:  354 85% 43%;
   --destructive-foreground: 48 30% 98%;
 
-  --border: 168 30% 22%;
-  --input: 168 30% 18%;
-  --ring: 49 97% 53%;
+  --border:       168 30% 22%;
+  --input:        168 30% 18%;
+  --ring:         49 97% 53%;
 
-  --radius: 1rem;
+  --radius: 0.875rem;   /* 14px — slightly tighter than 1rem */
 
-  /* Extra semantic variables for gradients/shadows */
-  --background-deep: 168 50% 7%;
-  --surface: 168 40% 14%;
-  --surface-elevated: 168 35% 17%;
-  --primary-glow: 153 80% 40%;
-  --live: 354 85% 50%;
-  --win: 153 80% 40%;
-  --draw: 49 80% 55%;
-  --loss: 354 70% 50%;
+  /* ── Extended semantic tokens ── */
+  --background-deep:   168 50% 7%;
+  --surface:           168 40% 14%;
+  --surface-elevated:  168 35% 17%;
+  --primary-glow:      153 80% 40%;
+  --live:              354 85% 50%;
+  --win:               153 80% 40%;
+  --draw:              49 80% 55%;
+  --loss:              354 70% 50%;
 
-  --gradient-hero: linear-gradient(135deg, hsl(168 50% 7% / 0.95) 0%, hsl(168 45% 11% / 0.85) 60%, hsl(153 100% 27% / 0.4) 100%);
+  /* ── Gradients ── */
+  --gradient-hero:    linear-gradient(135deg, hsl(168 50% 7% / 0.95) 0%, hsl(168 45% 11% / 0.85) 60%, hsl(153 100% 27% / 0.4) 100%);
   --gradient-primary: linear-gradient(135deg, hsl(153 100% 27%) 0%, hsl(153 90% 35%) 100%);
-  --gradient-gold: linear-gradient(135deg, hsl(49 97% 53%) 0%, hsl(38 95% 50%) 100%);
-  --gradient-flag: linear-gradient(90deg, hsl(153 100% 27%) 0%, hsl(354 85% 43%) 50%, hsl(49 97% 53%) 100%);
-  --gradient-card: linear-gradient(180deg, hsl(168 38% 15%) 0%, hsl(168 45% 11%) 100%);
-  --gradient-glow: radial-gradient(circle at 50% 0%, hsl(153 80% 40% / 0.3), transparent 60%);
+  --gradient-gold:    linear-gradient(135deg, hsl(49 97% 53%) 0%, hsl(38 95% 50%) 100%);
+  --gradient-flag:    linear-gradient(90deg, hsl(153 100% 27%) 0%, hsl(354 85% 43%) 50%, hsl(49 97% 53%) 100%);
+  --gradient-card:    linear-gradient(180deg, hsl(168 38% 15%) 0%, hsl(168 45% 11%) 100%);
+  --gradient-glow:    radial-gradient(circle at 50% 0%, hsl(153 80% 40% / 0.3), transparent 60%);
 
+  /* ── Shadows ── */
   --shadow-elegant: 0 10px 40px -10px hsl(168 80% 5% / 0.6);
-  --shadow-glow: 0 0 60px hsl(153 80% 40% / 0.25);
-  --shadow-gold: 0 8px 30px -8px hsl(49 97% 53% / 0.35);
-  --shadow-card: 0 4px 20px -4px hsl(168 80% 5% / 0.4);
+  --shadow-glow:    0 0 60px hsl(153 80% 40% / 0.25);
+  --shadow-gold:    0 8px 30px -8px hsl(49 97% 53% / 0.35);
+  --shadow-card:    0 4px 20px -4px hsl(168 80% 5% / 0.4);
+
+  /* ── Spacing scale (8px base) ── */
+  /* Used as reference. Tailwind classes (p-4=16px, p-8=32px, etc.)
+     should follow this 8px grid throughout components. */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
 }
 
+/* ─── Base layer ─────────────────────────────────────────────────────────── */
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    /* Smooth scroll for anchor links */
+    scroll-behavior: smooth;
+    /* Prevent horizontal overflow at root */
+    overflow-x: hidden;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent layout shift from scrollbar */
+    scrollbar-gutter: stable;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, .font-display {
@@ -123,215 +156,62 @@
     letter-spacing: -0.01em;
     text-transform: uppercase;
   }
+
+  /* Focus ring consistent with brand */
+  :focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 }
 
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
 @layer utilities {
-  .glass {
-    background: hsl(168 50% 8% / 0.7);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border-bottom: 1px solid hsl(168 30% 22% / 0.6);
+
+  /* ── Container — consistent max-width + padding ── */
+  /* Override Tailwind's .container with explicit breakpoints */
+  .container {
+    width: 100%;
+    margin-inline: auto;
+    /* Horizontal padding scales with viewport */
+    padding-inline: 1rem;       /* 16px mobile */
   }
+  @media (min-width: 640px) {
+    .container { padding-inline: 1.5rem; }  /* 24px sm */
+  }
+  @media (min-width: 768px) {
+    .container { padding-inline: 2rem; }    /* 32px md */
+  }
+  @media (min-width: 1024px) {
+    .container {
+      padding-inline: 2.5rem;              /* 40px lg */
+      max-width: 1280px;
+    }
+  }
+  @media (min-width: 1280px) {
+    .container { padding-inline: 3rem; }   /* 48px xl */
+  }
+  @media (min-width: 1536px) {
+    .container {
+      padding-inline: 4rem;               /* 64px 2xl */
+      max-width: 1440px;
+    }
+  }
+
+  /* ── Glass morphism ── */
+  .glass {
+    background: hsl(168 50% 7% / 0.75);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border-bottom: 1px solid hsl(168 30% 22% / 0.5);
+  }
+
+  /* ── Cameroon flag bar ── */
   .flag-bar {
     background: var(--gradient-flag);
   }
-  .text-gradient-gold {
-    background: var(--gradient-gold);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  .field-pattern {
-    background-image:
-      radial-gradient(circle at 50% 50%, hsl(153 80% 40% / 0.08) 0%, transparent 60%),
-      linear-gradient(hsl(168 30% 22% / 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(168 30% 22% / 0.3) 1px, transparent 1px);
-    background-size: 100% 100%, 40px 40px, 40px 40px;
-  }
-}
-/**
- * index.css — ADDITIONS only
- *
- * Paste/merge these blocks into your existing src/index.css
- * DO NOT replace the entire file — only add the missing pieces.
- *
- * Each section is labeled with where it goes in the existing file.
- */
 
-/* ── ADD to @theme block (alongside existing --animate-* entries) ─────────────
-   These support the skeleton pulse, countdown flash, and progress animations.
-
-  --animate-skeleton: skeleton 1.5s ease-in-out infinite;
-  --animate-flash: flash 0.6s ease-out;
-  --animate-slide-in-left: slide-in-left 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
-  --animate-slide-in-right: slide-in-right 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
-
-  @keyframes skeleton {
-    0%   { opacity: 1; }
-    50%  { opacity: 0.4; }
-    100% { opacity: 1; }
-  }
-
-  @keyframes flash {
-    0%   { background-color: hsl(49 97% 53% / 0.25); }
-    100% { background-color: transparent; }
-  }
-
-  @keyframes slide-in-left {
-    from { opacity: 0; transform: translateX(-12px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes slide-in-right {
-    from { opacity: 0; transform: translateX(12px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-─────────────────────────────────────────────────────────────────────────────*/
-
-
-/* ── ADD to :root block (alongside existing variables) ───────────────────────
-
-  --surface-card: 168 40% 13%;
-  --win-subtle:   153 80% 40% / 0.15;
-  --loss:         354 70% 50%;
-
-  -- Gradient overlays used by Standings zone indicators
-  --zone-champion: hsl(49 97% 53% / 0.08);
-  --zone-caf: hsl(153 100% 27% / 0.06);
-  --zone-relegation: hsl(354 85% 43% / 0.06);
-─────────────────────────────────────────────────────────────────────────────*/
-
-
-/* ── ADD to @layer utilities ─────────────────────────────────────────────────*/
-
-@layer utilities {
-
-  /* Background-deep helper (used in Footer, RoadToLions) */
-  .bg-background-deep {
-    background-color: hsl(var(--background-deep));
-  }
-
-  /* Surface variants */
-  .bg-surface {
-    background-color: hsl(var(--surface));
-  }
-
-  .bg-surface-elevated {
-    background-color: hsl(var(--surface-elevated));
-  }
-
-  /* Gradient utilities */
-  .bg-gradient-card {
-    background: var(--gradient-card);
-  }
-
-  .bg-gradient-primary {
-    background: var(--gradient-primary);
-  }
-
-  .bg-gradient-gold {
-    background: var(--gradient-gold);
-  }
-
-  /* Shadow utilities */
-  .shadow-elegant {
-    box-shadow: var(--shadow-elegant);
-  }
-
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  .shadow-gold {
-    box-shadow: var(--shadow-gold);
-  }
-
-  .shadow-card {
-    box-shadow: var(--shadow-card);
-  }
-
-  /* Live color */
-  .text-live {
-    color: hsl(var(--live));
-  }
-
-  .bg-live {
-    background-color: hsl(var(--live));
-  }
-
-  .border-live {
-    border-color: hsl(var(--live));
-  }
-
-  /* Win / draw / loss */
-  .text-win {
-    color: hsl(var(--win));
-  }
-
-  .text-draw {
-    color: hsl(var(--draw));
-  }
-
-  .text-loss {
-    color: hsl(var(--loss));
-  }
-
-  .bg-win {
-    background-color: hsl(var(--win));
-  }
-
-  .bg-draw {
-    background-color: hsl(var(--draw));
-  }
-
-  .bg-loss {
-    background-color: hsl(var(--loss));
-  }
-
-  /* primary-glow text */
-  .text-primary-glow {
-    color: hsl(var(--primary-glow));
-  }
-
-  /* Skeleton pulse override (more dramatic than Tailwind's default) */
-  .animate-skeleton {
-    animation: var(--animate-skeleton, skeleton 1.5s ease-in-out infinite);
-  }
-
-  /* Countdown flash — brief gold flash when number changes */
-  .animate-flash {
-    animation: var(--animate-flash, flash 0.6s ease-out);
-  }
-
-  /* Smooth ticker transition */
-  .ticker-wrap {
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  /* Command palette backdrop */
-  .backdrop-blur-palette {
-    backdrop-filter: blur(16px) saturate(120%);
-    -webkit-backdrop-filter: blur(16px) saturate(120%);
-  }
-
-  /* Hide scrollbar cross-browser (already present, keeping as reference) */
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-  /* Snap scroll helpers */
-  .snap-start { scroll-snap-align: start; }
-  .snap-x     { scroll-snap-type: x mandatory; }
-
-  /* Touch-friendly tap targets */
-  .tap-target {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
-  /* Gradient text — gold */
+  /* ── Gold gradient text ── */
   .text-gradient-gold {
     background: var(--gradient-gold);
     -webkit-background-clip: text;
@@ -339,7 +219,7 @@
     color: transparent;
   }
 
-  /* Gradient text — primary */
+  /* ── Primary gradient text ── */
   .text-gradient-primary {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
@@ -347,7 +227,33 @@
     color: transparent;
   }
 
-  /* Field pattern (already present, keeping reference) */
+  /* ── Background helpers ── */
+  .bg-background-deep   { background-color: hsl(var(--background-deep)); }
+  .bg-surface           { background-color: hsl(var(--surface)); }
+  .bg-surface-elevated  { background-color: hsl(var(--surface-elevated)); }
+  .bg-gradient-card     { background: var(--gradient-card); }
+  .bg-gradient-primary  { background: var(--gradient-primary); }
+  .bg-gradient-gold     { background: var(--gradient-gold); }
+
+  /* ── Shadow helpers ── */
+  .shadow-elegant { box-shadow: var(--shadow-elegant); }
+  .shadow-glow    { box-shadow: var(--shadow-glow); }
+  .shadow-gold    { box-shadow: var(--shadow-gold); }
+  .shadow-card    { box-shadow: var(--shadow-card); }
+
+  /* ── Status colours ── */
+  .text-live    { color: hsl(var(--live)); }
+  .bg-live      { background-color: hsl(var(--live)); }
+  .border-live  { border-color: hsl(var(--live)); }
+  .text-win     { color: hsl(var(--win)); }
+  .bg-win       { background-color: hsl(var(--win)); }
+  .text-draw    { color: hsl(var(--draw)); }
+  .bg-draw      { background-color: hsl(var(--draw)); }
+  .text-loss    { color: hsl(var(--loss)); }
+  .bg-loss      { background-color: hsl(var(--loss)); }
+  .text-primary-glow { color: hsl(var(--primary-glow)); }
+
+  /* ── Field pattern (used in RoadToLions etc.) ── */
   .field-pattern {
     background-image:
       radial-gradient(circle at 50% 50%, hsl(153 80% 40% / 0.08) 0%, transparent 60%),
@@ -356,52 +262,26 @@
     background-size: 100% 100%, 40px 40px, 40px 40px;
   }
 
-  /* Standings zone backgrounds */
-  .zone-champion {
-    background-color: var(--zone-champion, hsl(49 97% 53% / 0.05));
-  }
+  /* ── Scrollbar hide ── */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  .zone-caf {
-    background-color: var(--zone-caf, hsl(153 100% 27% / 0.04));
-  }
+  /* ── Snap scroll ── */
+  .snap-start { scroll-snap-align: start; }
+  .snap-x     { scroll-snap-type: x mandatory; }
 
-  .zone-relegation {
-    background-color: var(--zone-relegation, hsl(354 85% 43% / 0.04));
-  }
+  /* ── Skeleton animation ── */
+  .animate-skeleton { animation: var(--animate-skeleton); }
 
-  /* Sparkline container */
-  .sparkline-wrap {
-    display: inline-flex;
-    align-items: flex-end;
-    gap: 2px;
-  }
+  /* ── Touch tap target (min 44px) ── */
+  .tap-target { min-height: 44px; min-width: 44px; }
 
-  /* Reading ring */
-  .reading-ring {
-    transform: rotate(-90deg);
-    transform-origin: center;
-  }
+  /* ── Zone colours for standings ── */
+  .zone-champion  { background-color: hsl(49 97% 53% / 0.05); }
+  .zone-caf       { background-color: hsl(153 100% 27% / 0.04); }
+  .zone-relegation{ background-color: hsl(354 85% 43% / 0.04); }
 
-  /* Vote share bar segments */
-  .vote-bar-track {
-    height: 6px;
-    border-radius: 999px;
-    overflow: hidden;
-    display: flex;
-    gap: 2px;
-    background: rgba(255,255,255,0.08);
-  }
-
-  /* Glass morphism (already present — re-exported for clarity) */
-  .glass {
-    background: hsl(168 50% 8% / 0.7);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border-bottom: 1px solid hsl(168 30% 22% / 0.6);
-  }
-
-  /* Flag bar (already present) */
-  .flag-bar {
-    background: var(--gradient-flag);
-  }
+  /* ── Section spacing — applied via Section wrapper in Index.tsx ── */
+  /* py-12 = 48px (mobile) | lg:py-16 = 64px (desktop) */
+  /* This creates consistent breathing room between every section */
 }
