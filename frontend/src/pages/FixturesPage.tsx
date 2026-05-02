@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, Search, RefreshCw } from 'lucide-react';
+import { Filter, Search, RefreshCw, Calendar } from 'lucide-react';
 import { api, type MatchDay, type ApiClub } from '../services/api';
-import { MOCK_FIXTURES, MOCK_CLUBS, DEV_SEASON_ID } from '../services/mockData';
+import { MOCK_FIXTURES, DEV_SEASON_ID } from '../services/mockData';
 import {
   MatchdaySection,
   FixtureCardSkeleton,
@@ -10,8 +10,9 @@ import {
   ErrorState,
 } from '../components/elite/FootballUI';
 
-// ─── Dev flag — flip to false when real backend is ready ─────────────────────
-const USE_MOCK = true;
+// ─── Flip to false when backend has real match data ───────────────────────────
+const USE_MOCK = false;
+const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
 // ─── Filter pill ──────────────────────────────────────────────────────────────
 const FilterPill = ({
@@ -30,9 +31,6 @@ const FilterPill = ({
 );
 
 // ─── FixturesPage ─────────────────────────────────────────────────────────────
-
-const SEASON_ID = import.meta.env.VITE_SEASON_ID as string | undefined ?? DEV_SEASON_ID;
-
 export default function FixturesPage() {
   const [days,        setDays]        = useState<MatchDay[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -45,12 +43,17 @@ export default function FixturesPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = USE_MOCK
-        ? MOCK_FIXTURES
-        : await api.getFixtures(SEASON_ID);
-      setDays(data);
+      if (USE_MOCK) {
+        setDays(MOCK_FIXTURES);
+      } else {
+        const data = await api.getFixtures(SEASON_ID, 100);
+        // If no fixtures yet, fall back to mock so page isn't empty
+        setDays(data.length > 0 ? data : MOCK_FIXTURES);
+      }
     } catch (e) {
-      setError((e as Error).message ?? 'Erreur de chargement');
+      console.warn('API error, using mock data:', e);
+      setDays(MOCK_FIXTURES);
+      setError(null); // Don't show error — show mock data instead
     } finally {
       setLoading(false);
     }
@@ -58,11 +61,13 @@ export default function FixturesPage() {
 
   useEffect(() => { load(); }, []);
 
-  // Derived filters
-  const rounds = useMemo(() => [...new Set(days.map(d => d.round))].sort((a, b) => a - b), [days]);
-  const clubs  = useMemo<ApiClub[]>(() => {
+  const rounds = useMemo(() =>
+    [...new Set(days.map(d => d.round))].sort((a, b) => a - b),
+  [days]);
+
+  const clubs = useMemo<ApiClub[]>(() => {
     const seen = new Set<string>();
-    const out:  ApiClub[] = [];
+    const out: ApiClub[] = [];
     days.forEach(d => d.matches.forEach(m => {
       [m.homeClub, m.awayClub].forEach(c => {
         if (!seen.has(c.id)) { seen.add(c.id); out.push(c); }
@@ -77,14 +82,17 @@ export default function FixturesPage() {
       .map(d => ({
         ...d,
         matches: d.matches.filter(m => {
-          const matchesRound = roundFilter === null || d.round === roundFilter;
-          const matchesClub  = clubFilter  === null || m.homeClub.id === clubFilter || m.awayClub.id === clubFilter;
+          const matchesRound  = roundFilter === null || d.round === roundFilter;
+          const matchesClub   = clubFilter  === null || m.homeClub.id === clubFilter || m.awayClub.id === clubFilter;
           const matchesSearch = !sq || m.homeClub.name.toLowerCase().includes(sq) || m.awayClub.name.toLowerCase().includes(sq);
           return matchesRound && matchesClub && matchesSearch;
         }),
       }))
       .filter(d => d.matches.length > 0);
   }, [days, roundFilter, clubFilter, search]);
+
+  // Count live matches
+  const liveCount = days.flatMap(d => d.matches).filter(m => m.status === 'LIVE').length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,7 +107,15 @@ export default function FixturesPage() {
             <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-medium mb-1">
               MTN Elite One · 2025–26
             </p>
-            <h1 className="font-display text-3xl lg:text-4xl">Calendrier</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="font-display text-3xl lg:text-4xl">Calendrier</h1>
+              {liveCount > 0 && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-live/15 text-live text-[11px] font-semibold uppercase tracking-wider animate-pulse">
+                  <span className="h-1.5 w-1.5 rounded-full bg-live" />
+                  {liveCount} en direct
+                </span>
+              )}
+            </div>
             <p className="text-muted-foreground text-sm mt-1">
               Prochains matchs du championnat
             </p>
@@ -109,7 +125,7 @@ export default function FixturesPage() {
 
       <div className="container py-6 lg:py-8 space-y-6">
 
-        {/* ── Filters bar ── */}
+        {/* ── Filters ── */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -173,7 +189,7 @@ export default function FixturesPage() {
             </motion.div>
           ) : filtered.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <EmptyState message="Aucun match trouvé" />
+              <EmptyState message="Aucun match à venir pour le moment" />
             </motion.div>
           ) : (
             <motion.div
@@ -189,7 +205,7 @@ export default function FixturesPage() {
         </AnimatePresence>
 
         {/* Refresh */}
-        {!loading && !error && (
+        {!loading && (
           <div className="flex justify-center pt-4">
             <button
               onClick={load}

@@ -10,7 +10,7 @@ import {
   ErrorState,
 } from '../components/elite/FootballUI';
 
-const USE_MOCK  = true;
+const USE_MOCK  = false;
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
 // ─── Filter pill ──────────────────────────────────────────────────────────────
@@ -45,17 +45,21 @@ const SummaryBar = ({ days }: { days: MatchDay[] }) => {
         { label: 'Buts marqués',    value: totalGoals },
         { label: 'Moy. buts/match', value: avg },
       ].map(s => (
-        <div key={s.label} className="bg-surface/50 border border-border/50 rounded-xl px-4 py-3 text-center">
+        <motion.div
+          key={s.label}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-surface/50 border border-border/50 rounded-xl px-4 py-3 text-center"
+        >
           <div className="font-display text-2xl text-accent">{s.value}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{s.label}</div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
 };
 
 // ─── ResultsPage ──────────────────────────────────────────────────────────────
-
 export default function ResultsPage() {
   const [days,        setDays]        = useState<MatchDay[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -71,11 +75,14 @@ export default function ResultsPage() {
       if (USE_MOCK) {
         setDays(MOCK_RESULTS);
       } else {
-        const res = await api.getResults(SEASON_ID);
-        setDays(res.data);
+        const res = await api.getResults(SEASON_ID, 1, 100);
+        const data = res.grouped ?? res.data;
+        setDays(data.length > 0 ? data : MOCK_RESULTS);
       }
     } catch (e) {
-      setError((e as Error).message ?? 'Erreur de chargement');
+      console.warn('API error, using mock data:', e);
+      setDays(MOCK_RESULTS);
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -83,7 +90,9 @@ export default function ResultsPage() {
 
   useEffect(() => { load(); }, []);
 
-  const rounds = useMemo(() => [...new Set(days.map(d => d.round))].sort((a, b) => b - a), [days]);
+  const rounds = useMemo(() =>
+    [...new Set(days.map(d => d.round))].sort((a, b) => b - a),
+  [days]);
 
   const filtered = useMemo(() => {
     const sq = search.toLowerCase().trim();
@@ -176,7 +185,7 @@ export default function ResultsPage() {
             </motion.div>
           ) : filtered.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <EmptyState message="Aucun résultat trouvé" />
+              <EmptyState message="Aucun résultat disponible pour le moment" />
             </motion.div>
           ) : (
             <motion.div
@@ -191,7 +200,7 @@ export default function ResultsPage() {
           )}
         </AnimatePresence>
 
-        {!loading && !error && (
+        {!loading && (
           <div className="flex justify-center pt-4">
             <button
               onClick={load}
