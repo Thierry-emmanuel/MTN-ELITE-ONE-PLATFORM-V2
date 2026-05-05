@@ -1,8 +1,13 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
-import { results } from "./data";
-import { ClubBadge } from "./ClubBadge";
+import { ArrowRight } from "lucide-react";
+import { api, type ApiMatch } from "@/services/api";
+import { MOCK_RESULTS, DEV_SEASON_ID } from "@/services/mockData";
+import { ClubLogo } from "@/components/elite/FootballUI";
 import { SectionHeader } from "./SectionHeader";
+import { Link } from "react-router-dom";
+
+const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
 const containerVariants = {
   hidden: {},
@@ -13,73 +18,122 @@ const rowVariants = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
 };
 
-export const Results = () => {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
+const ResultRow = ({ match }: { match: ApiMatch }) => {
+  const hs      = match.homeScore ?? 0;
+  const as_     = match.awayScore ?? 0;
+  const homeWin = hs > as_;
+  const awayWin = as_ > hs;
+  const draw    = hs === as_;
+  const dt      = new Date(match.scheduledAt);
+  const date    = dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 
   return (
-    <section ref={ref} className="container py-6 lg:py-8">
-      <SectionHeader eyebrow="J18" title="Derniers Résultats" cta="Tous les résultats" size="compact" />
+    <motion.div
+      variants={rowVariants}
+      whileHover={{ x: 2 }}
+      className="group relative bg-surface/60 border border-border rounded-xl px-4 py-3 cursor-pointer hover:bg-surface hover:border-white/15 transition-all duration-200 overflow-hidden"
+    >
+      {/* Result color bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${
+        draw ? "bg-draw/50" : homeWin ? "bg-win/60" : "bg-loss/60"
+      }`} />
+
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 pl-2">
+        {/* Home */}
+        <div className={`flex items-center gap-2 justify-end min-w-0 ${homeWin ? "text-foreground" : "text-muted-foreground"}`}>
+          <div className="text-right min-w-0">
+            <div className="font-display text-xs truncate">{match.homeClub.name}</div>
+          </div>
+          <ClubLogo club={match.homeClub} size={26} />
+        </div>
+
+        {/* Score */}
+        <div className="flex flex-col items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-1.5 font-display text-lg tabular-nums">
+            <span className={homeWin ? "text-accent" : draw ? "text-draw" : "text-muted-foreground"}>{hs}</span>
+            <span className="text-muted-foreground/30 text-sm">–</span>
+            <span className={awayWin ? "text-accent" : draw ? "text-draw" : "text-muted-foreground"}>{as_}</span>
+          </div>
+          <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50">FT · {date}</span>
+        </div>
+
+        {/* Away */}
+        <div className={`flex items-center gap-2 min-w-0 ${awayWin ? "text-foreground" : "text-muted-foreground"}`}>
+          <ClubLogo club={match.awayClub} size={26} />
+          <div className="min-w-0">
+            <div className="font-display text-xs truncate">{match.awayClub.name}</div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const SkeletonRow = () => (
+  <div className="bg-surface/60 border border-border rounded-xl px-4 py-3 animate-pulse">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+      <div className="flex items-center justify-end gap-2">
+        <div className="h-3 w-20 rounded bg-white/6" />
+        <div className="h-6 w-6 rounded-full bg-white/6" />
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <div className="h-5 w-14 rounded bg-white/6" />
+        <div className="h-2 w-10 rounded bg-white/4" />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="h-6 w-6 rounded-full bg-white/6" />
+        <div className="h-3 w-20 rounded bg-white/6" />
+      </div>
+    </div>
+  </div>
+);
+
+export const Results = () => {
+  const ref    = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const [matches, setMatches] = useState<ApiMatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [round,   setRound]   = useState<number>(1);
+
+  useEffect(() => {
+    api.getResults(SEASON_ID, 1, 50)
+      .then(res => {
+        const days = res.grouped ?? res.data;
+        // Get most recent finished matches, flatten, take last 8
+        const allMatches = days.flatMap(d => d.matches)
+          .filter(m => m.status === "FINISHED")
+          .slice(-8)
+          .reverse();
+        if (allMatches.length > 0) setRound(allMatches[0].round);
+        setMatches(allMatches.length > 0 ? allMatches : MOCK_RESULTS.flatMap(d => d.matches).slice(0, 6));
+      })
+      .catch(() => setMatches(MOCK_RESULTS.flatMap(d => d.matches).slice(0, 6)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <section ref={ref}>
+      <div className="flex items-center justify-between mb-5">
+        <SectionHeader eyebrow={`J${round}`} title="Derniers Résultats" size="compact" />
+        <Link
+          to="/results"
+          className="hidden sm:inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-accent transition-colors group"
+        >
+          Tout voir
+          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      </div>
 
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate={inView ? "visible" : "hidden"}
-        className="grid sm:grid-cols-2 gap-2"
+        className="flex flex-col gap-2"
       >
-        {results.map((r, idx) => {
-          const homeWin = r.hs > r.as;
-          const awayWin = r.as > r.hs;
-          const draw    = r.hs === r.as;
-
-          return (
-            <motion.div
-              key={idx}
-              variants={rowVariants}
-              className="group relative bg-surface/60 border border-border rounded-lg px-3 py-2.5 flex items-center gap-2.5 hover:bg-surface hover:border-white/15 transition-all duration-200 cursor-pointer overflow-hidden"
-            >
-              {/* Win indicator line */}
-              <div
-                className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-lg transition-opacity ${
-                  draw ? "bg-draw opacity-40" : homeWin ? "bg-win opacity-60" : "bg-loss opacity-60"
-                }`}
-              />
-
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider w-10 shrink-0 pl-1">
-                {r.date}
-              </div>
-
-              <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 min-w-0">
-                {/* Home */}
-                <div
-                  className={`flex items-center gap-1.5 justify-end min-w-0 ${
-                    homeWin ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  <span className="font-medium text-xs truncate">{r.home.short}</span>
-                  <ClubBadge club={r.home} size={22} />
-                </div>
-
-                {/* Score */}
-                <div className="flex items-center gap-1 font-display text-base tabular-nums px-1 shrink-0">
-                  <span className={homeWin ? "text-accent" : draw ? "text-draw" : ""}>{r.hs}</span>
-                  <span className="text-muted-foreground/30 text-sm">-</span>
-                  <span className={awayWin ? "text-accent" : draw ? "text-draw" : ""}>{r.as}</span>
-                </div>
-
-                {/* Away */}
-                <div
-                  className={`flex items-center gap-1.5 min-w-0 ${
-                    awayWin ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  <ClubBadge club={r.away} size={22} />
-                  <span className="font-medium text-xs truncate">{r.away.short}</span>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+          : matches.map(m => <ResultRow key={m.id} match={m} />)
+        }
       </motion.div>
     </section>
   );

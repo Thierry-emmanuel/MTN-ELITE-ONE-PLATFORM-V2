@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, AlertTriangle, RefreshCw, Info } from 'lucide-react';
 import { api, type ApiStanding } from '../services/api';
-import { MOCK_STANDINGS, POSITION_CHANGES, DEV_SEASON_ID } from '../services/mockData';
-import { ClubLogo, FormIndicator, PositionChange, StandingRowSkeleton } from '../components/elite/FootballUI';
+import { MOCK_STANDINGS, DEV_SEASON_ID } from '../services/mockData';
+import { ClubLogo, FormIndicator, StandingRowSkeleton } from '../components/elite/FootballUI';
 
-const USE_MOCK  = false;
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
-// ─── Zone config ──────────────────────────────────────────────────────────────
 const getZone = (pos: number, total: number) => {
   if (pos === 1)        return 'champion';
   if (pos <= 3)         return 'caf';
@@ -30,13 +28,19 @@ const ZONE_BG: Record<string, string> = {
   none:       '',
 };
 
-// ─── Zone legend ──────────────────────────────────────────────────────────────
+const normalizeForm = (f: string): 'W' | 'D' | 'L' => {
+  const u = f.toUpperCase();
+  if (u === 'V' || u === 'W') return 'W';
+  if (u === 'D') return 'D';
+  return 'L';
+};
+
 const ZoneLegend = () => (
   <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-[10px] text-muted-foreground">
     {[
-      { color: 'bg-accent',      label: 'Champion' },
-      { color: 'bg-primary',     label: 'Zone CAF' },
-      { color: 'bg-destructive', label: 'Zone relégation' },
+      { color: 'bg-accent',      label: 'Champion MTN Elite One' },
+      { color: 'bg-primary',     label: 'Qualification CAF' },
+      { color: 'bg-destructive', label: 'Relégation Elite Two' },
     ].map(z => (
       <span key={z.label} className="flex items-center gap-1.5">
         <span className={`h-2.5 w-2.5 rounded-sm ${z.color}`} />
@@ -46,79 +50,67 @@ const ZoneLegend = () => (
   </div>
 );
 
-// ─── StandingsTable ───────────────────────────────────────────────────────────
-interface StandingsTableProps { standings: ApiStanding[] }
+const SummaryCards = ({ standings }: { standings: ApiStanding[] }) => {
+  const leader     = standings[0];
+  const totalGoals = standings.reduce((a, s) => a + s.goalsFor, 0);
+  const totalGames = Math.round(standings.reduce((a, s) => a + s.played, 0) / 2);
+  return (
+    <div className="grid grid-cols-3 gap-3 mb-6">
+      {[
+        { label: 'Leader',       value: leader?.club.name ?? '—', sub: `${leader?.points ?? 0} pts` },
+        { label: 'Buts marqués', value: totalGoals,                sub: 'cette saison' },
+        { label: 'Matchs joués', value: totalGames,                sub: `J${leader?.played ?? 0} en cours` },
+      ].map((s, i) => (
+        <motion.div key={s.label}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+          className="bg-surface/50 border border-border/50 rounded-xl px-4 py-3 text-center">
+          <div className="font-display text-xl lg:text-2xl text-accent truncate">{s.value}</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{s.label}</div>
+          <div className="text-[9px] text-muted-foreground/50 mt-0.5">{s.sub}</div>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
 
-const StandingsTable = ({ standings }: StandingsTableProps) => {
+const StandingsTable = ({ standings }: { standings: ApiStanding[] }) => {
   const [hovered, setHovered] = useState<string | null>(null);
   const total = standings.length;
-
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-gradient-card">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2.5 border-b border-border/60 bg-surface/80 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2.5 border-b border-border/60 bg-surface/90 backdrop-blur-sm">
         <div className="w-6 text-[10px] text-muted-foreground uppercase tracking-wider text-center">#</div>
-        <div className="w-5" />
         <div className="w-7" />
         <div className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider">Club</div>
-        <div className="hidden sm:flex items-center text-[10px] text-muted-foreground uppercase tracking-wider">
+        <div className="hidden sm:flex text-[10px] text-muted-foreground uppercase tracking-wider">
           {['J','V','N','D','BP','BC','DB'].map(h => (
             <span key={h} className="w-8 text-center">{h}</span>
           ))}
         </div>
-        <div className="hidden md:block text-[10px] text-muted-foreground uppercase tracking-wider w-[116px] text-center">
-          Forme
-        </div>
+        <div className="hidden lg:block text-[10px] text-muted-foreground uppercase tracking-wider w-[116px] text-center">Forme</div>
         <div className="w-10 text-right text-[10px] text-muted-foreground uppercase tracking-wider">Pts</div>
       </div>
 
-      {/* Rows */}
       {standings.map((row, idx) => {
         const zone  = getZone(row.position, total);
-        const delta = POSITION_CHANGES[row.club.id] ?? 0;
         const isHov = hovered === row.id;
-
+        const gd    = row.goalDifference;
         return (
-          <motion.div
-            key={row.id}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: idx * 0.035, ease: [0.22, 1, 0.36, 1] }}
-            onMouseEnter={() => setHovered(row.id)}
-            onMouseLeave={() => setHovered(null)}
-            className={`relative flex items-center gap-2 px-4 py-3 border-b border-border/25 last:border-0 cursor-pointer transition-colors duration-150 border-l-2 ${
-              ZONE_BORDER[zone]
-            } ${ZONE_BG[zone]} ${isHov ? 'bg-white/[0.03]' : ''}`}
+          <motion.div key={row.id}
+            initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: idx * 0.03, ease: [0.22, 1, 0.36, 1] }}
+            onMouseEnter={() => setHovered(row.id)} onMouseLeave={() => setHovered(null)}
+            className={`relative flex items-center gap-2 px-4 py-3 border-b border-border/20 last:border-0 cursor-pointer transition-colors duration-150 border-l-2 ${ZONE_BORDER[zone]} ${ZONE_BG[zone]} ${isHov ? 'bg-white/[0.025]' : ''}`}
           >
-            {/* Position */}
-            <div className={`w-6 shrink-0 font-display text-sm tabular-nums text-center ${
-              zone === 'champion' ? 'text-accent' : zone === 'caf' ? 'text-primary-glow' : 'text-muted-foreground'
-            }`}>
-              {row.position === 1
-                ? <Trophy className="h-3.5 w-3.5 text-accent mx-auto" />
-                : row.position}
+            <div className={`w-6 shrink-0 font-display text-sm tabular-nums text-center ${zone === 'champion' ? 'text-accent' : zone === 'caf' ? 'text-primary' : 'text-muted-foreground'}`}>
+              {row.position === 1 ? <Trophy className="h-3.5 w-3.5 text-accent mx-auto" /> : row.position}
             </div>
-
-            {/* Position change */}
-            <div className="w-5 shrink-0 flex items-center justify-center">
-              <PositionChange delta={delta} />
-            </div>
-
-            {/* Club logo */}
             <ClubLogo club={row.club} size={28} className="shrink-0" />
-
-            {/* Club name + city */}
             <div className="flex-1 min-w-0">
-              <div className={`text-sm font-semibold truncate transition-colors ${isHov ? 'text-accent' : 'text-foreground'}`}>
-                {row.club.name}
-              </div>
-              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
-                {row.club.city}
-              </div>
+              <div className={`text-sm font-semibold truncate transition-colors ${isHov ? 'text-accent' : 'text-foreground'}`}>{row.club.name}</div>
+              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">{row.club.city}</div>
             </div>
-
-            {/* Stats */}
-            <div className="hidden sm:flex items-center text-xs tabular-nums">
+            <div className="hidden sm:flex text-xs tabular-nums">
               {[
                 { val: row.played,       color: 'text-muted-foreground' },
                 { val: row.won,          color: 'text-win' },
@@ -126,73 +118,49 @@ const StandingsTable = ({ standings }: StandingsTableProps) => {
                 { val: row.lost,         color: 'text-loss' },
                 { val: row.goalsFor,     color: 'text-foreground/70' },
                 { val: row.goalsAgainst, color: 'text-foreground/70' },
-                {
-                  val: row.goalDifference >= 0 ? `+${row.goalDifference}` : row.goalDifference,
-                  color: row.goalDifference > 0 ? 'text-win' : row.goalDifference < 0 ? 'text-loss' : 'text-muted-foreground'
-                },
-              ].map((s, i) => (
-                <span key={i} className={`w-8 text-center ${s.color}`}>{s.val}</span>
-              ))}
+                { val: gd >= 0 ? `+${gd}` : gd, color: gd > 0 ? 'text-win' : gd < 0 ? 'text-loss' : 'text-muted-foreground' },
+              ].map((s, i) => <span key={i} className={`w-8 text-center ${s.color}`}>{s.val}</span>)}
             </div>
-
-            {/* Form guide */}
-            <div className="hidden md:flex items-center gap-1">
-              {(row.formGuide ?? []).slice(-5).map((r, i) => (
-                <FormIndicator key={i} result={r} />
-              ))}
+            <div className="hidden lg:flex items-center gap-1">
+              {(row.formGuide ?? []).slice(-5).map((r, i) => <FormIndicator key={i} result={normalizeForm(r)} />)}
             </div>
-
-            {/* Points */}
-            <div className={`w-10 text-right font-display text-base tabular-nums shrink-0 ${
-              zone === 'champion' ? 'text-accent' : 'text-foreground'
-            }`}>
-              {row.points}
-            </div>
+            <div className={`w-10 text-right font-display text-base tabular-nums shrink-0 ${zone === 'champion' ? 'text-accent' : 'text-foreground'}`}>{row.points}</div>
           </motion.div>
         );
       })}
 
-      {/* Relegation warning */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-t border-destructive/20 bg-destructive/[0.04]">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-t border-destructive/20 bg-destructive/[0.03]">
         <AlertTriangle className="h-3 w-3 text-destructive/60 shrink-0" />
-        <span className="text-[10px] text-destructive/50">
-          Les 2 derniers clubs à la fin de la saison sont relégués en Elite Two.
-        </span>
+        <span className="text-[10px] text-destructive/50">Les 2 derniers clubs sont relégués en MTN Elite Two à la fin de la saison.</span>
       </div>
     </div>
   );
 };
 
-// ─── Mobile compact view ──────────────────────────────────────────────────────
-const MobileStandings = ({ standings }: StandingsTableProps) => {
+const MobileTable = ({ standings }: { standings: ApiStanding[] }) => {
   const total = standings.length;
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-gradient-card sm:hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/60 bg-surface/80 text-[9px] text-muted-foreground uppercase tracking-wider">
         <span className="w-5 text-center">#</span>
+        <span className="w-6" />
         <span className="flex-1">Club</span>
-        <span className="w-7 text-center">J</span>
+        <span className="w-6 text-center">J</span>
+        <span className="w-7 text-center">DB</span>
         <span className="w-7 text-center">Pts</span>
       </div>
       {standings.map((row, idx) => {
         const zone = getZone(row.position, total);
+        const gd   = row.goalDifference;
         return (
-          <motion.div
-            key={row.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: idx * 0.03 }}
-            className={`flex items-center gap-2 px-3 py-2.5 border-b border-border/20 last:border-0 border-l-2 ${ZONE_BORDER[zone]}`}
-          >
-            <span className={`w-5 text-center font-display text-xs ${zone === 'champion' ? 'text-accent' : 'text-muted-foreground'}`}>
-              {row.position}
-            </span>
+          <motion.div key={row.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.025 }}
+            className={`flex items-center gap-2 px-3 py-2.5 border-b border-border/20 last:border-0 border-l-2 ${ZONE_BORDER[zone]}`}>
+            <span className={`w-5 text-center font-display text-xs ${zone === 'champion' ? 'text-accent' : 'text-muted-foreground'}`}>{row.position}</span>
             <ClubLogo club={row.club} size={22} />
             <span className="flex-1 text-xs font-medium truncate">{row.club.name}</span>
-            <span className="w-7 text-center text-xs text-muted-foreground">{row.played}</span>
-            <span className={`w-7 text-center font-display text-sm ${zone === 'champion' ? 'text-accent' : 'text-foreground'}`}>
-              {row.points}
-            </span>
+            <span className="w-6 text-center text-xs text-muted-foreground">{row.played}</span>
+            <span className={`w-7 text-center text-xs ${gd > 0 ? 'text-win' : gd < 0 ? 'text-loss' : 'text-muted-foreground'}`}>{gd > 0 ? `+${gd}` : gd}</span>
+            <span className={`w-7 text-center font-display text-sm ${zone === 'champion' ? 'text-accent' : 'text-foreground'}`}>{row.points}</span>
           </motion.div>
         );
       })}
@@ -200,27 +168,17 @@ const MobileStandings = ({ standings }: StandingsTableProps) => {
   );
 };
 
-// ─── StandingsPage ────────────────────────────────────────────────────────────
 export default function StandingsPage() {
   const [standings, setStandings] = useState<ApiStanding[]>([]);
   const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    setError(null);
     try {
-      if (USE_MOCK) {
-        setStandings(MOCK_STANDINGS);
-      } else {
-        const data = await api.getStandings(SEASON_ID);
-        // If standings not yet initialized, use mock data
-        setStandings(data.length > 0 ? data : MOCK_STANDINGS);
-      }
-    } catch (e) {
-      console.warn('API error, falling back to mock standings:', e);
+      const data = await api.getStandings(SEASON_ID);
+      setStandings(data.length > 0 ? data : MOCK_STANDINGS);
+    } catch {
       setStandings(MOCK_STANDINGS);
-      setError(null);
     } finally {
       setLoading(false);
     }
@@ -228,31 +186,33 @@ export default function StandingsPage() {
 
   useEffect(() => { load(); }, []);
 
+  const currentRound = standings[0]?.played ?? 0;
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Page header */}
-      <div className="border-b border-border/50 bg-surface/30">
-        <div className="container py-8 lg:py-10">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-medium mb-1">
-              MTN Elite One · 2025–26
-            </p>
-            <h1 className="font-display text-3xl lg:text-4xl">Classement</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Mis à jour après chaque match · {standings.length} clubs
+      {/* Hero header */}
+      <div className="relative border-b border-border/50 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-background" />
+        <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-accent/5 blur-[90px] pointer-events-none" />
+        <div className="container relative py-10 lg:py-14">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-1 w-8 bg-accent rounded-full" />
+              <p className="text-[10px] uppercase tracking-[0.25em] text-accent font-semibold">MTN Elite One · Saison 2025–26</p>
+            </div>
+            <h1 className="font-display text-4xl lg:text-5xl tracking-tight">Classement</h1>
+            <p className="text-muted-foreground text-sm mt-2">
+              {currentRound > 0 ? `Journée ${currentRound} · Mis à jour en temps réel` : 'Mis à jour après chaque match'}
             </p>
           </motion.div>
         </div>
       </div>
 
       <div className="container py-6 lg:py-8">
-        {/* Column legend */}
+        {!loading && standings.length > 0 && <SummaryCards standings={standings} />}
+
         <div className="hidden sm:flex items-center gap-1.5 mb-4 text-[10px] text-muted-foreground/60">
-          <Info className="h-3 w-3" />
+          <Info className="h-3 w-3 shrink-0" />
           <span>J=Joués · V=Victoires · N=Nuls · D=Défaites · BP=Buts pour · BC=Buts contre · DB=Différence</span>
         </div>
 
@@ -262,22 +222,10 @@ export default function StandingsPage() {
               className="rounded-xl border border-border overflow-hidden bg-gradient-card">
               {Array.from({ length: 14 }).map((_, i) => <StandingRowSkeleton key={i} i={i} />)}
             </motion.div>
-          ) : error ? (
-            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center py-20 gap-4">
-              <p className="text-sm text-muted-foreground">{error}</p>
-              <button onClick={load} className="text-xs text-accent hover:underline uppercase tracking-wider">
-                Réessayer
-              </button>
-            </motion.div>
           ) : (
             <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {/* Desktop table */}
-              <div className="hidden sm:block">
-                <StandingsTable standings={standings} />
-              </div>
-              {/* Mobile compact */}
-              <MobileStandings standings={standings} />
+              <div className="hidden sm:block"><StandingsTable standings={standings} /></div>
+              <MobileTable standings={standings} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -285,11 +233,8 @@ export default function StandingsPage() {
         <ZoneLegend />
 
         {!loading && (
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={load}
-              className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors"
-            >
+          <div className="flex justify-center mt-8">
+            <button onClick={load} className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors">
               <RefreshCw className="h-3.5 w-3.5" />
               Actualiser
             </button>
