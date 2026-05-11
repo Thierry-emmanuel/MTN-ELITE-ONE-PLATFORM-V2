@@ -1,118 +1,130 @@
-// ─── Types mapped from backend entities ──────────────────────────────────────
+import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import type {
+  MatchDay, Standing, PaginatedResponse, GroupedMatchResponse,
+} from '../types/football.types';
 
-export interface ApiClub {
-  id: string;
-  name: string;
-  city: string;
-  stadium: string;
-  logoUrl: string | null;
-  primaryColor: string | null;
-  secondaryColor: string | null;
+// ─── Config ───────────────────────────────────────────────────────────────────
+
+const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api';
+const DEFAULT_TIMEOUT = 10_000; // 10 s
+
+// ─── Custom error class ───────────────────────────────────────────────────────
+
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly code?: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
 }
 
-export interface ApiMatchEvent {
-  id: string;
-  minute: number;
-  type: 'GOAL' | 'YELLOW_CARD' | 'RED_CARD' | 'SUBSTITUTION_IN' | 'SUBSTITUTION_OUT' | 'OWN_GOAL' | 'PENALTY_GOAL' | 'SECOND_YELLOW';
-  playerName?: string;
-  clubId: string;
-}
+// ─── Axios instance ───────────────────────────────────────────────────────────
 
-export interface ApiMatch {
-  id: string;
-  round: number;
-  scheduledAt: string;
-  status: 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED' | 'CANCELLED';
-  homeScore: number | null;
-  awayScore: number | null;
-  venue: string | null;
-  city: string | null;
-  homeClub: ApiClub;
-  awayClub: ApiClub;
-  events?: ApiMatchEvent[];
-}
-
-export interface MatchDay {
-  date: string;
-  round: number;
-  matches: ApiMatch[];
-}
-
-export interface ApiStanding {
-  id: string;
-  position: number;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  goalDifference: number;
-  points: number;
-  formGuide: string[];
-  homePlayed: number;
-  homeWon: number;
-  homeDrawn: number;
-  homeLost: number;
-  awayPlayed: number;
-  awayWon: number;
-  awayDrawn: number;
-  awayLost: number;
-  club: ApiClub;
-}
-
-export interface ApiSeason {
-  id: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  status: 'UPCOMING' | 'ONGOING' | 'COMPLETED';
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-// ─── HTTP helper ──────────────────────────────────────────────────────────────
-
-const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api/v1';
-
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+const createClient = (): AxiosInstance => {
+  const client = axios.create({
+    baseURL: BASE_URL,
+    timeout: DEFAULT_TIMEOUT,
     headers: { 'Content-Type': 'application/json' },
   });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`${res.status} ${res.statusText}: ${body}`);
-  }
-  return res.json() as Promise<T>;
+
+  // Request interceptor — attach auth token if present
+  client.interceptors.request.use((config) => {
+    const token = localStorage.getItem('mtn_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  });
+
+  // Response interceptor — normalize errors
+  client.interceptors.response.use(
+    (res) => res,
+    (err: AxiosError) => {
+      if (err.code === 'ECONNABORTED') {
+        return Promise.reject(new ApiError(408, 'La requête a expiré. Vérifiez votre connexion.'));
+      }
+      if (!err.response) {
+        return Promise.reject(new ApiError(0, 'Impossible de joindre le serveur.'));
+      }
+      const status = err.response.status;
+      const data   = err.response.data as Record<string, unknown>;
+      const message =
+        (typeof data?.message === 'string' ? data.message : null) ??
+        HTTP_MESSAGES[status] ??
+        'Une erreur inattendue est survenue.';
+      return Promise.reject(new ApiError(status, message, data?.code as string));
+    },
+  );
+
+  return client;
+};
+
+const HTTP_MESSAGES: Record<number, string> = {
+  400: 'Requête invalide.',
+  401: 'Authentification requise.',
+  403: 'Accès refusé.',
+  404: 'Ressource introuvable.',
+  429: 'Trop de requêtes. Réessayez dans un moment.',
+  500: 'Erreur serveur. Nos équipes ont été alertées.',
+  503: 'Service temporairement indisponible.',
+};
+
+export const apiClient = createClient();
+
+// ─── Generic fetch helper ─────────────────────────────────────────────────────
+
+async function get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  const res = await apiClient.get<T>(url, config);
+  return res.data;
 }
 
-// ─── API endpoints ────────────────────────────────────────────────────────────
+// ─── API methods ──────────────────────────────────────────────────────────────
 
-export const api = {
-  /** GET /matches/fixtures/:seasonId */
-  getFixtures: (seasonId: string, limit = 50) =>
-    get<MatchDay[]>(`/matches/fixtures/${seasonId}?limit=${limit}`),
+export const footballApi = {
+  /**
+   * Returns finished matches grouped by matchday.
+   */
+  getResults: (
+    seasonId: string,
+    params?: { page?: number; pageSize?: number; round?: number; clubId?: string },
+  ) =>
+    get<GroupedMatchResponse>(`/seasons/${seasonId}/results`, { params }),
 
-  /** GET /matches/results/:seasonId */
-  getResults: (seasonId: string, page = 1, limit = 50) =>
-    get<{ data: MatchDay[]; total: number; grouped: MatchDay[] }>(
-      `/matches/results/${seasonId}?page=${page}&limit=${limit}`
-    ),
+  /**
+   * Returns upcoming + live matches grouped by matchday.
+   */
+  getFixtures: (
+    seasonId: string,
+    params?: { limit?: number; round?: number; clubId?: string; status?: string },
+  ) =>
+    get<MatchDay[]>(`/seasons/${seasonId}/fixtures`, { params }),
 
-  /** GET /standings/:seasonId */
-  getStandings: (seasonId: string) =>
-    get<ApiStanding[]>(`/standings/${seasonId}`),
+  /**
+   * Returns standings. Optionally filter by type (overall/home/away/form).
+   */
+  getStandings: (
+    seasonId: string,
+    params?: { type?: 'overall' | 'home' | 'away' | 'form' },
+  ) =>
+    get<Standing[]>(`/seasons/${seasonId}/standings`, { params }),
 
-  /** GET /seasons/current */
-  getCurrentSeason: () =>
-    get<ApiSeason>(`/seasons/current`),
-
-  /** GET /clubs?page=1&limit=20 */
-  getClubs: (page = 1, limit = 20) =>
-    get<PaginatedResponse<ApiClub>>(`/clubs?page=${page}&limit=${limit}`),
+  /**
+   * Single match detail (for expandable result cards).
+   */
+  getMatch: (matchId: string) =>
+    get<import('../types/football.types').Match>(`/matches/${matchId}`),
 };
+
+// ─── Query key factory — centralizes all cache keys ──────────────────────────
+
+export const QK = {
+  results:  (seasonId: string, filters?: object) =>
+    ['results',  seasonId, filters] as const,
+  fixtures: (seasonId: string, filters?: object) =>
+    ['fixtures', seasonId, filters] as const,
+  standings:(seasonId: string, type?: string)    =>
+    ['standings',seasonId, type]   as const,
+  match:    (matchId: string)                    =>
+    ['match', matchId]             as const,
+} as const;

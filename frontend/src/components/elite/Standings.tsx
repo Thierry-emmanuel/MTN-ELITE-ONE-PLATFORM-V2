@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Trophy, AlertTriangle, ArrowRight } from "lucide-react";
-import { api, type ApiStanding } from "@/services/api";
+import { footballApi as api } from "@/services/api";
 import { MOCK_STANDINGS, DEV_SEASON_ID } from "@/services/mockData";
 import { ClubLogo, FormIndicator, PositionChange, StandingRowSkeleton } from "@/components/elite/FootballUI";
 import { SectionHeader } from "./SectionHeader";

@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { api, type ApiMatch } from "@/services/api";
+import { footballApi as api } from "@/services/api";
 import { MOCK_RESULTS, DEV_SEASON_ID } from "@/services/mockData";
 import { ClubLogo } from "@/components/elite/FootballUI";
 import { SectionHeader } from "./SectionHeader";
@@ -96,7 +96,7 @@ export const Results = () => {
   const [round,   setRound]   = useState<number>(1);
 
   useEffect(() => {
-    api.getResults(SEASON_ID, 1, 50)
+   api.getFixtures(SEASON_ID, { limit: 50 })
       .then(res => {
         const days = res.grouped ?? res.data;
         // Get most recent finished matches, flatten, take last 8

@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight, Radio } from "lucide-react";
-import { api, type ApiMatch } from "@/services/api";
+import { footballApi as api } from "@/services/api";
+import type { ApiMatch } from "@/types/football.types";
 import { MOCK_FIXTURES, DEV_SEASON_ID } from "@/services/mockData";
 import { ClubLogo } from "@/components/elite/FootballUI";
 import { SectionHeader } from "./SectionHeader";
@@ -127,7 +128,7 @@ export const Fixtures = () => {
   const [round,    setRound]    = useState<number>(1);
 
   useEffect(() => {
-    api.getFixtures(SEASON_ID, 50)
+  api.getFixtures(SEASON_ID, { limit: 50 })
       .then(days => {
         // Get upcoming + live matches, flatten, take first 8
         const allMatches = days.flatMap(d => d.matches);
