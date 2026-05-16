@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import type {
-  MatchDay, Standing, PaginatedResponse, GroupedMatchResponse,
+  MatchDay, Standing, GroupedMatchResponse,
 } from '../types/football.types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -11,12 +11,13 @@ const DEFAULT_TIMEOUT = 10_000; // 10 s
 // ─── Custom error class ───────────────────────────────────────────────────────
 
 export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-    public readonly code?: string,
-  ) {
+  public readonly status: number;
+  public readonly code?: string;
+
+  constructor(status: number, message: string, code?: string) {
     super(message);
+    this.status = status;
+    this.code = code;
     this.name = 'ApiError';
   }
 }
@@ -89,7 +90,7 @@ export const footballApi = {
     seasonId: string,
     params?: { page?: number; pageSize?: number; round?: number; clubId?: string },
   ) =>
-    get<GroupedMatchResponse>(`/seasons/${seasonId}/results`, { params }),
+    get<GroupedMatchResponse>(`/matches/results/${seasonId}`, { params }),
 
   /**
    * Returns upcoming + live matches grouped by matchday.
@@ -98,7 +99,7 @@ export const footballApi = {
     seasonId: string,
     params?: { limit?: number; round?: number; clubId?: string; status?: string },
   ) =>
-    get<MatchDay[]>(`/seasons/${seasonId}/fixtures`, { params }),
+    get<MatchDay[]>(`/matches/fixtures/${seasonId}`, { params }),
 
   /**
    * Returns standings. Optionally filter by type (overall/home/away/form).
@@ -107,7 +108,7 @@ export const footballApi = {
     seasonId: string,
     params?: { type?: 'overall' | 'home' | 'away' | 'form' },
   ) =>
-    get<Standing[]>(`/seasons/${seasonId}/standings`, { params }),
+    get<Standing[]>(`/standings/${seasonId}`, { params }),
 
   /**
    * Single match detail (for expandable result cards).

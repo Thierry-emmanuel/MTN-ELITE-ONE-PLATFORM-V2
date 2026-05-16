@@ -1,4 +1,4 @@
-import type { MatchDay, Standing, FormResult, StandingsView } from '../types/football';
+import type { MatchDay, Standing, FormResult, StandingsView } from '../types/football.types';
 
 // ─── MatchDay filtering ───────────────────────────────────────────────────────
 
@@ -131,4 +131,11 @@ export function statusLabel(status: string, minute?: number): { text: string; is
     case 'PENALTIES':   return { text: 'Tirs au but',  isLive: true };
     default:            return { text: status,         isLive: false };
   }
+}
+
+export function getZone(pos: number, total: number): 'champion' | 'caf' | 'relegation' | 'none' {
+  if (pos === 1)        return 'champion';
+  if (pos <= 3)         return 'caf';
+  if (pos >= total - 1) return 'relegation';
+  return 'none';
 }

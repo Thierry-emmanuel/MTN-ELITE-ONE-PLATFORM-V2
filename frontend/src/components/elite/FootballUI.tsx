@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Calendar, Clock, Radio, Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import type { ApiClub, ApiMatch, ApiMatchEvent, MatchDay } from '../../services/api';
+import type { ApiClub, ApiMatch, MatchEvent, MatchDay } from '@/types/football.types';
 
 // ─── ClubLogo ────────────────────────────────────────────────────────────────
 
@@ -13,7 +13,7 @@ interface ClubLogoProps {
 export const ClubLogo = ({ club, size = 40, className = '' }: ClubLogoProps) => {
   const initials = club.name
     .split(' ')
-    .map(w => w[0])
+    .map((w: string) => w[0])
     .join('')
     .slice(0, 3)
     .toUpperCase();
@@ -183,7 +183,7 @@ export const FixtureCard = ({ match }: FixtureCardProps) => {
       <div className="text-center pt-3 border-t border-border/50">
         <div className={`font-display text-xl ${live ? 'text-live' : 'text-accent'}`}>{time}</div>
         <div className="text-[9px] uppercase tracking-widest text-muted-foreground mt-0.5">
-          {match.venue ?? 'Stade à confirmer'}
+          {typeof match.venue === 'object' ? (match.venue as any).name : (match.venue ?? 'Stade à confirmer')}
         </div>
       </div>
     </motion.div>
@@ -196,7 +196,7 @@ interface ResultCardProps {
   match: ApiMatch;
 }
 
-const goalScorers = (events: ApiMatchEvent[], clubId: string): string[] =>
+const goalScorers = (events: MatchEvent[], clubId: string): string[] =>
   events.filter(e => e.type === 'GOAL' && e.clubId === clubId).map(e => `${e.playerName} ${e.minute}'`);
 
 export const ResultCard = ({ match }: ResultCardProps) => {
@@ -281,7 +281,7 @@ const containerVariants = {
 };
 const itemVariants = {
   hidden:  { opacity: 0, y: 14 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as any } },
 };
 
 export const MatchdaySection = ({ day, variant, index }: MatchdaySectionProps) => {
@@ -320,8 +320,8 @@ export const MatchdaySection = ({ day, variant, index }: MatchdaySectionProps) =
             : 'grid grid-cols-1 sm:grid-cols-2 gap-2'
         }
       >
-        {day.matches.map(match => (
-          <motion.div key={match.id} variants={itemVariants}>
+        {day.matches.map((match: any) => (
+          <motion.div key={match.id} variants={itemVariants as any}>
             {variant === 'fixtures'
               ? <FixtureCard match={match} />
               : <ResultCard match={match} />}

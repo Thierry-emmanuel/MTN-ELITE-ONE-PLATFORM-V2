@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
-  Trophy, Star, Vote, ChevronLeft, ChevronRight,
+  Star, Vote, ChevronLeft, ChevronRight,
   Check, Users, UserCheck, Clock, BarChart2,
 } from "lucide-react";
 import { awards, teamOfTheWeek, coachOfTheWeek, type AwardCategory } from "./data";

@@ -192,7 +192,7 @@ export const MatchMeta = memo(({ match, showTime = true }: MatchMetaProps) => (
     {match.venue && (
       <span className="flex items-center gap-1">
         <MapPin className="h-2.5 w-2.5" />
-        {match.venue.name}
+        {typeof match.venue === 'object' ? match.venue.name : match.venue}
       </span>
     )}
     {match.referee && (

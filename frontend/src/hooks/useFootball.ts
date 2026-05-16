@@ -4,7 +4,7 @@ import {
   MOCK_FIXTURES, MOCK_RESULTS, MOCK_STANDINGS, DEV_SEASON_ID,
 } from '../services/mockData';
 import type {
-  FixturesFilter, ResultsFilter, StandingsFilter, MatchDay, Standing,
+  FixturesFilter, ResultsFilter, StandingsFilter, MatchDay,
 } from '../types/football.types';
 
 const SEASON_ID =

@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  AlertTriangle, RefreshCw, Radio, Clock, Search,
+  AlertTriangle, RefreshCw, Radio, Clock,
   CalendarX, Trophy, MapPin, User,
 } from 'lucide-react';
 import type { Club, FormResult, Match, MatchEvent } from '../../types/football.types';
@@ -238,7 +238,7 @@ export const MatchMeta = memo(({ match, showTime = true }: MatchMetaProps) => (
     {match.venue && (
       <span className="flex items-center gap-1">
         <MapPin className="h-2.5 w-2.5" />
-        {match.venue.name}
+        {typeof match.venue === 'object' ? match.venue.name : match.venue}
       </span>
     )}
     {match.referee && (

@@ -46,7 +46,7 @@ const ReadingRing = ({ readTime, size = 32 }: { readTime: string; size?: number 
 };
 
 const containerVariants = { hidden: {}, visible: { transition: { staggerChildren: 0.07 } } };
-const itemVariants = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } } };
+const itemVariants = { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as any } } };
 
 export const News = () => {
   const ref = useRef(null);

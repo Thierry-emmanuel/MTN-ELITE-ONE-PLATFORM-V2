@@ -6,6 +6,7 @@ import { MOCK_RESULTS, DEV_SEASON_ID } from "@/services/mockData";
 import { ClubLogo } from "@/components/elite/FootballUI";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
+import type { ApiMatch } from "@/types/football.types";
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
@@ -15,9 +16,8 @@ const containerVariants = {
 };
 const rowVariants = {
   hidden:  { opacity: 0, x: -12 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as any } },
 };
-
 const ResultRow = ({ match }: { match: ApiMatch }) => {
   const hs      = match.homeScore ?? 0;
   const as_     = match.awayScore ?? 0;
@@ -44,7 +44,7 @@ const ResultRow = ({ match }: { match: ApiMatch }) => {
           <div className="text-right min-w-0">
             <div className="font-display text-xs truncate">{match.homeClub.name}</div>
           </div>
-          <ClubLogo club={match.homeClub} size={26} />
+          <ClubLogo club={match.homeClub as any} size={26} />
         </div>
 
         {/* Score */}
@@ -59,7 +59,7 @@ const ResultRow = ({ match }: { match: ApiMatch }) => {
 
         {/* Away */}
         <div className={`flex items-center gap-2 min-w-0 ${awayWin ? "text-foreground" : "text-muted-foreground"}`}>
-          <ClubLogo club={match.awayClub} size={26} />
+          <ClubLogo club={match.awayClub as any} size={26} />
           <div className="min-w-0">
             <div className="font-display text-xs truncate">{match.awayClub.name}</div>
           </div>
@@ -96,20 +96,21 @@ export const Results = () => {
   const [round,   setRound]   = useState<number>(1);
 
   useEffect(() => {
-   api.getFixtures(SEASON_ID, { limit: 50 })
+    api.getResults(SEASON_ID, { pageSize: 50 })
       .then(res => {
-        const days = res.grouped ?? res.data;
+        const days = res.grouped ?? res.data ?? [];
         // Get most recent finished matches, flatten, take last 8
-        const allMatches = days.flatMap(d => d.matches)
-          .filter(m => m.status === "FINISHED")
+        const allMatches = days.flatMap((d: any) => d.matches)
+          .filter((m: any) => m.status === "FT" || m.status === "FINISHED")
           .slice(-8)
           .reverse();
         if (allMatches.length > 0) setRound(allMatches[0].round);
-        setMatches(allMatches.length > 0 ? allMatches : MOCK_RESULTS.flatMap(d => d.matches).slice(0, 6));
+        setMatches(allMatches.length > 0 ? (allMatches as any) : MOCK_RESULTS.flatMap((d: any) => d.matches).slice(0, 6));
       })
-      .catch(() => setMatches(MOCK_RESULTS.flatMap(d => d.matches).slice(0, 6)))
+      .catch(() => setMatches(MOCK_RESULTS.flatMap((d: any) => d.matches).slice(0, 6) as any))
       .finally(() => setLoading(false));
   }, []);
+
 
   return (
     <section ref={ref}>

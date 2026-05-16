@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 import { footballApi as api } from "@/services/api";
 import { MOCK_FIXTURES, DEV_SEASON_ID } from '../services/mockData';
-import { filterMatchDays, extractRounds, extractClubs, formatKickoff, formatKickoffDate, statusLabel } from '../utils/football.utils';
-import type { Match } from '../types/football.types';
+import { filterMatchDays, extractRounds, extractClubs, formatKickoff, formatKickoffDate } from '../utils/football.utils';
+import type { Match, MatchDay } from '../types/football.types';
 import {
   ClubLogo, MatchStatusChip, FilterPill, PageHero,
   FixtureCardSkeleton, EmptyState, ErrorState,
@@ -85,7 +85,7 @@ const FixtureCard = memo(({ match, index }: { match: Match; index: number }) => 
           <div className="flex items-center justify-center gap-3 mt-3 pt-3 border-t border-border/30 flex-wrap text-[10px] text-muted-foreground/40 uppercase tracking-wide">
             {match.venue && (
               <span className="flex items-center gap-1">
-                <MapPin className="h-2.5 w-2.5" />{match.venue.name}
+                <MapPin className="h-2.5 w-2.5" />{typeof match.venue === 'object' ? match.venue.name : match.venue}
               </span>
             )}
             {match.referee && (
@@ -182,7 +182,7 @@ export default function FixturesPage() {
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const data = await api.getFixtures(SEASON_ID, 100);
+      const data = await api.getFixtures(SEASON_ID, { limit: 100 });
       setDays(data.length > 0 ? data : MOCK_FIXTURES);
     } catch {
       setDays(MOCK_FIXTURES);

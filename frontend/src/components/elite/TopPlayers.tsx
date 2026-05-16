@@ -63,7 +63,6 @@ const Sparkline = ({
     ` L${pts[pts.length - 1].x.toFixed(1)},${height - pad} L${pts[0].x.toFixed(1)},${height - pad} Z`;
 
   const lastPt = pts[pts.length - 1];
-  const isUp = pts[pts.length - 1].v >= pts[pts.length - 2].v;
 
   return (
     <svg

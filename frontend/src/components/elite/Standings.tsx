@@ -6,6 +6,7 @@ import { MOCK_STANDINGS, DEV_SEASON_ID } from "@/services/mockData";
 import { ClubLogo, FormIndicator, PositionChange, StandingRowSkeleton } from "@/components/elite/FootballUI";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
+import type { ApiStanding } from "@/types/football.types";
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 

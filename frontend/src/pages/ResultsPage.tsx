@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, RefreshCw, ChevronDown, ChevronUp, Home, Plane } from 'lucide-react';
-import { footballApi as api } from "@/services/api"
 import { footballApi as api } from "@/services/api";
 import { MOCK_RESULTS, DEV_SEASON_ID } from '../services/mockData';
 import { filterMatchDays, extractRounds, extractClubs, calcResultsSummary, formatKickoff } from '../utils/football.utils';
-import type { Match } from '../types/football.types';
+import type { Match, MatchDay } from '../types/football.types';
 import {
   ClubLogo, MatchStatusChip, FilterPill, PageHero,
   ResultCardSkeleton, EmptyState, ErrorState,
@@ -191,7 +190,7 @@ export default function ResultsPage() {
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const res  = await api.getResults(SEASON_ID, 1, 200);
+      const res  = await api.getResults(SEASON_ID, { page: 1, pageSize: 200 });
       const data = res.grouped ?? res.data;
       setDays(data.length > 0 ? data : MOCK_RESULTS);
     } catch {

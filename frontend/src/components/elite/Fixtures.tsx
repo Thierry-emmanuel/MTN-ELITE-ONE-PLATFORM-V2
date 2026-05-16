@@ -16,7 +16,7 @@ const containerVariants = {
 };
 const cardVariants = {
   hidden:  { opacity: 0, y: 16, scale: 0.97 },
-  visible: { opacity: 1, y: 0,  scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0,  scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as any } },
 };
 
 const FixtureCard = ({ match }: { match: ApiMatch }) => {
@@ -89,7 +89,7 @@ const FixtureCard = ({ match }: { match: ApiMatch }) => {
       <div className="text-center pt-2.5 border-t border-border/40">
         <div className={`font-display text-lg ${live ? "text-live" : "text-accent"}`}>{time}</div>
         <div className="text-[9px] uppercase tracking-widest text-muted-foreground/60 mt-0.5 truncate">
-          {match.venue ?? match.city ?? "Stade à confirmer"}
+          {typeof match.venue === 'object' ? match.venue.name : (match.venue ?? match.city ?? "Stade à confirmer")}
         </div>
       </div>
     </motion.div>
@@ -131,13 +131,13 @@ export const Fixtures = () => {
   api.getFixtures(SEASON_ID, { limit: 50 })
       .then(days => {
         // Get upcoming + live matches, flatten, take first 8
-        const allMatches = days.flatMap(d => d.matches);
-        const upcoming = allMatches.filter(m => m.status === "SCHEDULED" || m.status === "LIVE");
+        const allMatches = (days as any).flatMap((d: any) => d.matches);
+        const upcoming = allMatches.filter((m: any) => m.status === "SCHEDULED" || m.status === "LIVE");
         const display  = upcoming.slice(0, 8);
         if (display.length > 0) setRound(display[0].round);
-        setMatches(display.length > 0 ? display : MOCK_FIXTURES.flatMap(d => d.matches).slice(0, 6));
+        setMatches(display.length > 0 ? (display as any) : MOCK_FIXTURES.flatMap((d: any) => d.matches).slice(0, 6));
       })
-      .catch(() => setMatches(MOCK_FIXTURES.flatMap(d => d.matches).slice(0, 6)))
+      .catch(() => setMatches(MOCK_FIXTURES.flatMap((d: any) => d.matches).slice(0, 6) as any))
       .finally(() => setLoading(false));
   }, []);
 

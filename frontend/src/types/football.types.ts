@@ -7,6 +7,7 @@ export type MatchStatus =
   | 'LIVE'
   | 'HT'
   | 'FT'
+  | 'FINISHED'
   | 'POSTPONED'
   | 'CANCELLED'
   | 'ABANDONED'
@@ -94,23 +95,26 @@ export type StandingsView = 'overall' | 'home' | 'away' | 'form';
 
 export type Zone = 'champion' | 'caf' | 'relegation' | 'none';
 
-export const getZone = (pos: number, total: number): Zone => {
-  if (pos === 1)        return 'champion';
-  if (pos <= 3)         return 'caf';
-  if (pos >= total - 1) return 'relegation';
-  return 'none';
-};
+export interface ApiClub {
+  id: string;
+  name: string;
+  city?: string;
+  primaryColor?: string;
+  logoUrl?: string;
+}
+
 export interface ApiMatch {
   id: string;
-  status: "SCHEDULED" | "LIVE" | "FINISHED";
+  status: MatchStatus;
   scheduledAt: string;
   round: number;
   homeScore: number | null;
   awayScore: number | null;
-  venue?: string;
+  venue?: Venue | string;
   city?: string;
-  homeClub: { name: string; primaryColor?: string; };
-  awayClub: { name: string; primaryColor?: string; };
+  homeClub: ApiClub;
+  awayClub: ApiClub;
+  events?: MatchEvent[];
 }
 
 export interface ApiStanding {
@@ -121,6 +125,47 @@ export interface ApiStanding {
   won: number;
   drawn: number;
   lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
   formGuide?: string[];
-  club: { name: string; city?: string; primaryColor?: string; };
+  homeWon?: number;
+  homeDrawn?: number;
+  awayWon?: number;
+  awayDrawn?: number;
+  club: ApiClub;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface GroupedMatchResponse {
+  data: MatchDay[];
+  grouped: MatchDay[];
+  total: number;
+}
+
+// ─── Filters ──────────────────────────────────────────────────────────────────
+
+export interface FixturesFilter {
+  round?: number;
+  clubId?: string;
+  status?: string;
+  limit?: number;
+}
+
+export interface ResultsFilter {
+  round?: number;
+  clubId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface StandingsFilter {
+  view: StandingsView;
 }

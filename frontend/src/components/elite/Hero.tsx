@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { Play, ArrowRight, Radio, LogIn, Zap, ChevronRight } from "lucide-react";
+import { Play, ArrowRight, Radio, Zap } from "lucide-react";
 import { heroSlides } from "./data";
 import { ClubBadge } from "./ClubBadge";
 import { Link } from "react-router-dom";
@@ -11,11 +11,8 @@ import p3 from "@/assets/images/players/EdouardSombang.png";
 import l3 from "@/assets/images/halloffame/Thomas_Nkono.png";
 import yt1 from "@/assets/images/youngtalents/NathanDouala.png";
 import n1 from "@/assets/news-1.jpg";
-import n2 from "@/assets/news-2.jpg";
-import n3 from "@/assets/news-3.jpg";
 
 const imgMap: Record<string, string> = { p1, p2, p3, l3, yt1, coach1: p2, coach2: p3 };
-const newsImgMap: Record<string, string> = { n1, n2, n3 };
 
 // ─── Reduce hero to 3 high-impact slides ─────────────────────────────────────
 // Slide 1 = match/live, Slide 2 = player, Slide 3 = news
@@ -324,8 +321,8 @@ const NewsSlide = ({ slide }: { slide: typeof HERO_SLIDES[0] }) => (
 
 // ─── Tab Navigation ───────────────────────────────────────────────────────────
 const TabNav = ({
-  idx, onChange, paused, onPauseToggle,
-}: { idx: number; onChange: (i: number) => void; paused: boolean; onPauseToggle: () => void }) => (
+  idx, onChange,
+}: { idx: number; onChange: (i: number) => void }) => (
   <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-[hsl(168,50%,5%)/0.7] to-transparent pt-8 pb-5">
     <div className="container flex items-end gap-3 flex-wrap">
       {TAB_LABELS.map((label, i) => (
@@ -462,8 +459,6 @@ export const Hero = () => {
       <TabNav
         idx={idx}
         onChange={setIdx}
-        paused={paused}
-        onPauseToggle={() => setPaused(v => !v)}
       />
     </section>
   );

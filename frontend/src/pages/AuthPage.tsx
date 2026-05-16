@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, EyeOff, Mail, Lock, User, Phone, Building2,
   FileText, ChevronRight, Loader2, AlertCircle, CheckCircle2,
-  ArrowLeft, Shield, Upload, Briefcase,
+  Shield, Upload, Briefcase,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
