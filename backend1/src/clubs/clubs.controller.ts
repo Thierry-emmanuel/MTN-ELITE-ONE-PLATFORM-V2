@@ -1,0 +1,86 @@
+// src/clubs/clubs.controller.ts
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
+import { ClubsService } from './clubs.service';
+import { CreateClubDto } from './dto/create-club.dto';
+import { UpdateClubDto } from './dto/update-club.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+
+@ApiTags('clubs')
+@ApiBearerAuth()
+@Controller('clubs')
+export class ClubsController {
+  constructor(private readonly clubsService: ClubsService) {}
+
+  // POST /clubs
+  @Post()
+  @ApiOperation({ summary: 'Create a new club' })
+  @ApiResponse({ status: 201, description: 'Club created successfully' })
+  @ApiResponse({ status: 409, description: 'Club name already exists' })
+  create(@Body() dto: CreateClubDto) {
+    return this.clubsService.create(dto);
+  }
+
+  // GET /clubs?page=1&limit=10
+  @Get()
+  @ApiOperation({ summary: 'Get all clubs (paginated)' })
+  findAll(@Query() pagination: PaginationDto) {
+    return this.clubsService.findAll(pagination);
+  }
+
+  // GET /clubs/:id
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a club by ID' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: 404, description: 'Club not found' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clubsService.findOne(id);
+  }
+
+  // GET /clubs/:id/squad
+  @Get(':id/squad')
+  @ApiOperation({ summary: 'Get full squad of a club' })
+  findSquad(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clubsService.findSquad(id);
+  }
+
+  // GET /clubs/:id/matches
+  @Get(':id/matches')
+  @ApiOperation({ summary: 'Get all matches of a club' })
+  findMatches(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clubsService.findMatches(id);
+  }
+
+  // PATCH /clubs/:id
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a club' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateClubDto) {
+    return this.clubsService.update(id, dto);
+  }
+
+  // DELETE /clubs/:id
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a club' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clubsService.remove(id);
+  }
+}
