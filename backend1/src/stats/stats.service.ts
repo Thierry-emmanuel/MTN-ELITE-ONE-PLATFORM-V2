@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlayerStats } from '../players/player-stats.entity';
 import { Standing } from '../standings/standing.entity';
+import { MatchStats } from '../matches/match-stats.entity';
 
 @Injectable()
 export class StatsService {
@@ -11,6 +12,8 @@ export class StatsService {
     private playerStatsRepository: Repository<PlayerStats>,
     @InjectRepository(Standing)
     private standingRepository: Repository<Standing>,
+    @InjectRepository(MatchStats)
+    private matchStatsRepository: Repository<MatchStats>,
   ) {}
 
   async getTopScorers(seasonId: string, limit: number = 10) {
@@ -37,5 +40,36 @@ export class StatsService {
       relations: ['club'],
       order: { goalsFor: 'DESC' },
     });
+  }
+
+  async getMatchStats(matchId: string) {
+    const stats = await this.matchStatsRepository.find({
+      where: { matchId },
+      relations: ['club'],
+    });
+
+    const teamStats = {};
+    stats.forEach(stat => {
+      const clubId = stat.clubId;
+      if (!teamStats[clubId]) {
+        teamStats[clubId] = {
+          club: stat.club,
+          goals: 0,
+          assists: 0,
+          yellowCards: 0,
+          redCards: 0,
+          shotsOnTarget: 0,
+          passesCompleted: 0,
+        };
+      }
+      teamStats[clubId].goals += stat.goals;
+      teamStats[clubId].assists += stat.assists;
+      teamStats[clubId].yellowCards += stat.yellowCards;
+      teamStats[clubId].redCards += stat.redCards;
+      teamStats[clubId].shotsOnTarget += stat.shotsOnTarget;
+      teamStats[clubId].passesCompleted += stat.passesCompleted;
+    });
+
+    return teamStats;
   }
 }

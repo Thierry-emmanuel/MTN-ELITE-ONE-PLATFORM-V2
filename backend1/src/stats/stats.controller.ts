@@ -1,6 +1,6 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param, ParseUUIDPipe } from '@nestjs/common';
 import { StatsService } from './stats.service';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('stats')
 @Controller('stats')
@@ -34,5 +34,12 @@ export class StatsController {
   @ApiQuery({ name: 'seasonId', required: true })
   getTeamsStats(@Query('seasonId') seasonId: string) {
     return this.statsService.getTeamsStats(seasonId);
+  }
+
+  @Get('match/:matchId')
+  @ApiOperation({ summary: 'Get aggregated match stats for both teams' })
+  @ApiParam({ name: 'matchId', required: true })
+  getMatchStats(@Param('matchId', ParseUUIDPipe) matchId: string) {
+    return this.statsService.getMatchStats(matchId);
   }
 }
