@@ -72,4 +72,20 @@ export class StatsService {
 
     return teamStats;
   }
+
+  async getSeasonSummary(seasonId: string) {
+    const standings = await this.standingRepository.find({
+      where: { seasonId },
+    });
+
+    const totalGoals = standings.reduce((sum, s) => sum + s.goalsFor, 0);
+    const totalMatches = standings.reduce((sum, s) => sum + s.played, 0) / 2;
+    const avgGoalsPerMatch = totalMatches > 0 ? totalGoals / totalMatches : 0;
+
+    return {
+      totalGoals,
+      totalMatches,
+      avgGoalsPerMatch: parseFloat(avgGoalsPerMatch.toFixed(2)),
+    };
+  }
 }

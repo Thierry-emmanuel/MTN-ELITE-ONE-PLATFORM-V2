@@ -42,4 +42,11 @@ export class StatsController {
   getMatchStats(@Param('matchId', ParseUUIDPipe) matchId: string) {
     return this.statsService.getMatchStats(matchId);
   }
+
+  @Get('season/:seasonId/summary')
+  @ApiOperation({ summary: 'Get global summary stats for a season' })
+  @ApiParam({ name: 'seasonId', required: true })
+  getSeasonSummary(@Param('seasonId', ParseUUIDPipe) seasonId: string) {
+    return this.statsService.getSeasonSummary(seasonId);
+  }
 }
