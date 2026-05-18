@@ -14,6 +14,20 @@ export type MatchStatus =
   | 'EXTRA_TIME'
   | 'PENALTIES';
 
+export type PlayerPosition = 'GK' | 'DF' | 'MF' | 'FW' | 'ALL';
+
+export type StatSortField =
+  | 'goals' | 'assists' | 'keyPasses' | 'shots' | 'shotsOnTarget'
+  | 'yellowCards' | 'redCards' | 'minutesPlayed' | 'appearances'
+  | 'xG' | 'penaltiesScored' | 'passAccuracy'
+  | 'goalsFor' | 'goalsAgainst' | 'wins' | 'cleanSheets' | 'possession';
+
+export type StatCategory =
+  | 'goals' | 'assists' | 'keyPasses' | 'shots' | 'cards' | 'minutes';
+
+export type ClubStatCategory =
+  | 'offensive' | 'defensive' | 'discipline' | 'overall';
+
 // ─── Core Entities ────────────────────────────────────────────────────────────
 
 export interface Club {
@@ -95,6 +109,80 @@ export type StandingsView = 'overall' | 'home' | 'away' | 'form';
 
 export type Zone = 'champion' | 'caf' | 'relegation' | 'none';
 
+// ─── Player Stats ─────────────────────────────────────────────────────────────
+
+export interface PlayerStat {
+  playerId: string;
+  playerName: string;
+  position: PlayerPosition;
+  nationality?: string;
+  photoUrl?: string;
+  age?: number;
+  clubId: string;
+  clubName: string;
+  clubShort?: string;
+  clubLogoUrl?: string;
+  /** Total metrics */
+  appearances: number;
+  minutesPlayed: number;
+  goals: number;
+  assists: number;
+  keyPasses: number;
+  shots: number;
+  shotsOnTarget: number;
+  xG?: number;
+  penaltiesScored: number;
+  penaltiesMissed: number;
+  yellowCards: number;
+  redCards: number;
+  passAccuracy?: number;
+  /** Derived per-90 (computed client-side or returned by API) */
+  goalsPer90?: number;
+  assistsPer90?: number;
+  shotsPer90?: number;
+}
+
+/** Lightweight shape used in top-list cards */
+export interface TopPerformer {
+  playerId: string;
+  playerName: string;
+  photoUrl?: string;
+  clubName: string;
+  clubShort?: string;
+  clubLogoUrl?: string;
+  value: number;
+  secondaryValue?: number;
+  secondaryLabel?: string;
+  category: StatCategory;
+}
+
+// ─── Club Stats ───────────────────────────────────────────────────────────────
+
+export interface ClubStat {
+  clubId: string;
+  clubName: string;
+  clubShort?: string;
+  clubLogoUrl?: string;
+  matchesPlayed: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  shots: number;
+  shotsOnTarget: number;
+  possession?: number;
+  yellowCards: number;
+  redCards: number;
+  penaltiesFor: number;
+  penaltiesAgainst: number;
+  cleanSheets: number;
+  points: number;
+}
+
+// ─── API shapes ───────────────────────────────────────────────────────────────
+
 export interface ApiClub {
   id: string;
   name: string;
@@ -115,6 +203,9 @@ export interface ApiMatch {
   homeClub: ApiClub;
   awayClub: ApiClub;
   events?: MatchEvent[];
+  liveMinute?: number;
+  referee?: Referee;
+  attendance?: number;
 }
 
 export interface ApiStanding {
@@ -168,4 +259,31 @@ export interface ResultsFilter {
 
 export interface StandingsFilter {
   view: StandingsView;
+}
+
+export interface PlayerStatsFilter {
+  seasonId?: string;
+  teamId?: string;
+  position?: PlayerPosition;
+  minMinutes?: number;
+  nationality?: string;
+  sort?: StatSortField;
+  order?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  per90?: boolean;
+}
+
+export interface ClubStatsFilter {
+  seasonId?: string;
+  sort?: StatSortField;
+  order?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface TopPerformersQuery {
+  seasonId: string;
+  category: StatCategory;
+  limit?: number;
 }
