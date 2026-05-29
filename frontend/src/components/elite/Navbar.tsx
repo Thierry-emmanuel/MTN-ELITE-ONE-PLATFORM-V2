@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, LogIn, Menu, X, ChevronDown, Radio,
   Trophy, Calendar, Users, Gamepad2, ArrowLeftRight,
-  Activity, Star, Award,
+  Activity, Star, Award, BarChart2, Newspaper, Edit3,
 } from "lucide-react";
 import { tickerItems } from "./data";
 import { Link, useLocation } from "react-router-dom";
@@ -20,11 +20,16 @@ const NAV_LINKS = [
     label: "Championnat",
     icon: <Trophy className="h-3.5 w-3.5" />,
     children: [
-      { label: "Classement",   href: "/standings",  icon: <Trophy className="h-3.5 w-3.5 text-accent" /> },
-      { label: "Résultats",    href: "/results",    icon: <Star className="h-3.5 w-3.5 text-accent" /> },
-      { label: "Calendrier",   href: "/fixtures",   icon: <Calendar className="h-3.5 w-3.5 text-accent" /> },
-      { label: "Statistiques", href: "/stats",      icon: <Award className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Classement",  href: "/standings", icon: <Trophy className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Résultats",   href: "/results",   icon: <Star className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Calendrier",  href: "/fixtures",  icon: <Calendar className="h-3.5 w-3.5 text-accent" /> },
     ],
+  },
+  // ── Statistiques — direct top-level link ──────────────────────────────────
+  {
+    label: "Statistiques",
+    icon: <BarChart2 className="h-3.5 w-3.5" />,
+    href: "/stats",
   },
   {
     label: "Clubs & Joueurs",
@@ -36,22 +41,37 @@ const NAV_LINKS = [
       { label: "Road to Lions",  href: "/lions",     icon: <Award className="h-3.5 w-3.5 text-primary-glow" /> },
     ],
   },
+  // ── Actualités — news section ─────────────────────────────────────────────
   {
-    label: "Matchs",
-    icon: <Calendar className="h-3.5 w-3.5" />,
-    href: "/matches",
+    label: "Actualités",
+    icon: <Newspaper className="h-3.5 w-3.5" />,
+    accent: true,
+    children: [
+      { label: "Toutes les actus",  href: "/news",    icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Espace éditeur",    href: "/editor",  icon: <Edit3 className="h-3.5 w-3.5 text-[#FCD116]" /> },
+    ],
   },
-  // ── NEW: Communauté (replaces Actualités) ──────────────────────────────────
+  // ── Récompenses ──────────────────────────────────────────────────────────
+  {
+    label: "Récompenses",
+    icon: <Award className="h-3.5 w-3.5" />,
+    children: [
+      { label: "Palmarès",         href: "/awards",              icon: <Award className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Ballon d'Or",      href: "/awards/ballon-dor",   icon: <span className="text-sm">🏆</span> },
+      { label: "Équipe de la sem.", href: "/awards/team-of-week", icon: <span className="text-sm">⚽</span> },
+      { label: "Voter maintenant",  href: "/awards/vote",         icon: <span className="text-sm">🗳️</span> },
+    ],
+  },
+  // ── Communauté ────────────────────────────────────────────────────────────
   {
     label: "Communauté",
     icon: <Users className="h-3.5 w-3.5" />,
-    accent: true, // highlight this as new
     children: [
-      { label: "Young Talent Watch", href: "/talents",   icon: <Star className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Hall of Fame",        href: "/halloffame",icon: <Trophy className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Jeux & Pronostics",   href: "/games",    icon: <Gamepad2 className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Transferts",          href: "/transfers", icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Blessures",           href: "/injuries",  icon: <Activity className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Young Talent Watch", href: "/talents",    icon: <Star className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Hall of Fame",       href: "/halloffame", icon: <Trophy className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Jeux & Pronostics",  href: "/games",      icon: <Gamepad2 className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Transferts",         href: "/transfers",  icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Blessures",          href: "/injuries",   icon: <Activity className="h-3.5 w-3.5 text-[#FCD116]" /> },
     ],
   },
 ] as const;
@@ -87,6 +107,10 @@ const LiveTicker = () => {
 const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  // Close on route change
+  useEffect(() => { setOpen(false); }, [location]);
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -96,14 +120,21 @@ const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  // Direct link (no children)
   if (!("children" in link)) {
+    const isActive = location.pathname === link.href;
     return (
       <Link
         to={link.href}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/55 hover:text-white hover:bg-white/6 transition-all duration-150"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 ${
+          isActive
+            ? "text-accent bg-accent/10"
+            : "text-white/55 hover:text-white hover:bg-white/6"
+        }`}
       >
         {link.icon}
         {link.label}
+        {isActive && <span className="h-1 w-1 rounded-full bg-accent ml-0.5" />}
       </Link>
     );
   }
@@ -141,7 +172,6 @@ const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="absolute top-full left-0 mt-2 min-w-[200px] bg-[hsl(168,50%,7%)] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
           >
-            {/* Dropdown header accent bar */}
             {isAccent && (
               <div className="h-[2px] bg-gradient-to-r from-accent via-accent/60 to-transparent" />
             )}
@@ -170,18 +200,25 @@ const MobileNavItem = ({
   link, onClose,
 }: { link: (typeof NAV_LINKS)[number]; onClose: () => void }) => {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
 
   if (!("children" in link)) {
+    const isActive = location.pathname === link.href;
     return (
       <Link
         to={link.href}
         onClick={onClose}
-        className="flex items-center gap-3 px-4 py-3 text-sm text-white/65 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+        className={`flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all ${
+          isActive
+            ? "bg-accent/10 text-accent"
+            : "text-white/65 hover:text-white hover:bg-white/5"
+        }`}
       >
-        <span className="h-7 w-7 grid place-items-center rounded-lg bg-white/5 shrink-0">
+        <span className={`h-7 w-7 grid place-items-center rounded-lg shrink-0 ${isActive ? "bg-accent/15" : "bg-white/5"}`}>
           {link.icon}
         </span>
         {link.label}
+        {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
       </Link>
     );
   }
@@ -196,22 +233,14 @@ const MobileNavItem = ({
           open ? "bg-white/6 text-white" : "text-white/65 hover:text-white hover:bg-white/5"
         }`}
       >
-        <span
-          className={`h-7 w-7 grid place-items-center rounded-lg shrink-0 ${
-            isAccent ? "bg-accent/15" : "bg-white/5"
-          }`}
-        >
+        <span className={`h-7 w-7 grid place-items-center rounded-lg shrink-0 ${isAccent ? "bg-accent/15" : "bg-white/5"}`}>
           {link.icon}
         </span>
         <span className={`flex-1 text-sm text-left ${isAccent ? "text-accent" : ""}`}>
           {link.label}
         </span>
-        {isAccent && !open && (
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-        )}
-        <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
+        {isAccent && !open && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       <AnimatePresence>
@@ -259,7 +288,7 @@ const MobileMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           transition={{ type: "spring", damping: 30, stiffness: 320 }}
           className="fixed top-0 right-0 bottom-0 w-[300px] bg-[hsl(168,50%,6%)] border-l border-white/8 z-50 lg:hidden flex flex-col"
         >
-          {/* Drawer header */}
+          {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
             <div className="flex items-center gap-3">
               <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" />
@@ -330,7 +359,7 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
 
   return (
     <>
-      {/* ── Season progress bar — 2px at very top ── */}
+      {/* Season progress bar */}
       <div className="fixed top-0 left-0 right-0 z-[60] h-[2px] bg-white/4">
         <motion.div
           className="h-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]"
@@ -349,11 +378,8 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
       >
         <div className="container flex items-center gap-3 h-[60px]">
 
-          {/* ── Logo ── */}
-          <Link
-            to="/"
-            className="flex items-center gap-3 shrink-0 group mr-2"
-          >
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 shrink-0 group mr-2">
             <div className="relative h-9 w-9 shrink-0">
               <img
                 src={logo}
@@ -371,27 +397,24 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
             </div>
           </Link>
 
-          {/* ── Divider ── */}
           <div className="hidden lg:block h-5 w-px bg-white/10 mx-1" />
 
-          {/* ── Desktop nav ── */}
+          {/* Desktop nav */}
           <nav className="hidden lg:flex items-center gap-0.5">
             {NAV_LINKS.map((link, i) => (
               <NavDropdown key={i} link={link} />
             ))}
           </nav>
 
-          {/* ── Live ticker — fills middle ── */}
+          {/* Live ticker */}
           <div className="flex-1 hidden md:flex items-center min-w-0 mx-3">
             <div className="w-full bg-white/[0.04] border border-white/[0.07] rounded-full px-3.5 py-1.5 overflow-hidden">
               <LiveTicker />
             </div>
           </div>
 
-          {/* ── Right actions ── */}
+          {/* Right actions */}
           <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
-
-            {/* Search */}
             <button
               onClick={onSearchOpen}
               className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-xl bg-white/5 border border-white/8 text-white/40 hover:text-white hover:bg-white/8 hover:border-white/15 transition-all text-[11px] group"
@@ -405,7 +428,6 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
               </kbd>
             </button>
 
-            {/* Login */}
             <Link
               to="/login"
               className="hidden sm:flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-[11px] font-medium text-white/55 hover:text-white border border-transparent hover:border-white/10 hover:bg-white/5 transition-all"
@@ -414,7 +436,6 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
               <span className="hidden md:inline">Connexion</span>
             </Link>
 
-            {/* Register CTA */}
             <Link
               to="/register"
               className="hidden sm:flex items-center h-8 px-4 rounded-xl bg-accent text-accent-foreground text-[11px] font-bold hover:bg-accent/90 transition-colors shadow-[0_2px_12px_rgba(252,209,22,0.25)]"
@@ -422,7 +443,6 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
               S'inscrire
             </Link>
 
-            {/* Mobile: search icon */}
             <button
               onClick={onSearchOpen}
               className="sm:hidden h-8 w-8 grid place-items-center rounded-xl bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
@@ -430,7 +450,6 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
               <Search className="h-3.5 w-3.5" />
             </button>
 
-            {/* Mobile: hamburger */}
             <button
               onClick={() => setMobileOpen(v => !v)}
               className="lg:hidden h-8 w-8 grid place-items-center rounded-xl bg-white/5 border border-white/8 text-white/50 hover:text-white transition-colors"
@@ -441,13 +460,13 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
           </div>
         </div>
 
-        {/* ── Mobile ticker row ── */}
+        {/* Mobile ticker row */}
         <div className="md:hidden overflow-hidden border-t border-white/[0.05] bg-white/[0.025] px-4 py-1.5">
           <LiveTicker />
         </div>
       </header>
 
-      {/* Spacer below fixed header */}
+      {/* Spacer */}
       <div className="h-[62px]" />
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
