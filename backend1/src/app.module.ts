@@ -20,6 +20,11 @@ import { ArticlesModule }    from './articles/articles.module';
 import { HeroBannersModule } from './hero-banners/hero-banners.module';
 import { AdminModule }       from './admin/admin.module';
 import { WebsocketModule }   from './websocket/websocket.module';
+import { TalentsModule }     from './talents/talents.module';
+import { HallOfFameModule }  from './hall-of-fame/hall-of-fame.module';
+import { CultureStoriesModule } from './culture-stories/culture-stories.module';
+import { APP_GUARD }         from '@nestjs/core';
+import { ThrottlerGuard }    from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -92,6 +97,15 @@ import { WebsocketModule }   from './websocket/websocket.module';
     HeroBannersModule,
     AdminModule,
     WebsocketModule,
+    TalentsModule,
+    HallOfFameModule,
+    CultureStoriesModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

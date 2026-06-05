@@ -9,6 +9,8 @@ import { Player, PlayerPosition } from './player.entity';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { Match, MatchStatus } from '../matches/match.entity';
+import { MatchEventType } from '../matches/match-event.entity';
 
 @Injectable()
 export class PlayersService {
@@ -94,5 +96,56 @@ export class PlayersService {
     player.clubId = newClubId;
     player.jerseyNumber = null as any;// reset jersey on transfer
     return this.playerRepo.save(player);
+  }
+
+  async getFormGuide(id: string) {
+    const player = await this.findOne(id);
+    if (!player.clubId) {
+      return { player, form: [] };
+    }
+
+    // Get the last 5 finished matches for the player's club
+    const matches = await this.playerRepo.manager.find(Match, {
+      where: [
+        { homeClubId: player.clubId, status: MatchStatus.FINISHED },
+        { awayClubId: player.clubId, status: MatchStatus.FINISHED },
+      ],
+      order: { scheduledAt: 'DESC' },
+      take: 5,
+      relations: ['events', 'homeClub', 'awayClub'],
+    });
+
+    const form = matches.map((match) => {
+      const isHome = match.homeClubId === player.clubId;
+      let result = 'D';
+      if (match.homeScore !== null && match.awayScore !== null) {
+        if (isHome && match.homeScore > match.awayScore) result = 'W';
+        if (isHome && match.homeScore < match.awayScore) result = 'L';
+        if (!isHome && match.awayScore > match.homeScore) result = 'W';
+        if (!isHome && match.awayScore < match.homeScore) result = 'L';
+      }
+
+      const playerEvents = match.events.filter((e) => e.playerId === id);
+      const goals = playerEvents.filter((e) => e.type === MatchEventType.GOAL || e.type === MatchEventType.PENALTY_GOAL).length;
+      const yellowCards = playerEvents.filter((e) => e.type === MatchEventType.YELLOW_CARD).length;
+      const redCards = playerEvents.filter((e) => e.type === MatchEventType.RED_CARD || e.type === MatchEventType.SECOND_YELLOW).length;
+
+      return {
+        matchId: match.id,
+        opponent: isHome ? match.awayClub?.name : match.homeClub?.name,
+        isHome,
+        scheduledAt: match.scheduledAt,
+        homeScore: match.homeScore,
+        awayScore: match.awayScore,
+        result,
+        playerStats: {
+          goals,
+          yellowCards,
+          redCards,
+        },
+      };
+    });
+
+    return { player, form };
   }
 }

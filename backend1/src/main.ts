@@ -43,6 +43,9 @@ async function bootstrap() {
     .addTag('awards', 'Awards et votes temps réel')
     .addTag('articles', 'Contenu éditorial (MongoDB)')
     .addTag('admin', 'Back-office CMS')
+    .addTag('talents', 'Jeunes Talents (MongoDB)')
+    .addTag('hall-of-fame', 'Légendes du Hall of Fame (MongoDB)')
+    .addTag('culture-stories', 'Histoires culturelles et historiques (MongoDB)')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

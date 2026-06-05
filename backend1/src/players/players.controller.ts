@@ -48,6 +48,13 @@ export class PlayersController {
     return this.playersService.findOne(id);
   }
 
+  // GET /players/:id/form
+  @Get(':id/form')
+  @ApiOperation({ summary: 'Get a player\'s form guide (last 5 matches)' })
+  getFormGuide(@Param('id', ParseUUIDPipe) id: string) {
+    return this.playersService.getFormGuide(id);
+  }
+
   // PATCH /players/:id
   @Patch(':id')
   @ApiOperation({ summary: 'Update player info' })
