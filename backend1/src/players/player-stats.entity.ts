@@ -10,6 +10,8 @@ export class PlayerStats {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  // ── Core stats (existing) ──────────────────────────────────────────────────
+
   @Column({ type: 'int', default: 0 })
   goals: number;
 
@@ -42,6 +44,40 @@ export class PlayerStats {
     nullable: true,
   })
   avgRating: number;
+
+  // ── Extended stats (new columns — requires migration) ─────────────────────
+
+  @Column({ name: 'key_passes', type: 'int', default: 0 })
+  keyPasses: number;
+
+  @Column({ type: 'int', default: 0 })
+  shots: number;
+
+  @Column({ name: 'shots_on_target', type: 'int', default: 0 })
+  shotsOnTarget: number;
+
+  @Column({
+    name: 'xg',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  xG: number | null;
+
+  @Column({
+    name: 'pass_accuracy',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  passAccuracy: number | null;
+
+  @Column({ name: 'penalties_missed', type: 'int', default: 0 })
+  penaltiesMissed: number;
+
+  // ── Relations ──────────────────────────────────────────────────────────────
 
   @Column({ name: 'player_id' })
   playerId: string;

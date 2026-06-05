@@ -8,10 +8,10 @@ import { MatchEvent } from '../matches/match-event.entity';
 import { PlayerStats } from './player-stats.entity';
 
 export enum PlayerPosition {
-  GOALKEEPER = 'GK',
-  DEFENDER = 'DEF',
-  MIDFIELDER = 'MID',
-  FORWARD = 'FWD',
+  GOALKEEPER  = 'GK',
+  DEFENDER    = 'DEF',
+  MIDFIELDER  = 'MID',
+  FORWARD     = 'FWD',
 }
 
 @Entity('players')
