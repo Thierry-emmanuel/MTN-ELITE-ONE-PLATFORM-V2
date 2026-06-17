@@ -13,6 +13,11 @@ import AwardsPage         from "./pages/AwardsPage.tsx";
 import BallonDorPage      from "./pages/BallonDorPage.tsx";
 import VotePage           from "./pages/VotePage.tsx";
 import TeamOfWeekPage     from "./pages/TeamOfWeekPage.tsx";
+import ClubsPage          from "./pages/ClubsPage.tsx";
+import ClubDetailPage     from "./pages/ClubDetailPage.tsx";
+import PlayersPage        from "./pages/PlayersPage.tsx";
+import PlayerDetailPage   from "./pages/PlayerDetailPage.tsx";
+import HistoryPage        from "./pages/HistoryPage.tsx";
 
 const App = () => (
   <BrowserRouter>
@@ -31,6 +36,11 @@ const App = () => (
       <Route path="/awards/ballon-dor"   element={<BallonDorPage />} />
       <Route path="/awards/team-of-week" element={<TeamOfWeekPage />} />
       <Route path="/awards/vote"         element={<VotePage />} />
+      <Route path="/clubs"               element={<ClubsPage />} />
+      <Route path="/clubs/:id"           element={<ClubDetailPage />} />
+      <Route path="/players"             element={<PlayersPage />} />
+      <Route path="/players/:id"         element={<PlayerDetailPage />} />
+      <Route path="/halloffame"          element={<HistoryPage />} />
       <Route path="*"                    element={<NotFound />} />
     </Routes>
   </BrowserRouter>

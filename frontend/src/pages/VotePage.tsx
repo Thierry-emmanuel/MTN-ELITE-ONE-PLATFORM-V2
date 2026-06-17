@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, CheckCircle2, Clock, Trophy,
-  ChevronLeft, ChevronRight, Users,
+  ArrowLeft, CheckCircle2,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useAwards, useVoting, useRealtimeVotes } from '@/hooks/useAwards';
 import { useVotingStore } from '@/store/awards.store';

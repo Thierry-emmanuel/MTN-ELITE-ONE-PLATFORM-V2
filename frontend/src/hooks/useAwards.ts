@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { awardsApi, connectAwardsSocket, disconnectAwardsSocket, subscribeToAward } from '../services/awardsApi';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '../store/awards.store';
 import { MOCK_AWARDS, MOCK_BALLON_DOR, MOCK_TEAM_OF_WEEK } from '../services/mockAwards';
-import type { AwardCategory } from '../types/awards.types';
+// (no additional type imports needed)
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? 'season-2025-26';
 

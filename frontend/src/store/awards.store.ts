@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, subscribeWithSelector } from 'zustand/middleware';
 import type {
-  Award, AwardCategory, AwardType, Nominee,
+  Award, AwardCategory, AwardType,
   VoteResults, BallonDorEdition, TeamOfWeek,
   LiveVoteEvent, RealtimeLeaderboardEntry,
 } from '../types/awards.types';

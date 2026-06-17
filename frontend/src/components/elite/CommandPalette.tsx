@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, ArrowRight, Trophy, Users, Calendar, Newspaper, Star } from "lucide-react";
 import { clubs, scorers, assistLeaders, news, fixtures } from "./data";
@@ -24,12 +25,12 @@ const buildIndex = (): SearchItem[] => {
 
   // Players
   [...scorers, ...assistLeaders].forEach(p =>
-    items.push({ id: `player-${p.name}`, type: "player", label: p.name, sublabel: p.club.name, href: `/players` })
+    items.push({ id: `player-${p.name}`, type: "player", label: p.name, sublabel: p.club.name, href: `/players/${p.imgKey || 'p1'}` })
   );
 
   // Matches / Fixtures
   fixtures.forEach((f, i) =>
-    items.push({ id: `match-${i}`, type: "match", label: `${f.home.name} vs ${f.away.name}`, sublabel: `${f.date} · ${f.time}`, href: `/matches` })
+    items.push({ id: `match-${i}`, type: "match", label: `${f.home.name} vs ${f.away.name}`, sublabel: `${f.date} · ${f.time}`, href: `/fixtures` })
   );
 
   // News
@@ -94,6 +95,7 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const results = query.trim()
     ? ALL_ITEMS.filter(item =>
@@ -139,14 +141,14 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (results[activeIdx]) {
-        window.location.href = results[activeIdx].href;
+        navigate(results[activeIdx].href);
         onClose();
       } else if (QUICK_LINKS[activeIdx]) {
-        window.location.href = QUICK_LINKS[activeIdx].href;
+        navigate(QUICK_LINKS[activeIdx].href);
         onClose();
       }
     }
-  }, [results, activeIdx, onClose]);
+  }, [results, activeIdx, onClose, navigate]);
 
   return (
     <AnimatePresence>
@@ -204,7 +206,7 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
                         key={item.id}
                         item={item}
                         active={i === activeIdx}
-                        onClick={() => { window.location.href = item.href; onClose(); }}
+                        onClick={() => { navigate(item.href); onClose(); }}
                       />
                     ))}
                   </>
@@ -221,7 +223,7 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
                     {QUICK_LINKS.map((link, i) => (
                       <button
                         key={link.label}
-                        onClick={() => { window.location.href = link.href; onClose(); }}
+                        onClick={() => { navigate(link.href); onClose(); }}
                         className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl transition-all ${
                           i === activeIdx ? "bg-white/8 text-white" : "text-white/55 hover:bg-white/5 hover:text-white"
                         }`}

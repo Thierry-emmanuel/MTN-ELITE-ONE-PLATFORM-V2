@@ -1,15 +1,15 @@
-import { memo, useState, useRef } from 'react';
+import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import {
   motion, AnimatePresence, useInView,
   useMotionValue, useTransform, useSpring,
 } from 'framer-motion';
 import {
-  Trophy, Star, ChevronUp, ChevronDown,
-  Minus, Crown, Users, Calendar, Sparkles,
+  Trophy, Star, ChevronUp, ChevronDown, ChevronLeft, ChevronRight,
+  Minus, Crown, Users, Calendar, Sparkles, Play, Pause,
 } from 'lucide-react';
 import { useAwardCountdown } from '@/hooks/useAwards';
 import { MOCK_HISTORICAL } from '@/services/mockAwards';
-import type { BallonDorEdition, BallonDorRanking, HistoricalWinner } from '@/types/awards.types';
+import type { BallonDorEdition, HistoricalWinner } from '@/types/awards.types';
 
 // ─── Floating particles ───────────────────────────────────────────────────────
 const Particle = ({ x, y, delay, size }: { x: number; y: number; delay: number; size: number }) => (
@@ -29,7 +29,6 @@ const ParticleField = () => (
   </div>
 );
 
-// ─── Animated spotlight ───────────────────────────────────────────────────────
 const Spotlight = () => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
     <motion.div
@@ -82,7 +81,6 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
   const top = edition.ranking[0];
   return (
     <section className="relative min-h-[72vh] flex flex-col items-center justify-center overflow-hidden rounded-3xl bg-[#050505]">
-      {/* Radial glows */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_70%,rgba(252,209,22,0.13)_0%,transparent_65%)]" />
       <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#FCD116]/5 to-transparent" />
       <Spotlight />
@@ -91,8 +89,6 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#FCD116]/50 to-transparent" />
 
       <div className="relative z-10 text-center px-6 py-16 space-y-8 max-w-3xl mx-auto w-full">
-
-        {/* Badge */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="flex justify-center">
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#FCD116]/30 bg-[#FCD116]/8 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 text-[#FCD116]" />
@@ -101,14 +97,12 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
           </div>
         </motion.div>
 
-        {/* Trophy + Title */}
         <div className="space-y-3">
           <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 70, damping: 12, delay: 0.2 }} className="flex justify-center">
             <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }} className="text-7xl sm:text-9xl" style={{ filter: 'drop-shadow(0 0 50px rgba(252,209,22,0.55))' }}>
               🏆
             </motion.div>
           </motion.div>
-
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.4 }}>
             <h1 className="font-display font-black leading-[0.9]">
               <span className="block text-5xl sm:text-7xl lg:text-8xl text-white">BALLON</span>
@@ -117,7 +111,6 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
           </motion.div>
         </div>
 
-        {/* Leader card */}
         {top && (
           <motion.div initial={{ opacity: 0, y: 20, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.6, delay: 0.75 }} className="mx-auto max-w-sm">
             <div className="relative rounded-2xl border border-[#FCD116]/30 bg-[#FCD116]/[0.05] p-5 overflow-hidden backdrop-blur-sm">
@@ -149,12 +142,10 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
           </motion.div>
         )}
 
-        {/* Meta */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="flex items-center justify-center gap-2 text-sm text-white/25">
           <Users className="h-4 w-4" />{edition.totalVotes.toLocaleString('fr-FR')} votes
         </motion.div>
 
-        {/* Countdown */}
         {edition.votingOpen && edition.votingDeadline && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1 }} className="space-y-4">
             <p className="text-[11px] text-white/25 uppercase tracking-[.2em]">Fermeture des votes dans</p>
@@ -162,7 +153,6 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
           </motion.div>
         )}
 
-        {/* Ceremony */}
         {!edition.votingOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="flex items-center justify-center gap-2 text-sm text-white/30">
             <Calendar className="h-4 w-4 text-[#FCD116]/40" />
@@ -222,8 +212,11 @@ export const BallonDorRankingList = memo(({ edition }: { edition: BallonDorEditi
                   ? <span className="flex items-center text-[#10B981] text-[10px] font-bold"><ChevronUp className="h-3 w-3" />{entry.rankChange}</span>
                   : <span className="flex items-center text-[#CE1126]/70 text-[10px] font-bold"><ChevronDown className="h-3 w-3" />{Math.abs(entry.rankChange)}</span>}
               </div>
-              <div className={`relative h-11 w-11 shrink-0 rounded-full border-2 flex items-center justify-center font-black text-sm bg-white/10 ${isFirst ? 'border-[#FCD116] shadow-[0_0_16px_rgba(252,209,22,0.35)]' : 'border-white/10'}`}>
-                {entry.nominee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              <div className={`relative h-11 w-11 shrink-0 rounded-full border-2 flex items-center justify-center font-black text-sm overflow-hidden ${isFirst ? 'border-[#FCD116] shadow-[0_0_16px_rgba(252,209,22,0.35)]' : 'border-white/10 bg-white/10'}`}>
+                {entry.nominee.photoUrl
+                  ? <img src={entry.nominee.photoUrl} alt={entry.nominee.name} className="w-full h-full object-cover object-top" loading="lazy" />
+                  : <span className="text-white/70">{entry.nominee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+                }
                 {isFirst && <Crown className="absolute -top-2.5 left-1/2 -translate-x-1/2 h-4 w-4 text-[#FCD116]" fill="currentColor" />}
               </div>
               <div className="flex-1 min-w-0">
@@ -250,10 +243,10 @@ export const BallonDorRankingList = memo(({ edition }: { edition: BallonDorEditi
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden border-t border-white/[0.05]">
                   <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { l: 'Jury',     v: entry.juryPoints,                         c: 'text-[#60A5FA]' },
-                      { l: 'Fans',     v: entry.fanPoints,                          c: 'text-[#FCD116]' },
-                      { l: 'Buts',     v: entry.nominee.stats.goals ?? 0,           c: 'text-white/80'  },
-                      { l: 'Note',     v: entry.nominee.stats.rating?.toFixed(1) ?? '—', c: 'text-white/80' },
+                      { l: 'Jury',  v: entry.juryPoints,                          c: 'text-[#60A5FA]' },
+                      { l: 'Fans',  v: entry.fanPoints,                           c: 'text-[#FCD116]' },
+                      { l: 'Buts',  v: entry.nominee.stats.goals ?? 0,            c: 'text-white/80'  },
+                      { l: 'Note',  v: entry.nominee.stats.rating?.toFixed(1) ?? '—', c: 'text-white/80' },
                     ].map(s => (
                       <div key={s.l} className="rounded-xl bg-white/[0.04] border border-white/[0.05] p-3 text-center">
                         <p className={`font-display text-xl font-black tabular-nums ${s.c}`}>{s.v}</p>
@@ -272,100 +265,235 @@ export const BallonDorRankingList = memo(({ edition }: { edition: BallonDorEditi
 });
 BallonDorRankingList.displayName = 'BallonDorRankingList';
 
-// ─── Past Winners Gallery ─────────────────────────────────────────────────────
-const WinnerCard = memo(({ winner, index }: { winner: HistoricalWinner; index: number }) => {
-  const ref    = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-30px' });
-  const mx     = useMotionValue(0);
-  const my     = useMotionValue(0);
-  const rx     = useTransform(useSpring(my, { stiffness: 400, damping: 40 }), [-0.5, 0.5], [6, -6]);
-  const ry     = useTransform(useSpring(mx, { stiffness: 400, damping: 40 }), [-0.5, 0.5], [-6, 6]);
+// ─── CAROUSEL WINNERS ─────────────────────────────────────────────────────────
+
+// Carousel slide card
+const CarouselSlide = memo(({
+  winner, isActive, isPrev, isNext, onClick,
+}: {
+  winner: HistoricalWinner;
+  isActive: boolean;
+  isPrev: boolean;
+  isNext: boolean;
+  onClick: () => void;
+}) => {
   const clubName = 'clubName' in winner.winner ? (winner.winner as any).clubName : '';
+  const photoUrl = (winner.winner as any).photoUrl;
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const rx = useTransform(useSpring(my, { stiffness: 400, damping: 40 }), [-0.5, 0.5], [8, -8]);
+  const ry = useTransform(useSpring(mx, { stiffness: 400, damping: 40 }), [-0.5, 0.5], [-8, 8]);
+
+  const scale    = isActive ? 1    : 0.82;
+  const opacity  = isActive ? 1    : isPrev || isNext ? 0.45 : 0;
+  const zIndex   = isActive ? 10   : isPrev || isNext ? 5    : 0;
+  const x        = isActive ? 0    : isPrev ? '-110%'         : isNext ? '110%' : '0%';
+  const blur     = isActive ? 0    : 4;
 
   return (
     <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 28, scale: 0.94 }}
-      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
-      transition={{ duration: 0.45, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      style={{ perspective: 900 }}
-      onMouseMove={e => {
-        const r = e.currentTarget.getBoundingClientRect();
-        mx.set((e.clientX - r.left) / r.width - 0.5);
-        my.set((e.clientY - r.top)  / r.height - 0.5);
-      }}
-      onMouseLeave={() => { mx.set(0); my.set(0); }}
+      animate={{ scale, opacity, x, filter: `blur(${blur}px)` }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      style={{ zIndex, perspective: 1000, position: 'absolute', width: '100%' }}
+      onClick={!isActive ? onClick : undefined}
+      className={!isActive ? 'cursor-pointer' : ''}
     >
       <motion.div
-        style={{ rotateX: rx, rotateY: ry }}
-        className="group relative rounded-2xl border border-[#FCD116]/18 bg-gradient-to-b from-[#FCD116]/[0.06] to-black/80 overflow-hidden cursor-default hover:border-[#FCD116]/40 transition-colors duration-400"
+        onMouseMove={isActive ? (e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          mx.set((e.clientX - r.left) / r.width - 0.5);
+          my.set((e.clientY - r.top)  / r.height - 0.5);
+        } : undefined}
+        onMouseLeave={isActive ? () => { mx.set(0); my.set(0); } : undefined}
+        className="group relative rounded-3xl border overflow-hidden bg-[#070707]"
+        style={{
+          borderColor: isActive ? 'rgba(252,209,22,0.4)' : 'rgba(255,255,255,0.06)',
+          boxShadow: isActive ? '0 0 60px rgba(252,209,22,0.12), 0 24px 60px rgba(0,0,0,0.7)' : 'none',
+          ...(isActive ? { rotateX: rx, rotateY: ry } : {}),
+        }}
       >
-        {/* Top accent */}
-        <div className="h-px bg-gradient-to-r from-transparent via-[#FCD116]/40 to-transparent" />
+        {isActive && (
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#FCD116]/70 to-transparent" />
+        )}
 
-        {/* Hover shimmer */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#FCD116]/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none" />
+        {/* Background player image if available */}
+        {photoUrl && (
+          <div className="absolute inset-0 overflow-hidden">
+            <img
+              src={photoUrl}
+              alt=""
+              className="w-full h-full object-cover object-top scale-110 opacity-15 blur-sm"
+              aria-hidden
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#070707] via-[#070707]/80 to-[#070707]/60" />
+          </div>
+        )}
 
-        <div className="p-5 relative">
-          {/* Year + Trophy */}
-          <div className="flex items-start justify-between mb-5">
+        {/* Gold radial glow */}
+        {isActive && (
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_80%,rgba(252,209,22,0.10)_0%,transparent_70%)] pointer-events-none" />
+        )}
+
+        <div className="relative z-10 p-8">
+          {/* Edition year */}
+          <div className="flex items-start justify-between mb-8">
             <div>
-              <p className="text-[10px] text-[#FCD116]/40 uppercase tracking-[.2em] font-bold mb-0.5">Édition</p>
-              <p className="font-display text-4xl font-black text-[#FCD116]/85 tabular-nums leading-none">{winner.year}</p>
+              <p className="text-[10px] text-[#FCD116]/40 uppercase tracking-[.25em] font-black mb-1">Édition</p>
+              <motion.p
+                key={winner.year}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="font-display text-6xl font-black text-[#FCD116]/70 tabular-nums leading-none"
+              >
+                {winner.year}
+              </motion.p>
             </div>
             <motion.div
-              initial={{ scale: 0 }}
-              animate={inView ? { scale: 1 } : {}}
-              transition={{ type: 'spring', delay: index * 0.08 + 0.3, stiffness: 200 }}
-              className="text-3xl"
-              style={{ filter: 'drop-shadow(0 0 10px rgba(252,209,22,0.45))' }}
+              animate={isActive ? {
+                filter: ['drop-shadow(0 0 20px rgba(252,209,22,0.4))', 'drop-shadow(0 0 50px rgba(252,209,22,0.75))', 'drop-shadow(0 0 20px rgba(252,209,22,0.4))'],
+                scale: [1, 1.08, 1],
+              } : { filter: 'drop-shadow(0 0 0px transparent)', scale: 1 }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="text-5xl"
             >
               🏆
             </motion.div>
           </div>
 
-          {/* Winner */}
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full border-2 border-[#FCD116]/35 overflow-hidden shrink-0 shadow-[0_0_14px_rgba(252,209,22,0.18)] group-hover:shadow-[0_0_20px_rgba(252,209,22,0.30)] transition-shadow">
-              {(winner.winner as any).photoUrl
-                ? <img src={(winner.winner as any).photoUrl} alt={winner.winner.name} className="w-full h-full object-cover object-top" loading="lazy" />
-                : <div className="w-full h-full bg-white/8 flex items-center justify-center font-black text-white/65">
-                    {winner.winner.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-                  </div>
-              }
+          {/* Winner player */}
+          <div className="flex items-center gap-5 mb-8">
+            <div className="relative shrink-0">
+              <motion.div
+                animate={isActive ? { boxShadow: ['0 0 0 0 rgba(252,209,22,0)', '0 0 0 6px rgba(252,209,22,0.15)', '0 0 0 0 rgba(252,209,22,0)'] } : {}}
+                transition={{ duration: 2.5, repeat: Infinity }}
+                className="h-20 w-20 rounded-2xl overflow-hidden border-2 border-[#FCD116]/40"
+              >
+                {photoUrl
+                  ? <img src={photoUrl} alt={winner.winner.name} className="w-full h-full object-cover object-top" loading="lazy" />
+                  : <div className="w-full h-full bg-white/10 flex items-center justify-center font-black text-white text-2xl">
+                      {winner.winner.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                    </div>
+                }
+              </motion.div>
+              {isActive && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', delay: 0.2 }}
+                  className="absolute -top-2 -right-2"
+                >
+                  <Crown className="h-6 w-6 text-[#FCD116]" fill="currentColor" style={{ filter: 'drop-shadow(0 0 8px rgba(252,209,22,0.8))' }} />
+                </motion.div>
+              )}
             </div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm text-white/90 truncate leading-tight">{winner.winner.name}</p>
-              {clubName && <p className="text-[11px] text-white/35 truncate">{clubName}</p>}
+
+            <div className="min-w-0 flex-1">
+              <motion.p
+                key={`${winner.year}-name`}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="font-display text-2xl font-black text-white leading-tight"
+              >
+                {winner.winner.name}
+              </motion.p>
+              {clubName && (
+                <motion.p
+                  key={`${winner.year}-club`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.18 }}
+                  className="text-sm text-white/40 mt-0.5"
+                >
+                  {clubName}
+                </motion.p>
+              )}
+              <div className="flex gap-0.5 mt-2">
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.25 + i * 0.07, type: 'spring', stiffness: 400 }}
+                  >
+                    <Star className="h-3.5 w-3.5 text-[#FCD116]/60" fill="currentColor" />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Highlight stat */}
+            <div className="shrink-0 text-right">
+              <motion.p
+                key={`${winner.year}-stat`}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+                className="font-display text-4xl font-black text-[#FCD116] tabular-nums"
+              >
+                {winner.winner.highlightStat.value}
+              </motion.p>
+              <p className="text-[10px] text-white/30 uppercase tracking-wide">
+                {winner.winner.highlightStat.label}
+              </p>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="mt-4 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">
-            <span className="text-[10px] text-white/25 uppercase tracking-wider">
-              {winner.season.replace('season-', '')}
+          {/* Season badge */}
+          <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
+            <span className="text-[10px] text-white/25 uppercase tracking-wider font-bold">
+              {winner.season.replace('season-', '').replace('-', '–')}
             </span>
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <motion.div key={i} initial={{ opacity: 0, scale: 0 }} animate={inView ? { opacity: 1, scale: 1 } : {}} transition={{ delay: index * 0.08 + 0.5 + i * 0.06 }}>
-                  <Star className="h-3 w-3 text-[#FCD116]/55" fill="currentColor" />
-                </motion.div>
-              ))}
-            </div>
+            {isActive && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-[10px] text-[#FCD116]/50 font-bold uppercase tracking-wider flex items-center gap-1"
+              >
+                <Trophy className="h-3 w-3" /> Ballon d'Or
+              </motion.span>
+            )}
           </div>
         </div>
       </motion.div>
     </motion.div>
   );
 });
-WinnerCard.displayName = 'WinnerCard';
+CarouselSlide.displayName = 'CarouselSlide';
 
+// ─── Past Winners Gallery (Carousel) ─────────────────────────────────────────
 export const PastWinnersGallery = memo(() => {
-  const ref    = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-40px' });
+  const ref     = useRef(null);
+  const inView  = useInView(ref, { once: true, margin: '-40px' });
+  const [current, setCurrent] = useState(0);
+  const [autoplay, setAutoplay] = useState(true);
+  const total   = MOCK_HISTORICAL.length;
+
+  // Autoplay
+  useEffect(() => {
+    if (!autoplay || !inView) return;
+    const id = setInterval(() => setCurrent(c => (c + 1) % total), 4500);
+    return () => clearInterval(id);
+  }, [autoplay, inView, total]);
+
+  const prev = useCallback(() => { setAutoplay(false); setCurrent(c => (c - 1 + total) % total); }, [total]);
+  const next = useCallback(() => { setAutoplay(false); setCurrent(c => (c + 1) % total); }, [total]);
+  const goTo = (i: number) => { setAutoplay(false); setCurrent(i); };
+
+  if (MOCK_HISTORICAL.length === 0) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} className="text-center py-12">
+        <div className="text-4xl mb-3 opacity-30">📜</div>
+        <p className="text-white/25 text-sm">Palmarès disponible après la première édition.</p>
+      </motion.div>
+    );
+  }
+
+  const prevIdx = (current - 1 + total) % total;
+  const nextIdx = (current + 1) % total;
 
   return (
-    <section ref={ref} className="space-y-6">
+    <section ref={ref} className="space-y-8">
       {/* Section heading */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -381,23 +509,102 @@ export const PastWinnersGallery = memo(() => {
         <div className="flex-1 h-px bg-gradient-to-l from-[#FCD116]/25 to-transparent" />
       </motion.div>
 
-      {/* Winners grid */}
-      {MOCK_HISTORICAL.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MOCK_HISTORICAL.map((w, i) => (
-            <WinnerCard key={w.year} winner={w} index={i} />
+      {/* Carousel container */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.55, delay: 0.1 }}
+        className="relative"
+      >
+        {/* Slide area */}
+        <div className="relative h-[340px] mx-12">
+          {MOCK_HISTORICAL.map((winner, i) => (
+            <CarouselSlide
+              key={winner.year}
+              winner={winner}
+              isActive={i === current}
+              isPrev={i === prevIdx}
+              isNext={i === nextIdx}
+              onClick={() => goTo(i)}
+            />
           ))}
         </div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          className="text-center py-12"
+
+        {/* Nav arrows */}
+        <button
+          onClick={prev}
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/12 hover:text-white transition-all z-20"
+          aria-label="Précédent"
         >
-          <div className="text-4xl mb-3 opacity-30">📜</div>
-          <p className="text-white/25 text-sm">Palmarès disponible après la première édition.</p>
-        </motion.div>
-      )}
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          onClick={next}
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center text-white/50 hover:bg-white/12 hover:text-white transition-all z-20"
+          aria-label="Suivant"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </motion.div>
+
+      {/* Dots + autoplay toggle */}
+      <div className="flex items-center justify-center gap-4">
+        <div className="flex gap-2">
+          {MOCK_HISTORICAL.map((w, i) => (
+            <button
+              key={w.year}
+              onClick={() => goTo(i)}
+              aria-label={`Aller à ${w.year}`}
+              className="relative"
+            >
+              <motion.div
+                animate={{
+                  width: i === current ? 24 : 6,
+                  backgroundColor: i === current ? '#FCD116' : 'rgba(255,255,255,0.15)',
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="h-1.5 rounded-full"
+              />
+            </button>
+          ))}
+        </div>
+
+        {/* Autoplay toggle */}
+        <button
+          onClick={() => setAutoplay(a => !a)}
+          className="flex items-center gap-1.5 text-[10px] text-white/25 hover:text-white/50 transition-colors"
+        >
+          {autoplay
+            ? <><Pause className="h-3 w-3" /> Auto</>
+            : <><Play  className="h-3 w-3" /> Jouer</>
+          }
+        </button>
+      </div>
+
+      {/* Year thumbnails strip */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={inView ? { opacity: 1 } : {}}
+        transition={{ delay: 0.3 }}
+        className="flex gap-2 overflow-x-auto scrollbar-hide pb-1"
+      >
+        {MOCK_HISTORICAL.map((w, i) => (
+          <motion.button
+            key={w.year}
+            onClick={() => goTo(i)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all ${
+              i === current
+                ? 'border-[#FCD116]/50 bg-[#FCD116]/[0.08] text-[#FCD116]'
+                : 'border-white/[0.06] bg-white/[0.02] text-white/30 hover:border-white/15 hover:text-white/60'
+            }`}
+          >
+            <span className="font-display text-sm font-black tabular-nums">{w.year}</span>
+            <span className="text-[9px] truncate max-w-[80px]">{w.winner.name.split(' ').slice(-1)[0]}</span>
+          </motion.button>
+        ))}
+      </motion.div>
     </section>
   );
 });

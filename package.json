@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "cache-manager-redis-yet": "^5.1.5"
+  },
+  "devDependencies": {
+    "uuid": "^14.0.0"
   }
 }

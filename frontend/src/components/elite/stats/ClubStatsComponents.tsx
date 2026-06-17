@@ -3,33 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Download } from 'lucide-react';
 import type { ClubStat, StatSortField } from '@/types/football.types';
 
-// ─── Column definitions ────────────────────────────────────────────────────────
-interface ClubColDef {
-  key: keyof ClubStat | 'rank';
-  label: string;
-  tooltip: string;
-  defaultVisible: boolean;
-  align: 'left' | 'right';
-}
-
-const CLUB_COLUMNS: ClubColDef[] = [
-  { key: 'clubName',        label: 'Club',        tooltip: 'Nom du club',                  defaultVisible: true,  align: 'left'  },
-  { key: 'matchesPlayed',   label: 'J',           tooltip: 'Matchs joués',                  defaultVisible: true,  align: 'right' },
-  { key: 'wins',            label: 'V',           tooltip: 'Victoires',                     defaultVisible: true,  align: 'right' },
-  { key: 'draws',           label: 'N',           tooltip: 'Matchs nuls',                   defaultVisible: true,  align: 'right' },
-  { key: 'losses',          label: 'D',           tooltip: 'Défaites',                      defaultVisible: true,  align: 'right' },
-  { key: 'goalsFor',        label: 'BP',          tooltip: 'Buts marqués',                  defaultVisible: true,  align: 'right' },
-  { key: 'goalsAgainst',    label: 'BC',          tooltip: 'Buts encaissés',                defaultVisible: true,  align: 'right' },
-  { key: 'shots',           label: 'Tirs',        tooltip: 'Tentatives au but',             defaultVisible: true,  align: 'right' },
-  { key: 'shotsOnTarget',   label: 'C/C',         tooltip: 'Tirs cadrés',                   defaultVisible: true,  align: 'right' },
-  { key: 'cleanSheets',     label: 'CS',          tooltip: 'Clean sheets (sans encaisser)', defaultVisible: true,  align: 'right' },
-  { key: 'yellowCards',     label: '🟨',          tooltip: 'Cartons jaunes',                defaultVisible: true,  align: 'right' },
-  { key: 'redCards',        label: '🟥',          tooltip: 'Cartons rouges',                defaultVisible: true,  align: 'right' },
-  { key: 'possession',      label: 'Poss.',       tooltip: 'Possession moyenne (%)',        defaultVisible: false, align: 'right' },
-  { key: 'penaltiesFor',    label: 'Pen.M.',      tooltip: 'Penalties marqués',             defaultVisible: false, align: 'right' },
-  { key: 'penaltiesAgainst',label: 'Pen.C.',      tooltip: 'Penalties concédés',            defaultVisible: false, align: 'right' },
-  { key: 'points',          label: 'Pts',         tooltip: 'Points au classement',          defaultVisible: true,  align: 'right' },
-];
 
 // ─── Mini horizontal bar ─────────────────────────────────────────────────────
 const MiniBar = memo(({ value, max, color = 'bg-accent/50' }: {

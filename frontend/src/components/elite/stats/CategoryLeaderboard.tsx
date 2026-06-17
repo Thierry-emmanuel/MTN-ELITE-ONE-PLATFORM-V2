@@ -25,7 +25,7 @@ const CATEGORY_CONFIG: Record<StatCategory, {
     cols: [
       { key: 'appearances',    header: 'J',     title: 'Matchs joués' },
       { key: 'goals',          header: 'Buts',  title: 'Buts marqués',   highlight: true },
-      { key: 'penaltyGoals',   header: 'Pen.',  title: 'Buts sur penalty' },
+      { key: 'penaltiesScored',header: 'Pen.',  title: 'Buts sur penalty' },
     ],
   },
   assists: {

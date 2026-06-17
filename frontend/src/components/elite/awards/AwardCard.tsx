@@ -1,8 +1,8 @@
-import React, { memo, useRef } from 'react';
+import React, { memo } from 'react';
 
 import { Link } from 'react-router-dom';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Trophy, Users, Clock, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { Users, Clock, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { AWARD_META } from '@/types/awards.types';
 import type { Award, Nominee, PlayerNominee, VoteResult } from '@/types/awards.types';
 

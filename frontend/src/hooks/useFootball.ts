@@ -132,3 +132,70 @@ export function useMatch(matchId: string | null) {
     staleTime: STALE.live,
   });
 }
+
+// ─── useClubs ─────────────────────────────────────────────────────────────────
+export function useClubs() {
+  return useQuery({
+    queryKey: QK.clubs(),
+    queryFn: () => footballApi.getClubs(),
+    staleTime: 300_000,
+  });
+}
+
+// ─── useClub ──────────────────────────────────────────────────────────────────
+export function useClub(id: string) {
+  return useQuery({
+    queryKey: QK.club(id),
+    queryFn: () => footballApi.getClub(id),
+    enabled: !!id,
+    staleTime: 300_000,
+  });
+}
+
+// ─── useClubSquad ─────────────────────────────────────────────────────────────
+export function useClubSquad(id: string) {
+  return useQuery({
+    queryKey: QK.clubSquad(id),
+    queryFn: () => footballApi.getClubSquad(id),
+    enabled: !!id,
+    staleTime: 300_000,
+  });
+}
+
+// ─── useClubMatches ───────────────────────────────────────────────────────────
+export function useClubMatches(id: string) {
+  return useQuery({
+    queryKey: QK.clubMatches(id),
+    queryFn: () => footballApi.getClubMatches(id),
+    enabled: !!id,
+    staleTime: 60_000,
+  });
+}
+
+// ─── usePlayers ───────────────────────────────────────────────────────────────
+export function usePlayers(filters?: { position?: string; clubId?: string }) {
+  return useQuery({
+    queryKey: QK.players(filters ?? {}),
+    queryFn: () => footballApi.getPlayers(filters),
+    staleTime: 120_000,
+  });
+}
+
+// ─── usePlayer ────────────────────────────────────────────────────────────────
+export function usePlayer(id: string) {
+  return useQuery({
+    queryKey: QK.player(id),
+    queryFn: () => footballApi.getPlayer(id),
+    enabled: !!id,
+    staleTime: 120_000,
+  });
+}
+
+// ─── useLegends ───────────────────────────────────────────────────────────────
+export function useLegends() {
+  return useQuery({
+    queryKey: QK.legends(),
+    queryFn: () => footballApi.getLegends(),
+    staleTime: 300_000,
+  });
+}

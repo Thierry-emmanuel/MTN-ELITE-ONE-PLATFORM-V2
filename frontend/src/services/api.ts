@@ -4,6 +4,8 @@ import type {
   PlayerStat, ClubStat, PaginatedResponse,
   PlayerStatsFilter, ClubStatsFilter, TopPerformer, StatCategory,
 } from '../types/football.types';
+import { clubs as MOCK_CLUBS, legends as MOCK_LEGENDS } from '../components/elite/data';
+import { MOCK_PLAYER_STATS, MOCK_FIXTURES } from './mockData';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -162,6 +164,83 @@ export const footballApi = {
       topScorerGoals: number;
       cleanSheets: number;
     }>(`/stats/season/${seasonId}/summary`),
+
+  // ── Clubs ──────────────────────────────────────────────────────────────────
+  getClubs: async () => {
+    try {
+      const res = await get<any>('/clubs');
+      // NestJS backend returns paginated or array, handle both
+      return Array.isArray(res) ? res : res.data || Object.values(MOCK_CLUBS);
+    } catch (e) {
+      console.warn('Failed to fetch clubs from backend, using mock data.', e);
+      return Object.values(MOCK_CLUBS);
+    }
+  },
+
+  getClub: async (id: string) => {
+    try {
+      return await get<any>(`/clubs/${id}`);
+    } catch (e) {
+      console.warn(`Failed to fetch club ${id} from backend, using mock data.`, e);
+      return Object.values(MOCK_CLUBS).find(c => c.id === id) || MOCK_CLUBS.cot;
+    }
+  },
+
+  getClubSquad: async (id: string) => {
+    try {
+      return await get<any[]>(`/clubs/${id}/squad`);
+    } catch (e) {
+      console.warn(`Failed to fetch squad for club ${id}, using mock players.`, e);
+      return MOCK_PLAYER_STATS.filter(p => p.clubId === id);
+    }
+  },
+
+  getClubMatches: async (id: string) => {
+    try {
+      return await get<any>(`/clubs/${id}/matches`);
+    } catch (e) {
+      console.warn(`Failed to fetch matches for club ${id}, using mock fixtures.`, e);
+      // Filter fixtures containing this club
+      return MOCK_FIXTURES.flatMap(fd => fd.matches).filter(m => m.homeClub.id === id || m.awayClub.id === id);
+    }
+  },
+
+  // ── Players ────────────────────────────────────────────────────────────────
+  getPlayers: async (params?: { position?: string; clubId?: string }) => {
+    try {
+      const res = await get<any>('/players', { params });
+      return Array.isArray(res) ? res : res.data || MOCK_PLAYER_STATS;
+    } catch (e) {
+      console.warn('Failed to fetch players, using mock data.', e);
+      let filtered = [...MOCK_PLAYER_STATS];
+      if (params?.position && params.position !== 'ALL') {
+        filtered = filtered.filter(p => p.position === params.position);
+      }
+      if (params?.clubId) {
+        filtered = filtered.filter(p => p.clubId === params.clubId);
+      }
+      return filtered;
+    }
+  },
+
+  getPlayer: async (id: string) => {
+    try {
+      return await get<any>(`/players/${id}`);
+    } catch (e) {
+      console.warn(`Failed to fetch player ${id}, using mock.`, e);
+      return MOCK_PLAYER_STATS.find(p => p.playerId === id) || MOCK_PLAYER_STATS[0];
+    }
+  },
+
+  // ── Hall of Fame / History ─────────────────────────────────────────────────
+  getLegends: async () => {
+    try {
+      return await get<any[]>('/hall-of-fame');
+    } catch (e) {
+      console.warn('Failed to fetch hall-of-fame, using mock legends.', e);
+      return MOCK_LEGENDS;
+    }
+  },
 };
 
 // ─── Query key factory ────────────────────────────────────────────────────────
@@ -175,4 +254,11 @@ export const QK = {
   clubStats:      (seasonId: string, filters?: object) => ['clubStats',  seasonId, filters] as const,
   topPerformers:  (seasonId: string, category: string) => ['topPerf',   seasonId, category] as const,
   seasonSummary:  (seasonId: string)                   => ['seasonSum',  seasonId]           as const,
+  clubs:          ()                                   => ['clubs']                        as const,
+  club:           (id: string)                         => ['club', id]                     as const,
+  clubSquad:      (id: string)                         => ['clubSquad', id]                as const,
+  clubMatches:    (id: string)                         => ['clubMatches', id]              as const,
+  players:        (filters?: object)                   => ['players', filters]             as const,
+  player:         (id: string)                         => ['player', id]                   as const,
+  legends:        ()                                   => ['legends']                      as const,
 } as const;

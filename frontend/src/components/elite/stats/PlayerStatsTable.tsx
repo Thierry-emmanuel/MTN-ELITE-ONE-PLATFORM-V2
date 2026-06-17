@@ -208,7 +208,7 @@ const TableRow = memo(({
           );
         }
 
-        const rawVal = (player as Record<string, unknown>)[key] as number ?? 0;
+        const rawVal = (player as any)[key] as number ?? 0;
         return (
           <td key={key} className={`px-3 py-3 text-right text-sm tabular-nums ${key === 'yellowCards' ? 'text-[#FCD116]/80' : key === 'redCards' ? 'text-[#CE1126]/80' : 'text-foreground/80'}`}>
             {fmt(col, rawVal)}

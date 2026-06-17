@@ -2,7 +2,7 @@ import { Controller, Get, Post, Param, Body, Req, UseGuards } from '@nestjs/comm
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AwardsService } from './awards.service';
 import { VoteDto } from './dto/vote.dto';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 @ApiTags('awards')
 @Controller('awards')

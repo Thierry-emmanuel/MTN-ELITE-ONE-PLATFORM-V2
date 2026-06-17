@@ -80,8 +80,8 @@ const MiniBar = ({ value, max }: { value: number; max: number }) => (
 );
 
 // ─── Single mini row inside the tab preview ───────────────────────────────────
-const MiniRow = ({ rank, name, club, value, unit, max }: {
-  rank: number; name: string; club: string; value: number; unit: string; max: number;
+const MiniRow = ({ rank, name, value, max }: {
+  rank: number; name: string; value: number; max: number;
 }) => (
   <div className="flex items-center gap-2 py-1">
     <span className="w-4 text-center text-[10px] text-muted-foreground/40 tabular-nums shrink-0">{rank}</span>
@@ -160,9 +160,7 @@ export const StatCategoryTabs = memo(({
                 key={p.playerId}
                 rank={i + 1}
                 name={p.playerName}
-                club={p.clubShort ?? p.clubName}
                 value={activeTab.getVal(p)}
-                unit={activeTab.unit}
                 max={maxVal}
               />
             ))}

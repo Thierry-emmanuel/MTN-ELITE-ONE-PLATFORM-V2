@@ -43,15 +43,7 @@ const ETAME = {
   stats: { goals: 8, assists: 11, appearances: 17, minutesPlayed: 1490, rating: 8.2, keyPasses: 57 },
   highlightStat: { label: 'Passes D.', value: 11 }, form: ['L','W','W','D','W'],
 };
-const SOUAIBOU = {
-  id: 'p4', type: 'PLAYER' as const,
-  name: 'Souaibou Marou', position: 'MID', nationality: 'CMR', age: 22,
-  photoUrl: IMG.sergeDaura,
-  description: 'Jeune milieu box-to-box de PWD Bamenda. Sa vision du jeu et son pressing intense en font l\'une des révélations de la saison.',
-  clubId: 'pwd', clubName: 'PWD Bamenda', clubShort: 'PWD',
-  stats: { goals: 7, assists: 9, appearances: 18, minutesPlayed: 1620, rating: 7.9 },
-  highlightStat: { label: 'Buts+PD', value: 16 }, form: ['D','W','L','W','D'],
-};
+
 const NJOH = {
   id: 'p5', type: 'PLAYER' as const,
   name: 'Richard Njoh', position: 'GK', nationality: 'CMR', age: 26,
@@ -88,15 +80,7 @@ const NATHAND = {
   stats: { goals: 5, assists: 2, appearances: 12, minutesPlayed: 820, rating: 7.5 },
   highlightStat: { label: 'Buts', value: 5 }, form: ['W','D','L','W','W'],
 };
-const EKANGA = {
-  id: 'p8', type: 'PLAYER' as const,
-  name: 'Marc Ekanga', position: 'DEF', nationality: 'CMR', age: 28,
-  photoUrl: IMG.edouardSombang,
-  description: 'Défenseur central fiable et charismatique de Canon Yaoundé. Son leadership et sa lecture du jeu font de lui l\'un des meilleurs défenseurs de la Elite One.',
-  clubId: 'cnk', clubName: 'Canon Yaoundé', clubShort: 'CNK',
-  stats: { goals: 2, assists: 3, appearances: 18, minutesPlayed: 1620, rating: 7.8 },
-  highlightStat: { label: 'Duels gagnés', value: 84 }, form: ['W','D','W','W','L'],
-};
+
 
 // ─── Teams ────────────────────────────────────────────────────────────────────
 const COTON = { id: 'cot', type: 'TEAM' as const, name: 'Coton Sport', city: 'Garoua', coach: 'Oumarou Halidou', description: 'Le leader incontesté du championnat. 12 victoires en 18 matchs, le meilleur bilan offensif et défensif de la saison.', stats: { wins: 12, draws: 2, losses: 4, goalsFor: 38, goalsAgainst: 16, points: 38 }, form: ['W','W','D','W','W'], highlightStat: { label: 'Points', value: 38 } };

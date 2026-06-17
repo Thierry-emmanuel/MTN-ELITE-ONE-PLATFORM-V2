@@ -43,15 +43,15 @@ function applyFilters(players: PlayerStat[], f: PlayerStatsFilter) {
 }
 function sortPlayers(players: PlayerStat[], field: StatSortField, dir: 'asc' | 'desc') {
   return [...players].sort((a, b) => {
-    const va = (a as Record<string, unknown>)[field] as number ?? 0;
-    const vb = (b as Record<string, unknown>)[field] as number ?? 0;
+    const va = (a as any)[field] as number ?? 0;
+    const vb = (b as any)[field] as number ?? 0;
     return dir === 'desc' ? vb - va : va - vb;
   });
 }
 function sortClubs(clubs: ClubStat[], field: StatSortField, dir: 'asc' | 'desc') {
   return [...clubs].sort((a, b) => {
-    const va = (a as Record<string, unknown>)[field] as number ?? 0;
-    const vb = (b as Record<string, unknown>)[field] as number ?? 0;
+    const va = (a as any)[field] as number ?? 0;
+    const vb = (b as any)[field] as number ?? 0;
     return dir === 'desc' ? vb - va : va - vb;
   });
 }

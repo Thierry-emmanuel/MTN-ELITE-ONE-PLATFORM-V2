@@ -4,7 +4,7 @@ import {
   Plus, Save, Send, Eye, Edit3, Trash2,
   FileText, CheckCircle, Clock, Archive,
   Image, Tag, AlignLeft, Type, Star,
-  ChevronRight, X,
+  X,
 } from 'lucide-react';
 import { CategoryBadge } from './ArticleCard';
 import { CATEGORY_META } from '@/types/news.types';

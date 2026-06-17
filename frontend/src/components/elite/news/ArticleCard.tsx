@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, MessageCircle, Eye, ArrowRight } from 'lucide-react';
+import { Clock, MessageCircle, Eye } from 'lucide-react';
 import { CATEGORY_META } from '@/types/news.types';
 import type { Article } from '@/types/news.types';
 
