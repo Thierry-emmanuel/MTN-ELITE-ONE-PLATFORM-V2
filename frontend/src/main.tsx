@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SearchProvider } from '@/context/SearchContext';
 import './index.css';
 import App from './App.tsx';
 
@@ -8,8 +9,8 @@ import App from './App.tsx';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime:        60_000,   // 1 min — don't refetch if data is fresh
-      retry:            1,        // 1 retry on failure before showing error
+      staleTime:            60_000,   // 1 min
+      retry:                1,
       refetchOnWindowFocus: false,
     },
   },
@@ -19,7 +20,9 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <SearchProvider>
+        <App />
+      </SearchProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

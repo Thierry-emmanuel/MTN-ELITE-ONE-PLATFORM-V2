@@ -25,6 +25,13 @@
   --color-input:               hsl(var(--input));
   --color-ring:                hsl(var(--ring));
 
+  /* ── Extended semantic colour tokens — available as Tailwind utilities ── */
+  --color-live:                hsl(var(--live));
+  --color-win:                 hsl(var(--win));
+  --color-draw:                hsl(var(--draw));
+  --color-loss:                hsl(var(--loss));
+  --color-primary-glow:        hsl(var(--primary-glow));
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
