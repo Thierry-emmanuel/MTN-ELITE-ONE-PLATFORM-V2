@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import {
   Wifi, WifiOff, Sparkles, Vote, ChevronRight,
+  Trophy, Users, Shield, ClipboardList, CircleDot,
 } from 'lucide-react';
 import { useAwards, useTeamOfWeek, useRealtimeVotes } from '@/hooks/useAwards';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '@/store/awards.store';
@@ -12,11 +13,11 @@ import { PageHero } from '@/components/elite/FootballPrimitives';
 import type { AwardType, Award } from '@/types/awards.types';
 
 // ─── Type filter ──────────────────────────────────────────────────────────────
-const TYPE_TABS: { id: AwardType | 'ALL'; label: string; icon: string }[] = [
-  { id: 'ALL',    label: 'Tous',    icon: '🏆' },
-  { id: 'PLAYER', label: 'Joueurs', icon: '⚽' },
-  { id: 'TEAM',   label: 'Équipes', icon: '🛡️' },
-  { id: 'COACH',  label: 'Coachs',  icon: '📋' },
+const TYPE_TABS: { id: AwardType | 'ALL'; label: string; icon: React.ReactNode }[] = [
+  { id: 'ALL',    label: 'Tous',    icon: <Trophy    className="h-3.5 w-3.5" /> },
+  { id: 'PLAYER', label: 'Joueurs', icon: <Users     className="h-3.5 w-3.5" /> },
+  { id: 'TEAM',   label: 'Équipes', icon: <Shield    className="h-3.5 w-3.5" /> },
+  { id: 'COACH',  label: 'Coachs',  icon: <ClipboardList className="h-3.5 w-3.5" /> },
 ];
 
 // ─── Ballon d'Or CTA banner ───────────────────────────────────────────────────
@@ -52,9 +53,9 @@ const BallonDorBanner = () => {
           <motion.div
             animate={{ y: [0, -10, 0], filter: ['drop-shadow(0 0 20px rgba(252,209,22,0.4))', 'drop-shadow(0 0 50px rgba(252,209,22,0.7))', 'drop-shadow(0 0 20px rgba(252,209,22,0.4))'] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="text-5xl sm:text-6xl shrink-0"
+            className="shrink-0"
           >
-            🏆
+            <Trophy className="h-14 w-14 sm:h-16 sm:w-16 text-[#FCD116]" strokeWidth={1} />
           </motion.div>
           <div>
             <p className="text-[10px] font-black text-[#FCD116]/60 uppercase tracking-[.2em] mb-0.5">Récompense suprême</p>
@@ -166,9 +167,8 @@ const TeamOfWeekSection = ({ teamOfWeek }: { teamOfWeek: any }) => {
             <motion.span
               animate={{ filter: ['drop-shadow(0 0 6px rgba(52,211,153,0.3))', 'drop-shadow(0 0 16px rgba(52,211,153,0.6))', 'drop-shadow(0 0 6px rgba(52,211,153,0.3))'] }}
               transition={{ duration: 3, repeat: Infinity }}
-              className="text-lg"
             >
-              ⚽
+              <CircleDot className="h-5 w-5 text-[#34D399]" />
             </motion.span>
             <div>
               <h2 className="font-display text-base font-black text-white/90">Équipe de la semaine</h2>
@@ -303,9 +303,9 @@ export default function AwardsPage() {
           </div>
         ) : (
           <div className="space-y-10">
-            <AwardsGrid title="Votes ouverts"      icon="🗳️" awards={openRest}  votedMap={votedMap} />
-            <AwardsGrid title="Récemment annoncés" icon="🏆" awards={announced}  votedMap={votedMap} />
-            <AwardsGrid title="Clôturés"           icon="📋" awards={closed}     votedMap={votedMap} />
+            <AwardsGrid title="Votes ouverts"      icon={<Vote         className="h-4 w-4" />} awards={openRest}  votedMap={votedMap} />
+            <AwardsGrid title="Récemment annoncés" icon={<Trophy       className="h-4 w-4" />} awards={announced}  votedMap={votedMap} />
+            <AwardsGrid title="Clôturés"           icon={<ClipboardList className="h-4 w-4" />} awards={closed}     votedMap={votedMap} />
           </div>
         )}
 

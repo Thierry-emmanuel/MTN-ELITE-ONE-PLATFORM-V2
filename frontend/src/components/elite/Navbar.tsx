@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, LogIn, Menu, X, ChevronDown, Radio,
-  Trophy, Calendar, Users, Gamepad2, ArrowLeftRight,
+  Trophy, Calendar, Users, ArrowLeftRight,
   Activity, Star, Award, BarChart2, Newspaper, Edit3,
+  Vote, Circle,
 } from "lucide-react";
 import { tickerItems } from "./data";
 import { Link, useLocation } from "react-router-dom";
@@ -57,9 +58,9 @@ const NAV_LINKS = [
     icon: <Award className="h-3.5 w-3.5" />,
     children: [
       { label: "Palmarès",         href: "/awards",              icon: <Award className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Ballon d'Or",      href: "/awards/ballon-dor",   icon: <span className="text-sm">🏆</span> },
-      { label: "Équipe de la sem.", href: "/awards/team-of-week", icon: <span className="text-sm">⚽</span> },
-      { label: "Voter maintenant",  href: "/awards/vote",         icon: <span className="text-sm">🗳️</span> },
+      { label: "Ballon d'Or",      href: "/awards/ballon-dor",   icon: <Trophy className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Équipe de la sem.", href: "/awards/team-of-week", icon: <Circle className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Voter maintenant",  href: "/awards/vote",         icon: <Vote className="h-3.5 w-3.5 text-[#FCD116]" /> },
     ],
   },
   // ── Communauté ────────────────────────────────────────────────────────────
@@ -67,11 +68,10 @@ const NAV_LINKS = [
     label: "Communauté",
     icon: <Users className="h-3.5 w-3.5" />,
     children: [
-      { label: "Young Talent Watch", href: "/talents",    icon: <Star className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Hall of Fame",       href: "/halloffame", icon: <Trophy className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Jeux & Pronostics",  href: "/games",      icon: <Gamepad2 className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Transferts",         href: "/transfers",  icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Blessures",          href: "/injuries",   icon: <Activity className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Young Talent Watch", href: "/players",    icon: <Star          className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Hall of Fame",       href: "/halloffame", icon: <Trophy        className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Transferts",         href: "/results",    icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Blessures",          href: "/stats",      icon: <Activity      className="h-3.5 w-3.5 text-[#FCD116]" /> },
     ],
   },
 ] as const;

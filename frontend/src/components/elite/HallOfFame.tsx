@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { Star, ArrowUpRight, Quote } from "lucide-react";
+import { Star, ArrowUpRight, Quote, Trophy } from "lucide-react";
 import { legends } from "./data";
 import { SectionHeader } from "./SectionHeader";
 
@@ -229,7 +229,9 @@ export const HallOfFame = () => {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center justify-center py-16 text-center"
             >
-              <div className="text-4xl mb-4 opacity-30">🏆</div>
+              <div className="mb-4 opacity-30">
+                <Trophy className="h-10 w-10 text-accent mx-auto" />
+              </div>
               <p className="text-sm text-muted-foreground">Aucune légende pour cette ère pour le moment</p>
               <button onClick={() => setActiveEra("all")} className="mt-3 text-xs text-accent hover:underline">
                 Voir toutes les légendes

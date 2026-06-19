@@ -111,12 +111,15 @@ const LiveMatchHero = ({ slide }: { slide: typeof HERO_SLIDES[0] }) => {
             <Zap className="h-3 w-3" /> Événements
           </div>
           {[
-            { min: "23'", event: "⚽ Souaibou (PWD) — Pénalty" },
-            { min: "41'", event: "🟨 Ngando (UDS)" },
-            { min: "58'", event: "⚽ Etame (UDS) — Contre-attaque" },
+            { min: "23'", event: "But · Souaibou (PWD) — Pénalty",       type: 'goal'   },
+            { min: "41'", event: "Carton jaune · Ngando (UDS)",           type: 'yellow' },
+            { min: "58'", event: "But · Etame (UDS) — Contre-attaque",   type: 'goal'   },
           ].map((e, i) => (
             <div key={i} className="flex items-center gap-3 py-1.5 border-b border-white/5 last:border-0">
               <span className="text-[10px] tabular-nums text-accent font-bold w-7 shrink-0">{e.min}</span>
+              <span className={`h-2 w-2 rounded-full shrink-0 ${
+                e.type === 'goal' ? 'bg-[#10B981]' : 'bg-[#FCD116]'
+              }`} />
               <span className="text-xs text-white/60">{e.event}</span>
             </div>
           ))}
@@ -264,7 +267,7 @@ const NewsSlide = ({ slide }: { slide: typeof HERO_SLIDES[0] }) => (
           animate={{ opacity: 1, x: 0 }}
           className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full bg-[#008751] text-white text-[10px] font-bold uppercase tracking-widest"
         >
-          🇨🇲 {slide.kicker}
+          CMR · {slide.kicker}
         </motion.div>
 
         <motion.h1

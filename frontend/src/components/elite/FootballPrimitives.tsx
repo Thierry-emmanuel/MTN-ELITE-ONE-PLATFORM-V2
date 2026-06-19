@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import {
   AlertTriangle, RefreshCw, Radio, Clock,
   CalendarX, Trophy, MapPin, User,
+  CircleDot, SquareX, ArrowLeftRight,
 } from 'lucide-react';
 import type { Club, FormResult, Match, MatchEvent } from '../../types/football.types';
 import { statusLabel, formatKickoff } from '../../utils/football.utils';
@@ -215,9 +216,13 @@ export interface EventsTimelineProps {
   homeClubId: string;
 }
 
-const EVENT_ICON: Record<string, string> = {
-  GOAL: '⚽', OWN_GOAL: '⚽', YELLOW: '🟨',
-  RED: '🟥', SUBSTITUTION: '🔄', PENALTY: '⚽',
+const EVENT_ICON_MAP: Record<string, React.ReactNode> = {
+  GOAL:         <CircleDot className="h-3 w-3 text-[#10B981]" />,
+  OWN_GOAL:     <CircleDot className="h-3 w-3 text-[#CE1126]" />,
+  PENALTY:      <CircleDot className="h-3 w-3 text-[#FCD116]" />,
+  YELLOW:       <SquareX   className="h-3 w-3 text-[#FCD116]" />,
+  RED:          <SquareX   className="h-3 w-3 text-[#CE1126]" />,
+  SUBSTITUTION: <ArrowLeftRight className="h-3 w-3 text-white/40" />,
 };
 
 export const EventsTimeline = memo(({ events, homeClubId }: EventsTimelineProps) => (
@@ -227,7 +232,9 @@ export const EventsTimeline = memo(({ events, homeClubId }: EventsTimelineProps)
       return (
         <div key={i} className={`flex items-center gap-2 text-xs ${isHome ? 'flex-row' : 'flex-row-reverse'}`}>
           <span className="text-muted-foreground/40 w-7 tabular-nums text-[10px] shrink-0 text-right">{ev.minute}'</span>
-          <span>{EVENT_ICON[ev.type] ?? '•'}</span>
+          <span className="h-5 w-5 flex items-center justify-center shrink-0">
+            {EVENT_ICON_MAP[ev.type] ?? <span className="h-1.5 w-1.5 rounded-full bg-white/20" />}
+          </span>
           <span className="text-muted-foreground truncate">{ev.playerName}</span>
         </div>
       );

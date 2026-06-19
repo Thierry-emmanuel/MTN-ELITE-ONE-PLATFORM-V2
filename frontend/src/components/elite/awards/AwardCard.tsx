@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 
 import { Link } from 'react-router-dom';
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Users, Clock, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { Users, Clock, ChevronRight, CheckCircle2, Sparkles, Trophy, Vote, Eye } from 'lucide-react';
 import { AWARD_META } from '@/types/awards.types';
 import type { Award, Nominee, PlayerNominee, VoteResult } from '@/types/awards.types';
 
@@ -226,7 +226,9 @@ export const AwardCard = memo(({ award, votedNomineeId, index = 0, variant = 'de
             {isOpen
               ? <span className="flex items-center gap-1 text-[9px] text-[#10B981] font-black shrink-0"><span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />LIVE</span>
               : award.votingStatus === 'ANNOUNCED'
-              ? <span className="text-[9px] text-[#FCD116] font-bold shrink-0">🏆 ANNONCÉ</span>
+              ? <span className="flex items-center gap-1 text-[9px] text-[#FCD116] font-bold shrink-0">
+                  <Trophy className="h-2.5 w-2.5" /> ANNONCÉ
+                </span>
               : null}
           </div>
 
@@ -245,7 +247,9 @@ export const AwardCard = memo(({ award, votedNomineeId, index = 0, variant = 'de
 
           <Link to={`/awards/${award.id}`}
             className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl bg-white/[0.05] border border-white/[0.08] text-xs font-bold text-white/50 hover:bg-white/[0.09] hover:text-white hover:border-[#FCD116]/30 transition-all group-hover:border-white/15">
-            {isOpen ? '🗳️ Voter' : '👀 Résultats'}
+            {isOpen
+              ? <><Vote className="h-3.5 w-3.5" /> Voter</>
+              : <><Eye  className="h-3.5 w-3.5" /> Résultats</>}
             <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
