@@ -4,9 +4,11 @@ import { ArrowRight, Radio } from "lucide-react";
 import { footballApi as api } from "@/services/api";
 import type { ApiMatch } from "@/types/football.types";
 import { MOCK_FIXTURES, DEV_SEASON_ID } from "@/services/mockData";
-import { ClubLogo } from "@/components/elite/FootballUI";
+import { ClubLogo } from "@/components/ui/football";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
+import { useFixtures } from "@/hooks/useFootball";
+import { useMemo } from "react";
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
@@ -53,35 +55,47 @@ const FixtureCard = ({ match }: { match: ApiMatch }) => {
       </div>
 
       {/* Teams */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex-1 flex flex-col items-center gap-2 text-center">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-3">
+        <div className="flex flex-col items-center gap-1.5 text-center min-w-0">
           <div className="relative">
-            <ClubLogo club={match.homeClub} size={44} />
+            <ClubLogo club={match.homeClub} size={36} />
             {match.homeClub.primaryColor && (
               <div className="absolute -inset-2 rounded-full blur-lg opacity-0 group-hover:opacity-20 transition-opacity"
                 style={{ background: match.homeClub.primaryColor }} />
             )}
           </div>
-          <span className="font-display text-[11px] leading-tight line-clamp-2">{match.homeClub.name}</span>
+          <span className="font-display text-[10px] leading-tight truncate w-full">{match.homeClub.name}</span>
         </div>
 
-        {live && match.homeScore !== null ? (
-          <div className="font-display text-2xl text-live shrink-0 tabular-nums px-1">
-            {match.homeScore}–{match.awayScore}
-          </div>
-        ) : (
-          <div className="font-display text-base text-muted-foreground/30 shrink-0">vs</div>
-        )}
+        <div className="flex flex-col items-center justify-center shrink-0">
+          {live && match.homeScore !== null ? (
+            <div className="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 font-mono font-bold text-amber-500 text-xs flex items-center gap-1 shadow-inner">
+              <span>{match.homeScore}</span>
+              <span className="text-stone-600">:</span>
+              <span>{match.awayScore}</span>
+            </div>
+          ) : (
+            <div className="text-[10px] font-mono font-semibold text-stone-400 bg-zinc-950 border border-zinc-800 rounded px-2 py-0.5">
+              vs
+            </div>
+          )}
+          {live && (
+            <div className="flex items-center gap-1 text-[8px] font-bold text-emerald-500 mt-1 uppercase tracking-wider animate-pulse">
+              <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </div>
+          )}
+        </div>
 
-        <div className="flex-1 flex flex-col items-center gap-2 text-center">
+        <div className="flex flex-col items-center gap-1.5 text-center min-w-0">
           <div className="relative">
-            <ClubLogo club={match.awayClub} size={44} />
+            <ClubLogo club={match.awayClub} size={36} />
             {match.awayClub.primaryColor && (
               <div className="absolute -inset-2 rounded-full blur-lg opacity-0 group-hover:opacity-20 transition-opacity"
                 style={{ background: match.awayClub.primaryColor }} />
             )}
           </div>
-          <span className="font-display text-[11px] leading-tight line-clamp-2">{match.awayClub.name}</span>
+          <span className="font-display text-[10px] leading-tight truncate w-full">{match.awayClub.name}</span>
         </div>
       </div>
 
@@ -123,24 +137,16 @@ const SkeletonCard = () => (
 export const Fixtures = () => {
   const ref    = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-  const [matches,  setMatches]  = useState<ApiMatch[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [round,    setRound]    = useState<number>(1);
+  const { data: daysData, isLoading: loading } = useFixtures();
 
-  useEffect(() => {
-  api.getFixtures(SEASON_ID, { limit: 50 })
-      .then(days => {
-        // Get upcoming + live matches, flatten, take first 8
-        const allMatches = (days as any).flatMap((d: any) => d.matches);
-        const upcoming = allMatches.filter((m: any) => m.status === "SCHEDULED" || m.status === "LIVE");
-        const display  = upcoming.slice(0, 8);
-        if (display.length > 0) setRound(display[0].round);
-        setMatches(display.length > 0 ? (display as any) : MOCK_FIXTURES.flatMap((d: any) => d.matches).slice(0, 6));
-      })
-      .catch(() => setMatches(MOCK_FIXTURES.flatMap((d: any) => d.matches).slice(0, 6) as any))
-      .finally(() => setLoading(false));
-  }, []);
+  const matches = useMemo(() => {
+    const days = daysData ?? MOCK_FIXTURES;
+    const allMatches = days.flatMap(d => d.matches);
+    const upcoming = allMatches.filter(m => m.status === "SCHEDULED" || m.status === "LIVE");
+    return upcoming.slice(0, 8);
+  }, [daysData]);
 
+  const round = matches[0]?.round ?? 1;
   const liveCount = matches.filter(m => m.status === "LIVE").length;
 
   return (

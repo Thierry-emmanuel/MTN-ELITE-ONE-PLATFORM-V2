@@ -1,0 +1,17 @@
+# Antigravity Assistant Rules — Mtn Elite One Project
+
+[GLOBAL_CONTEXT]
+- Project Nature: Official Digital Platform for Cameroonian Football (MTN Elite One).
+- Architecture: Feature-Based Monorepo (NestJS Backend / React 18 Frontend)[cite: 1].
+- Quality Standard: No 'any' type allowed. Strict TypeScript compliance[cite: 1].
+
+[FRONTEND_COMPLETION_RULES]
+- UI Components: Never generate generic administrative tables or default gray SaaS dashboards[cite: 1].
+- Responsiveness: Enforce Tailwind prefixes (sm:, md:, lg:) for layout components to support 320px up to 1920px viewpoints[cite: 1].
+- Data Fetching: Prohibit direct useEffect for REST calls. Auto-suggest TanStack Query (@tanstack/react-query) custom hooks hooks.
+- Accessibility: Automatically inject 'aria-live="polite"' on real-time match events or match score views updated via WebSockets[cite: 1, 1]. All club/player images must strictly feature an descriptive 'alt' tag[cite: 1].
+
+[BACKEND_COMPLETION_RULES]
+- Data Integrity: Ensure DTOs use 'class-validator' decorators for incoming controller payloads.
+- Database Contract: Match PostgreSQL entities (TypeORM) structure with the shared TypeScript interfaces on the frontend.
+- CMS Management: Editorial modules, Match reports, and Culture stories must output structured HTML/JSON nodes compatible with a Tiptap rich text layout[cite: 1].

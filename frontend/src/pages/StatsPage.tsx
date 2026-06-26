@@ -7,13 +7,13 @@ import {
   Users, Shield, Table2, Target, Zap, BookOpen,
   ArrowUpRight, Square, Clock, RefreshCw, TrendingUp,
 } from 'lucide-react';
-import { footballApi as api } from '@/services/api';
 import { MOCK_PLAYER_STATS, MOCK_CLUB_STATS, DEV_SEASON_ID } from '@/services/mockData';
-import { PageHero }            from '@/components/elite/FootballPrimitives';
+import { PageHero }            from '@/components/ui/football';
 import { StatsFilters }        from '@/components/elite/stats/StatsFilters';
 import { PlayerStatsTable }    from '@/components/elite/stats/PlayerStatsTable';
 import { ClubStatsTable }      from '@/components/elite/stats/ClubStatsComponents';
 import { CategoryLeaderboard } from '@/components/elite/stats/CategoryLeaderboard';
+import { usePlayerStats, useClubStats } from '@/hooks/useFootball';
 import type {
   PlayerStat, ClubStat,
   PlayerStatsFilter, StatSortField, StatCategory,
@@ -85,9 +85,12 @@ export default function StatsPage() {
   const [tab,            setTab]            = useState<MainTab>((searchParams.get('tab') as MainTab) ?? 'players');
   const [seasonId,       setSeasonId]       = useState(searchParams.get('season') ?? SEASON_ID);
   const [activeCategory, setActiveCategory] = useState<StatCategory>((searchParams.get('cat') as StatCategory) ?? 'goals');
-  const [allPlayers,     setAllPlayers]     = useState<PlayerStat[]>([]);
-  const [allClubs,       setAllClubs]       = useState<ClubStat[]>([]);
-  const [loading,        setLoading]        = useState(true);
+  const { data: allPlayersData, isLoading: playersLoading } = usePlayerStats(seasonId, { limit: 200 });
+  const { data: allClubsData, isLoading: clubsLoading } = useClubStats(seasonId, { limit: 50 });
+  const allPlayers = allPlayersData ?? MOCK_PLAYER_STATS;
+  const allClubs = allClubsData ?? MOCK_CLUB_STATS;
+  const loading = playersLoading || clubsLoading;
+
   const [per90,          setPer90]          = useState(false);
   const [playerPage,     setPlayerPage]     = useState(1);
   const [playerSort,     setPlayerSort]     = useState<StatSortField>('goals');
@@ -104,27 +107,6 @@ export default function StatsPage() {
     if (firstLoad.current) { firstLoad.current = false; return; }
     setSearchParams({ tab, season: seasonId, cat: activeCategory }, { replace: true });
   }, [tab, seasonId, activeCategory]);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [pRes, cRes] = await Promise.allSettled([
-        api.getPlayerStats(seasonId, { limit: 200 }),
-        api.getClubStats(seasonId,   { limit: 50  }),
-      ]);
-      setAllPlayers(pRes.status === 'fulfilled' && pRes.value.data?.length > 0
-        ? pRes.value.data : MOCK_PLAYER_STATS);
-      setAllClubs(cRes.status === 'fulfilled' && cRes.value.data?.length > 0
-        ? cRes.value.data : MOCK_CLUB_STATS);
-    } catch {
-      setAllPlayers(MOCK_PLAYER_STATS);
-      setAllClubs(MOCK_CLUB_STATS);
-    } finally {
-      setLoading(false);
-    }
-  }, [seasonId]);
-
-  useEffect(() => { load(); }, [load]);
 
   const filteredPlayers  = useMemo(() => applyFilters(allPlayers, filters), [allPlayers, filters]);
   const sortedPlayers    = useMemo(() => sortPlayers(filteredPlayers, playerSort, playerDir), [filteredPlayers, playerSort, playerDir]);
@@ -159,7 +141,7 @@ export default function StatsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <PageHero
         eyebrow="MTN Elite One · Saison 2025–26"
         title="Statistiques"
@@ -193,12 +175,12 @@ export default function StatsPage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
-            <StatCard icon={Target}       label="Buts marqués"      value={totalGoals}       color="text-[#FCD116]" delay={0}    />
+            <StatCard icon={Target}       label="Buts marqués"      value={totalGoals}       color="text-accent" delay={0}    />
             <StatCard icon={Zap}          label="Passes décisives"  value={totalAssists}                            delay={0.04} />
             <StatCard icon={TrendingUp}   label="Moy. buts / match" value={avgGoals}                               delay={0.08} />
             <StatCard icon={ArrowUpRight} label="Tirs tentés"       value={totalShots}                             delay={0.12} />
-            <StatCard icon={Square}       label="Cartons jaunes"    value={totalYellow}      color="text-[#FCD116]" delay={0.16} />
-            <StatCard icon={Square}       label="Cartons rouges"    value={totalRed}         color="text-[#CE1126]" delay={0.20} />
+            <StatCard icon={Square}       label="Cartons jaunes"    value={totalYellow}      color="text-accent" delay={0.16} />
+            <StatCard icon={Square}       label="Cartons rouges"    value={totalRed}         color="text-live" delay={0.20} />
             <StatCard icon={Target}       label="Penalties"         value={totalPens}                              delay={0.24} />
             <StatCard icon={Shield}       label="Clean sheets"      value={totalCleanSheets}                       delay={0.28} />
           </div>
@@ -209,10 +191,10 @@ export default function StatsPage() {
               color="text-accent" delay={0.32} />
             <StatCard icon={Zap} label="Top passeur"
               value={topAssister?.assists ?? 0} sub={topAssister?.playerName}
-              color="text-[#10B981]" delay={0.36} />
+              color="text-win" delay={0.36} />
             <StatCard icon={Square} label="Plus de cartons"
               value={(topCards?.yellowCards ?? 0) + (topCards?.redCards ?? 0)}
-              sub={topCards?.playerName} color="text-[#FCD116]" delay={0.40} />
+              sub={topCards?.playerName} color="text-accent" delay={0.40} />
           </div>
         </section>
 
@@ -345,6 +327,6 @@ export default function StatsPage() {
         )}
 
       </div>
-    </div>
+    </>
   );
 }

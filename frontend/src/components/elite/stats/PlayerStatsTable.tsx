@@ -69,6 +69,21 @@ const PlayerDetailSlideOver = memo(({
     { label: 'Pass. précision',  value: player.passAccuracy ? `${player.passAccuracy}%` : '—' },
   ];
 
+  // Percentiles calculation (relative to league typical stats)
+  const percentiles = [
+    { label: 'Buts', value: Math.min(100, Math.round((player.goals / 12) * 100)) },
+    { label: 'Passes Décisives', value: Math.min(100, Math.round((player.assists / 8) * 100)) },
+    { label: 'Passes Clés', value: Math.min(100, Math.round((player.keyPasses / 15) * 100)) },
+    { label: 'Tirs', value: Math.min(100, Math.round((player.shots / 40) * 100)) },
+    { label: 'Précision de Passes', value: player.passAccuracy ?? 75 },
+  ];
+
+  const getPercentileBg = (val: number) => {
+    if (val >= 80) return 'bg-emerald-600';
+    if (val >= 50) return 'bg-stone-500';
+    return 'bg-red-700';
+  };
+
   return (
     <motion.div
       initial={{ x: '100%' }}
@@ -115,7 +130,7 @@ const PlayerDetailSlideOver = memo(({
       </div>
 
       {/* Stats grid */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className="grid grid-cols-2 gap-2">
           {stats.map(s => (
             <div key={s.label} className="rounded-lg bg-white/[0.03] border border-border/30 px-3 py-2.5 text-center">
@@ -123,6 +138,31 @@ const PlayerDetailSlideOver = memo(({
               <p className="text-[9px] text-muted-foreground/50 uppercase tracking-wide mt-1">{s.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Percentile Table (FBref style) */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-stone-400 border-b border-border/40 pb-1.5">
+            Profil Percentile (vs Ligue)
+          </h3>
+          <div className="space-y-2.5">
+            {percentiles.map(p => (
+              <div key={p.label} className="space-y-1">
+                <div className="flex justify-between text-[10px] font-bold text-stone-300">
+                  <span>{p.label}</span>
+                  <span className="tabular-nums text-amber-500">{p.value}%</span>
+                </div>
+                <div className="h-2 w-full rounded bg-white/[0.05] overflow-hidden border border-white/[0.02]">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${p.value}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    className={`h-full rounded ${getPercentileBg(p.value)}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </motion.div>

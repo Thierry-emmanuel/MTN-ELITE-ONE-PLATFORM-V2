@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { footballApi, QK, ApiError } from '../services/api';
 import {
-  MOCK_FIXTURES, MOCK_RESULTS, MOCK_STANDINGS, DEV_SEASON_ID,
+  MOCK_FIXTURES, MOCK_RESULTS, MOCK_STANDINGS, MOCK_PLAYER_STATS, MOCK_CLUB_STATS, DEV_SEASON_ID,
 } from '../services/mockData';
 import type {
   FixturesFilter, ResultsFilter, StandingsFilter, MatchDay,
+  PlayerStatsFilter, ClubStatsFilter,
 } from '../types/football.types';
 
 const SEASON_ID =
@@ -197,5 +198,43 @@ export function useLegends() {
     queryKey: QK.legends(),
     queryFn: () => footballApi.getLegends(),
     staleTime: 300_000,
+  });
+}
+
+// ─── usePlayerStats ───────────────────────────────────────────────────────────
+export function usePlayerStats(seasonId: string, filters?: Omit<PlayerStatsFilter, 'seasonId'>) {
+  return useQuery({
+    queryKey: QK.playerStats(seasonId, filters),
+    queryFn: async () => {
+      try {
+        const res = await footballApi.getPlayerStats(seasonId, filters);
+        return res.data && res.data.length > 0 ? res.data : MOCK_PLAYER_STATS;
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
+          return MOCK_PLAYER_STATS;
+        }
+        throw err;
+      }
+    },
+    staleTime: 120_000,
+  });
+}
+
+// ─── useClubStats ─────────────────────────────────────────────────────────────
+export function useClubStats(seasonId: string, filters?: Omit<ClubStatsFilter, 'seasonId'>) {
+  return useQuery({
+    queryKey: QK.clubStats(seasonId, filters),
+    queryFn: async () => {
+      try {
+        const res = await footballApi.getClubStats(seasonId, filters);
+        return res.data && res.data.length > 0 ? res.data : MOCK_CLUB_STATS;
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
+          return MOCK_CLUB_STATS;
+        }
+        throw err;
+      }
+    },
+    staleTime: 120_000,
   });
 }

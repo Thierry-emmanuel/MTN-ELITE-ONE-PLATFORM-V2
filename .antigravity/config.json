@@ -1,0 +1,31 @@
+{
+  "ide": {
+    "name": "MTN Elite One Workspace",
+    "version": "2026.2",
+    "multiRoot": true
+  },
+  "projects": {
+    "frontend": {
+      "path": "frontend",
+      "framework": "React 18",
+      "language": "TypeScript",
+      "entryPoint": "frontend/src/main.tsx"
+    },
+    "backend": {
+      "path": "backend1",
+      "framework": "NestJS",
+      "language": "TypeScript",
+      "entryPoint": "backend1/src/main.ts"
+    }
+  },
+  "searchAndIndex": {
+    "exclude": [
+      "**/node_modules",
+      "**/.vite",
+      "backend1/dist",
+      "frontend/dist",
+      "*.docx"
+    ],
+    "watchExtensions": [".ts", ".tsx", ".json", ".css", ".schema"]
+  }
+}

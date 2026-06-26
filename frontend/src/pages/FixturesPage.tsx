@@ -12,7 +12,8 @@ import {
   ClubLogo, MatchStatusChip, FilterPill, PageHero,
   FixtureCardSkeleton, EmptyState, ErrorState,
   SummaryCard, MatchdayHeader, EventsTimeline,
-} from '../components/elite/FootballPrimitives';
+} from '@/components/ui/football';
+import { useFixtures } from '@/hooks/useFootball';
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
@@ -28,11 +29,11 @@ const FixtureCard = memo(({ match, index }: { match: Match; index: number }) => 
       transition={{ duration: 0.35, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
       className={`group relative rounded-xl border overflow-hidden transition-all duration-300 ${
         isLive
-          ? 'border-[#CE1126]/35 bg-[#CE1126]/[0.04] hover:border-[#CE1126]/55'
+          ? 'border-live/35 bg-live/[0.04] hover:border-live/55'
           : 'border-border bg-gradient-to-b from-white/[0.04] to-transparent hover:border-white/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]'
       }`}
     >
-      {isLive && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#CE1126]" />}
+      {isLive && <div className="absolute top-0 left-0 right-0 h-[2px] bg-live" />}
 
       <div
         className="p-4 cursor-pointer"
@@ -49,36 +50,58 @@ const FixtureCard = memo(({ match, index }: { match: Match; index: number }) => 
         </div>
 
         {/* Teams + score */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 flex flex-col items-center gap-1.5 text-center">
-            <ClubLogo club={match.homeClub} size={48} />
-            <span className="font-display text-xs leading-tight">{match.homeClub.name}</span>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex flex-col items-center gap-1.5 text-center min-w-0">
+            <ClubLogo club={match.homeClub} size={40} />
+            <span className="font-display text-[11px] leading-tight truncate w-full">{match.homeClub.name}</span>
           </div>
 
-          <div className="flex flex-col items-center shrink-0 gap-1">
+          <div className="flex flex-col items-center justify-center shrink-0">
             {match.homeScore !== null && match.awayScore !== null ? (
-              <div className={`font-display text-2xl tabular-nums leading-none ${isLive ? 'text-[#CE1126]' : 'text-foreground'}`}>
-                {match.homeScore} – {match.awayScore}
+              <div className="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 font-mono font-bold text-amber-500 text-sm flex items-center gap-1 shadow-inner">
+                <span>{match.homeScore}</span>
+                <span className="text-stone-600">:</span>
+                <span>{match.awayScore}</span>
               </div>
             ) : (
-              <div className="font-display text-xl text-muted-foreground/30">vs</div>
+              <div className="text-[11px] font-mono font-semibold text-stone-400 bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1">
+                {formatKickoff(match.kickoffUtc)}
+              </div>
             )}
-            <div className={`font-display text-sm ${isLive ? 'text-[#CE1126]' : 'text-accent'}`}>
-              {formatKickoff(match.kickoffUtc)}
-            </div>
             {isLive && match.liveMinute && (
-              <div className="flex items-center gap-1 text-[10px] text-[#CE1126]/70">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#CE1126] animate-pulse" />
+              <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 mt-1 uppercase tracking-wider animate-pulse">
+                <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
                 {match.liveMinute}'
               </div>
             )}
           </div>
 
-          <div className="flex-1 flex flex-col items-center gap-1.5 text-center">
-            <ClubLogo club={match.awayClub} size={48} />
-            <span className="font-display text-xs leading-tight">{match.awayClub.name}</span>
+          <div className="flex flex-col items-center gap-1.5 text-center min-w-0">
+            <ClubLogo club={match.awayClub} size={40} />
+            <span className="font-display text-[11px] leading-tight truncate w-full">{match.awayClub.name}</span>
           </div>
         </div>
+
+        {/* Micro-grid of events */}
+        {match.events && match.events.length > 0 && (
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-3 mt-3 pt-2 border-t border-border/20 text-[9px] text-muted-foreground/60 font-mono">
+            <div className="text-right space-y-0.5 min-w-0 truncate">
+              {match.events.filter(e => e.clubId === match.homeClub.id).map(e => (
+                <div key={e.id} className="truncate">
+                  {e.playerName} ({e.minute}') {e.type === 'GOAL' || e.type === 'PENALTY_GOAL' ? '⚽' : e.type === 'YELLOW_CARD' ? '🟨' : e.type === 'RED_CARD' ? '🟥' : ''}
+                </div>
+              ))}
+            </div>
+            <div className="w-4" />
+            <div className="text-left space-y-0.5 min-w-0 truncate">
+              {match.events.filter(e => e.clubId === match.awayClub.id).map(e => (
+                <div key={e.id} className="truncate">
+                  {e.type === 'GOAL' || e.type === 'PENALTY_GOAL' ? '⚽' : e.type === 'YELLOW_CARD' ? '🟨' : e.type === 'RED_CARD' ? '🟥' : ''} {e.playerName} ({e.minute}')
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Meta */}
         {(match.venue || match.referee) && (
@@ -158,8 +181,8 @@ const FixturesSummary = memo(({ days }: { days: MatchDay[] }) => {
         label="Matchs à venir" value={total} delay={0}
         badge={liveCount > 0 ? (
           <div className="flex items-center justify-center gap-1 mt-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#CE1126] animate-pulse" />
-            <span className="text-[9px] text-[#CE1126] font-bold uppercase">{liveCount} live</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
+            <span className="text-[9px] text-live font-bold uppercase">{liveCount} live</span>
           </div>
         ) : undefined}
       />
@@ -172,26 +195,11 @@ FixturesSummary.displayName = 'FixturesSummary';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function FixturesPage() {
-  const [days,        setDays]        = useState<MatchDay[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState<string | null>(null);
+  const { data: daysData, isLoading: loading } = useFixtures();
+  const days = daysData ?? MOCK_FIXTURES;
   const [roundFilter, setRoundFilter] = useState<number | null>(null);
   const [clubFilter,  setClubFilter]  = useState<string | null>(null);
   const [search,      setSearch]      = useState('');
-
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const data = await api.getFixtures(SEASON_ID, { limit: 100 });
-      setDays(data.length > 0 ? data : MOCK_FIXTURES);
-    } catch {
-      setDays(MOCK_FIXTURES);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   const rounds = useMemo(() => extractRounds(days, 'asc'), [days]);
   const clubs  = useMemo(() => extractClubs(days), [days]);
@@ -217,14 +225,14 @@ export default function FixturesPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <PageHero
         eyebrow="MTN Elite One · Saison 2025–26"
         title="Calendrier"
         subtitle="Prochains matchs · Saison 2025–2026"
         accentColor="green"
         badge={liveCount > 0 ? (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CE1126]/15 border border-[#CE1126]/30 text-[#CE1126] text-xs font-bold uppercase tracking-wider animate-pulse">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-live/15 border border-live/30 text-live text-xs font-bold uppercase tracking-wider animate-pulse">
             <Radio className="h-3 w-3" />
             {liveCount} en direct
           </span>
@@ -318,6 +326,6 @@ export default function FixturesPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

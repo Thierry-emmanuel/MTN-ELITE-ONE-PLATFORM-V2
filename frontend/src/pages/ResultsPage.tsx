@@ -10,6 +10,7 @@ import {
   ResultCardSkeleton, EmptyState, ErrorState,
   SummaryCard, MatchdayHeader, EventsTimeline, MatchMeta,
 } from '../components/elite/FootballPrimitives';
+import { useResults } from '@/hooks/useFootball';
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
@@ -64,43 +65,64 @@ const ResultCard = memo(({ match, index }: { match: Match; index: number }) => {
         </div>
 
         {/* Teams + score */}
-        <div className="flex items-center gap-3">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           {/* Home */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <ClubLogo club={match.homeClub} size={36} className="shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
+            <ClubLogo club={match.homeClub} size={32} className="shrink-0" />
             <div className="min-w-0">
-              <span className={`font-display text-sm leading-tight block truncate ${homeWon ? 'text-foreground' : 'text-muted-foreground'}`}>
+              <span className={`font-display text-xs leading-tight block truncate ${homeWon ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
                 {match.homeClub.name}
               </span>
-              <span className="text-[9px] text-muted-foreground/40 uppercase flex items-center gap-0.5">
-                <Home className="h-2.5 w-2.5" /> Domicile
+              <span className="text-[8px] text-muted-foreground/40 uppercase flex items-center gap-0.5">
+                <Home className="h-2 w-2" /> Domicile
               </span>
             </div>
           </div>
 
           {/* Score */}
-          <div className="flex flex-col items-center shrink-0 gap-0.5">
-            <div className="flex items-center gap-1.5 font-display text-2xl tabular-nums">
-              <span className={homeWon ? 'text-foreground' : draw ? 'text-muted-foreground' : 'text-muted-foreground/50'}>{hs}</span>
-              <span className="text-muted-foreground/20 text-lg">–</span>
-              <span className={awayWon ? 'text-foreground' : draw ? 'text-muted-foreground' : 'text-muted-foreground/50'}>{as_}</span>
+          <div className="flex flex-col items-center justify-center shrink-0">
+            <div className="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 font-mono font-bold text-amber-500 text-xs flex items-center gap-1 shadow-inner">
+              <span>{hs}</span>
+              <span className="text-stone-600">:</span>
+              <span>{as_}</span>
             </div>
-            {draw && <span className="text-[9px] text-[#FCD116]/60 uppercase tracking-widest font-bold">Nul</span>}
+            {draw && <span className="text-[8px] text-[#FCD116]/60 uppercase tracking-widest font-black mt-0.5">Nul</span>}
           </div>
 
           {/* Away */}
-          <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
-            <ClubLogo club={match.awayClub} size={36} className="shrink-0" />
+          <div className="flex items-center gap-2 min-w-0 flex-row-reverse">
+            <ClubLogo club={match.awayClub} size={32} className="shrink-0" />
             <div className="min-w-0 text-right">
-              <span className={`font-display text-sm leading-tight block truncate ${awayWon ? 'text-foreground' : 'text-muted-foreground'}`}>
+              <span className={`font-display text-xs leading-tight block truncate ${awayWon ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
                 {match.awayClub.name}
               </span>
-              <span className="text-[9px] text-muted-foreground/40 uppercase flex items-center gap-0.5 justify-end">
-                <Plane className="h-2.5 w-2.5" /> Extérieur
+              <span className="text-[8px] text-muted-foreground/40 uppercase flex items-center gap-0.5 justify-end">
+                <Plane className="h-2 w-2" /> Extérieur
               </span>
             </div>
           </div>
         </div>
+
+        {/* Micro-grid of events */}
+        {match.events && match.events.length > 0 && (
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-3 mt-3 pt-2 border-t border-border/20 text-[9px] text-muted-foreground/60 font-mono">
+            <div className="text-right space-y-0.5 min-w-0 truncate">
+              {match.events.filter(e => e.clubId === match.homeClub.id).map(e => (
+                <div key={e.id} className="truncate">
+                  {e.playerName} ({e.minute}') {e.type === 'GOAL' || e.type === 'PENALTY_GOAL' ? '⚽' : e.type === 'YELLOW_CARD' ? '🟨' : e.type === 'RED_CARD' ? '🟥' : ''}
+                </div>
+              ))}
+            </div>
+            <div className="w-4" />
+            <div className="text-left space-y-0.5 min-w-0 truncate">
+              {match.events.filter(e => e.clubId === match.awayClub.id).map(e => (
+                <div key={e.id} className="truncate">
+                  {e.type === 'GOAL' || e.type === 'PENALTY_GOAL' ? '⚽' : e.type === 'YELLOW_CARD' ? '🟨' : e.type === 'RED_CARD' ? '🟥' : ''} {e.playerName} ({e.minute}')
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* xG */}
         <div className="mt-3 pt-3 border-t border-border/30">
@@ -180,27 +202,11 @@ SummaryBar.displayName = 'SummaryBar';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ResultsPage() {
-  const [days,        setDays]        = useState<MatchDay[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState<string | null>(null);
+  const { data: daysData, isLoading: loading } = useResults();
+  const days = daysData ?? MOCK_RESULTS;
   const [roundFilter, setRoundFilter] = useState<number | null>(null);
   const [clubFilter,  setClubFilter]  = useState<string | null>(null);
   const [search,      setSearch]      = useState('');
-
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const res  = await api.getResults(SEASON_ID, { page: 1, pageSize: 200 });
-      const data = res.grouped ?? res.data;
-      setDays(data.length > 0 ? data : MOCK_RESULTS);
-    } catch {
-      setDays(MOCK_RESULTS);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   const rounds = useMemo(() => extractRounds(days as any, 'desc'), [days]);
   const clubs  = useMemo(() => extractClubs(days as any), [days]);

@@ -5,7 +5,7 @@ import PageLayout from "@/layout/PageLayout";
 // ─── Route-level code splitting ───────────────────────────────────────────────
 // Each page is its own chunk — first-load JS drops significantly.
 
-const Index           = lazy(() => import("./pages/Index"));
+const HomePage         = lazy(() => import("./pages/HomePage"));
 const AuthPage        = lazy(() => import("./pages/AuthPage").then(m => ({ default: m.AuthPage })));
 const NotFound        = lazy(() => import("./pages/NotFound"));
 const FixturesPage    = lazy(() => import("./pages/FixturesPage"));
@@ -44,7 +44,7 @@ const App = () => (
     <Suspense fallback={<PageFallback />}>
       <Routes>
         {/* Homepage — manages its own layout for the hero flush effect */}
-        <Route path="/"  element={<Index />} />
+        <Route path="/"  element={<HomePage />} />
 
         {/* Auth pages — no footer */}
         <Route path="/login"    element={<AuthPage />} />

@@ -4,6 +4,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import {
   Wifi, WifiOff, Sparkles, Vote, ChevronRight,
   Trophy, Users, Shield, ClipboardList, CircleDot,
+  Award, Crown,
 } from 'lucide-react';
 import { useAwards, useTeamOfWeek, useRealtimeVotes } from '@/hooks/useAwards';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '@/store/awards.store';
@@ -119,10 +120,10 @@ const AwardsGrid = ({
         transition={{ duration: 0.35 }}
         className="flex items-center gap-2 mb-4"
       >
-        <span className="text-lg">{icon}</span>
-        <h2 className="font-display text-base font-black text-white/80">{title}</h2>
-        <span className="text-[11px] text-white/25 font-normal ml-1">({awards.length})</span>
-        <div className="flex-1 h-px bg-gradient-to-r from-white/8 to-transparent ml-2" />
+        <span className="text-lg text-amber-500">{icon}</span>
+        <h2 className="font-sans text-sm font-black uppercase tracking-widest text-stone-100">{title}</h2>
+        <span className="text-[11px] text-stone-400 font-normal ml-1">({awards.length})</span>
+        <div className="flex-1 h-px bg-gradient-to-r from-amber-500/20 to-transparent ml-2" />
       </motion.div>
 
       <motion.div
@@ -210,7 +211,7 @@ export default function AwardsPage() {
   const closed    = useMemo(() => filtered.filter(a => a.votingStatus !== 'OPEN' && a.votingStatus !== 'ANNOUNCED'), [filtered]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black text-stone-100">
       <PageHero
         eyebrow="MTN Elite One · Saison 2025–26"
         title="Palmarès & Récompenses"
@@ -303,9 +304,9 @@ export default function AwardsPage() {
           </div>
         ) : (
           <div className="space-y-10">
-            <AwardsGrid title="Votes ouverts"      icon={<Vote         className="h-4 w-4" />} awards={openRest}  votedMap={votedMap} />
-            <AwardsGrid title="Récemment annoncés" icon={<Trophy       className="h-4 w-4" />} awards={announced}  votedMap={votedMap} />
-            <AwardsGrid title="Clôturés"           icon={<ClipboardList className="h-4 w-4" />} awards={closed}     votedMap={votedMap} />
+            <AwardsGrid title="Votes ouverts"      icon={<Sparkles     className="h-4 w-4 text-amber-500" />} awards={openRest}  votedMap={votedMap} />
+            <AwardsGrid title="Récemment annoncés" icon={<Crown        className="h-4 w-4 text-amber-500" />} awards={announced}  votedMap={votedMap} />
+            <AwardsGrid title="Clôturés"           icon={<Award        className="h-4 w-4 text-amber-500" />} awards={closed}     votedMap={votedMap} />
           </div>
         )}
 

@@ -29,7 +29,7 @@ export class Award {
   @Column({ name: 'season_id' })
   seasonId: string;
 
-  @Column({ name: 'winner_id', nullable: true })
+  @Column({ name: 'winner_id', type: 'varchar', nullable: true })
   winnerId: string | null;
 
   // ── Relations ──

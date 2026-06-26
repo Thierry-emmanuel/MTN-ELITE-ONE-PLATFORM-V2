@@ -12,7 +12,7 @@ import type { StandingsView, Zone } from '../types/football.types';
 import {
   ClubLogo, FormIndicator, StandingRowSkeleton,
   PageHero, ErrorState, SummaryCard,
-} from '../components/elite/FootballPrimitives';
+} from '../components/ui/football';
 import { Link } from 'react-router-dom';
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
@@ -25,7 +25,6 @@ function normaliseForm(f: string): 'W' | 'D' | 'L' {
   return 'L';
 }
 
-// ─── Convert ApiStanding → Standing-compatible ─────────────────────────────
 function adaptStanding(s: ApiStanding, idx: number) {
   return {
     id:             s.id,
@@ -47,21 +46,21 @@ function adaptStanding(s: ApiStanding, idx: number) {
   };
 }
 
-// ─── Zone styling ─────────────────────────────────────────────────────────────
+// ─── Zone styling — using semantic tokens ─────────────────────────────────────
 const ZONE_BORDER: Record<Zone, string> = {
-  champion:   'border-l-[#FCD116]',
-  caf:        'border-l-[#008751]',
-  relegation: 'border-l-[#CE1126]',
+  champion:   'border-l-accent',
+  caf:        'border-l-primary',
+  relegation: 'border-l-live',
   none:       'border-l-transparent',
 };
 const ZONE_BG: Record<Zone, string> = {
-  champion:   'bg-[#FCD116]/[0.03]',
-  caf:        'bg-[#008751]/[0.03]',
-  relegation: 'bg-[#CE1126]/[0.03]',
+  champion:   'bg-accent/[0.03]',
+  caf:        'bg-primary/[0.03]',
+  relegation: 'bg-live/[0.03]',
   none:       '',
 };
 
-// ─── Position delta (replace with live API data when ready) ──────────────────
+// ─── Position delta ───────────────────────────────────────────────────────────
 const POSITION_CHANGES: Record<number, number> = {
   1: 2, 2: 0, 3: -1, 4: 1, 5: 0, 6: -2, 7: 1, 8: -1, 9: 0, 10: -1,
 };
@@ -69,19 +68,19 @@ const POSITION_CHANGES: Record<number, number> = {
 const PositionDelta = ({ pos }: { pos: number }) => {
   const d = POSITION_CHANGES[pos] ?? 0;
   if (d > 0) return (
-    <span className="flex items-center gap-0.5 text-[#1F8A4C] text-[9px] font-bold">
+    <span className="flex items-center gap-0.5 text-win text-[9px] font-bold">
       <TrendingUp className="h-2.5 w-2.5" />+{d}
     </span>
   );
   if (d < 0) return (
-    <span className="flex items-center gap-0.5 text-[#CE1126] text-[9px] font-bold">
+    <span className="flex items-center gap-0.5 text-live text-[9px] font-bold">
       <TrendingDown className="h-2.5 w-2.5" />{d}
     </span>
   );
   return <span className="text-white/20"><Minus className="h-2.5 w-2.5" /></span>;
 };
 
-// ─── Single standings row (desktop) ──────────────────────────────────────────
+// ─── Standing row ─────────────────────────────────────────────────────────────
 interface RowData {
   id: string; position: number; club: any;
   played: number; won: number; drawn: number; lost: number;
@@ -97,12 +96,15 @@ const StandingRow = memo(({
 
   const cols = [
     { val: row.played,       cls: 'text-muted-foreground' },
-    { val: row.won,          cls: 'text-[#1F8A4C]' },
-    { val: row.drawn,        cls: 'text-[#FCD116]' },
-    { val: row.lost,         cls: 'text-[#CE1126]' },
+    { val: row.won,          cls: 'text-win' },
+    { val: row.drawn,        cls: 'text-draw' },
+    { val: row.lost,         cls: 'text-live' },
     { val: row.goalsFor,     cls: 'text-foreground/70' },
     { val: row.goalsAgainst, cls: 'text-foreground/70' },
-    { val: gd >= 0 ? `+${gd}` : String(gd), cls: gd > 0 ? 'text-[#1F8A4C]' : gd < 0 ? 'text-[#CE1126]' : 'text-muted-foreground' },
+    {
+      val: gd >= 0 ? `+${gd}` : String(gd),
+      cls: gd > 0 ? 'text-win' : gd < 0 ? 'text-live' : 'text-muted-foreground',
+    },
   ];
 
   return (
@@ -116,8 +118,15 @@ const StandingRow = memo(({
     >
       {/* Position + delta */}
       <div className="w-10 flex items-center gap-1 shrink-0">
-        <span className={`font-display text-sm tabular-nums w-4 text-center ${zone === 'champion' ? 'text-[#FCD116]' : zone === 'caf' ? 'text-[#008751]' : zone === 'relegation' ? 'text-[#CE1126]/70' : 'text-muted-foreground'}`}>
-          {row.position === 1 ? <Trophy className="h-3.5 w-3.5 text-[#FCD116] mx-auto" /> : row.position}
+        <span className={`font-display text-sm tabular-nums w-4 text-center ${
+          zone === 'champion'   ? 'text-accent' :
+          zone === 'caf'        ? 'text-primary' :
+          zone === 'relegation' ? 'text-live/70' :
+          'text-muted-foreground'
+        }`}>
+          {row.position === 1
+            ? <Trophy className="h-3.5 w-3.5 text-accent mx-auto" />
+            : row.position}
         </span>
         <PositionDelta pos={row.position} />
       </div>
@@ -127,7 +136,7 @@ const StandingRow = memo(({
       <div className="flex-1 min-w-0">
         <Link
           to={`/clubs/${row.club.id}`}
-          className={`text-sm font-semibold truncate transition-colors block leading-tight ${isHovered ? 'text-[#FCD116]' : 'text-foreground'}`}
+          className={`text-sm font-semibold truncate transition-colors block leading-tight ${isHovered ? 'text-accent' : 'text-foreground'}`}
         >
           {row.club.name}
         </Link>
@@ -144,7 +153,7 @@ const StandingRow = memo(({
         {row.formGuide.slice(-5).map((r, i) => <FormIndicator key={i} result={r} />)}
       </div>
 
-      <div className={`w-10 text-right font-display text-base tabular-nums shrink-0 ${zone === 'champion' ? 'text-[#FCD116]' : 'text-foreground'}`}>
+      <div className={`w-10 text-right font-display text-base tabular-nums shrink-0 ${zone === 'champion' ? 'text-accent' : 'text-foreground'}`}>
         {row.points}
       </div>
     </motion.div>
@@ -153,8 +162,8 @@ const StandingRow = memo(({
 StandingRow.displayName = 'StandingRow';
 
 // ─── Desktop table ────────────────────────────────────────────────────────────
-const COL_HEADERS  = ['J', 'V', 'N', 'D', 'BP', 'BC', 'DB'];
-const COL_TITLES   = ['Joués','Victoires','Nuls','Défaites','Buts Pour','Buts Contre','Différence'];
+const COL_HEADERS = ['J', 'V', 'N', 'D', 'BP', 'BC', 'DB'];
+const COL_TITLES  = ['Joués','Victoires','Nuls','Défaites','Buts Pour','Buts Contre','Différence'];
 
 const DesktopTable = memo(({ rows }: { rows: RowData[] }) => {
   const [hovered, setHovered] = useState<string | null>(null);
@@ -186,9 +195,9 @@ const DesktopTable = memo(({ rows }: { rows: RowData[] }) => {
         />
       ))}
 
-      <div className="flex items-center gap-2 px-4 py-2.5 border-t border-[#CE1126]/15 bg-[#CE1126]/[0.025]">
-        <Info className="h-3 w-3 text-[#CE1126]/50 shrink-0" />
-        <span className="text-[10px] text-[#CE1126]/40">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-t border-live/15 bg-live/[0.025]">
+        <Info className="h-3 w-3 text-live/50 shrink-0" />
+        <span className="text-[10px] text-live/40">
           Les 2 derniers clubs sont relégués en MTN Elite Two à la fin de la saison.
         </span>
       </div>
@@ -221,16 +230,16 @@ const MobileTable = memo(({ rows }: { rows: RowData[] }) => {
             transition={{ delay: idx * 0.02 }}
             className={`flex items-center gap-2 px-3 py-2.5 border-b border-border/20 last:border-0 border-l-2 ${ZONE_BORDER[zone]}`}
           >
-            <span className={`w-5 text-center font-display text-xs tabular-nums ${zone === 'champion' ? 'text-[#FCD116]' : 'text-muted-foreground'}`}>
+            <span className={`w-5 text-center font-display text-xs tabular-nums ${zone === 'champion' ? 'text-accent' : 'text-muted-foreground'}`}>
               {row.position}
             </span>
             <ClubLogo club={row.club} size={22} />
             <span className="flex-1 text-xs font-medium truncate">{row.club.name}</span>
             <span className="w-6 text-center text-xs text-muted-foreground tabular-nums">{row.played}</span>
-            <span className={`w-8 text-center text-xs tabular-nums ${gd > 0 ? 'text-[#1F8A4C]' : gd < 0 ? 'text-[#CE1126]' : 'text-muted-foreground'}`}>
+            <span className={`w-8 text-center text-xs tabular-nums ${gd > 0 ? 'text-win' : gd < 0 ? 'text-live' : 'text-muted-foreground'}`}>
               {gd > 0 ? `+${gd}` : gd}
             </span>
-            <span className={`w-8 text-center font-display text-sm tabular-nums ${zone === 'champion' ? 'text-[#FCD116]' : 'text-foreground'}`}>
+            <span className={`w-8 text-center font-display text-sm tabular-nums ${zone === 'champion' ? 'text-accent' : 'text-foreground'}`}>
               {row.points}
             </span>
           </motion.div>
@@ -245,12 +254,12 @@ MobileTable.displayName = 'MobileTable';
 const ZoneLegend = () => (
   <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 text-[10px] text-muted-foreground">
     {[
-      { color: 'bg-[#FCD116]', label: 'Champion MTN Elite One' },
-      { color: 'bg-[#008751]', label: 'Qualification CAF' },
-      { color: 'bg-[#CE1126]', label: 'Relégation Elite Two' },
+      { cls: 'bg-accent',   label: 'Champion MTN Elite One' },
+      { cls: 'bg-primary',  label: 'Qualification CAF' },
+      { cls: 'bg-live',     label: 'Relégation Elite Two' },
     ].map(z => (
       <span key={z.label} className="flex items-center gap-1.5">
-        <span className={`h-2 w-2 rounded-sm ${z.color}`} />
+        <span className={`h-2 w-2 rounded-sm ${z.cls}`} />
         {z.label}
       </span>
     ))}
@@ -259,10 +268,10 @@ const ZoneLegend = () => (
 
 // ─── View tabs ────────────────────────────────────────────────────────────────
 const VIEW_TABS: { id: StandingsView; label: string; icon: React.ReactNode }[] = [
-  { id: 'overall', label: 'Général',    icon: <ListOrdered className="h-3.5 w-3.5" /> },
-  { id: 'home',    label: 'Domicile',   icon: <Home className="h-3.5 w-3.5" /> },
-  { id: 'away',    label: 'Extérieur',  icon: <Plane className="h-3.5 w-3.5" /> },
-  { id: 'form',    label: 'Forme',      icon: <BarChart2 className="h-3.5 w-3.5" /> },
+  { id: 'overall', label: 'Général',   icon: <ListOrdered className="h-3.5 w-3.5" /> },
+  { id: 'home',    label: 'Domicile',  icon: <Home className="h-3.5 w-3.5" /> },
+  { id: 'away',    label: 'Extérieur', icon: <Plane className="h-3.5 w-3.5" /> },
+  { id: 'form',    label: 'Forme',     icon: <BarChart2 className="h-3.5 w-3.5" /> },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -290,13 +299,13 @@ export default function StandingsPage() {
   const adapted = useMemo(() => raw.map(adaptStanding), [raw]);
   const rows    = useMemo(() => sortStandings(adapted as any, view) as RowData[], [adapted, view]);
 
-  const leader       = rows[0];
-  const totalGoals   = rows.reduce((a, s) => a + s.goalsFor, 0);
-  const totalGames   = Math.round(rows.reduce((a, s) => a + s.played, 0) / 2);
+  const leader     = rows[0];
+  const totalGoals = rows.reduce((a, s) => a + s.goalsFor, 0);
+  const totalGames = Math.round(rows.reduce((a, s) => a + s.played, 0) / 2);
   const currentRound = rows[0]?.played ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <PageHero
         eyebrow="MTN Elite One · Saison 2025–26"
         title="Classement"
@@ -308,9 +317,9 @@ export default function StandingsPage() {
         {/* Summary cards */}
         {!loading && rows.length > 0 && (
           <div className="grid grid-cols-3 gap-3 mb-6">
-            <SummaryCard label="Leader" value={leader?.club.short ?? '—'} sub={`${leader?.points ?? 0} pts`} delay={0} />
-            <SummaryCard label="Buts marqués" value={totalGoals} sub="cette saison" delay={0.06} />
-            <SummaryCard label="Matchs joués" value={totalGames} sub={`J${currentRound} en cours`} delay={0.12} />
+            <SummaryCard label="Leader"        value={leader?.club.short ?? '—'} sub={`${leader?.points ?? 0} pts`} delay={0} />
+            <SummaryCard label="Buts marqués"  value={totalGoals} sub="cette saison" delay={0.06} />
+            <SummaryCard label="Matchs joués"  value={totalGames} sub={`J${currentRound} en cours`} delay={0.12} />
           </div>
         )}
 
@@ -361,8 +370,8 @@ export default function StandingsPage() {
         <ZoneLegend />
 
         <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground/40">
-          <span className="flex items-center gap-1 text-[#1F8A4C]"><TrendingUp className="h-3 w-3" /> Progression</span>
-          <span className="flex items-center gap-1 text-[#CE1126]"><TrendingDown className="h-3 w-3" /> Régression</span>
+          <span className="flex items-center gap-1 text-win"><TrendingUp className="h-3 w-3" /> Progression</span>
+          <span className="flex items-center gap-1 text-live"><TrendingDown className="h-3 w-3" /> Régression</span>
           <span className="flex items-center gap-1"><Minus className="h-3 w-3" /> Inchangé</span>
         </div>
 
@@ -374,6 +383,6 @@ export default function StandingsPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

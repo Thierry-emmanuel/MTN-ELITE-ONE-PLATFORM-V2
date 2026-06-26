@@ -3,10 +3,12 @@ import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { footballApi as api } from "@/services/api";
 import { MOCK_RESULTS, DEV_SEASON_ID } from "@/services/mockData";
-import { ClubLogo } from "@/components/elite/FootballUI";
+import { ClubLogo } from "@/components/ui/football";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
 import type { ApiMatch } from "@/types/football.types";
+import { useResults } from "@/hooks/useFootball";
+import { useMemo } from "react";
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
@@ -49,12 +51,12 @@ const ResultRow = ({ match }: { match: ApiMatch }) => {
 
         {/* Score */}
         <div className="flex flex-col items-center gap-0.5 shrink-0">
-          <div className="flex items-center gap-1.5 font-display text-lg tabular-nums">
-            <span className={homeWin ? "text-accent" : draw ? "text-draw" : "text-muted-foreground"}>{hs}</span>
-            <span className="text-muted-foreground/30 text-sm">–</span>
-            <span className={awayWin ? "text-accent" : draw ? "text-draw" : "text-muted-foreground"}>{as_}</span>
+          <div className="bg-zinc-950 border border-zinc-800 rounded px-2 py-0.5 font-mono font-bold text-amber-500 text-xs flex items-center gap-1 shadow-inner">
+            <span>{hs}</span>
+            <span className="text-stone-600">:</span>
+            <span>{as_}</span>
           </div>
-          <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50">FT · {date}</span>
+          <span className="text-[8px] uppercase tracking-widest text-stone-500">FT · {date}</span>
         </div>
 
         {/* Away */}
@@ -91,25 +93,18 @@ const SkeletonRow = () => (
 export const Results = () => {
   const ref    = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-  const [matches, setMatches] = useState<ApiMatch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [round,   setRound]   = useState<number>(1);
+  const { data: daysData, isLoading: loading } = useResults();
 
-  useEffect(() => {
-    api.getResults(SEASON_ID, { pageSize: 50 })
-      .then(res => {
-        const days = res.grouped ?? res.data ?? [];
-        // Get most recent finished matches, flatten, take last 8
-        const allMatches = days.flatMap((d: any) => d.matches)
-          .filter((m: any) => m.status === "FT" || m.status === "FINISHED")
-          .slice(-8)
-          .reverse();
-        if (allMatches.length > 0) setRound(allMatches[0].round);
-        setMatches(allMatches.length > 0 ? (allMatches as any) : MOCK_RESULTS.flatMap((d: any) => d.matches).slice(0, 6));
-      })
-      .catch(() => setMatches(MOCK_RESULTS.flatMap((d: any) => d.matches).slice(0, 6) as any))
-      .finally(() => setLoading(false));
-  }, []);
+  const matches = useMemo(() => {
+    const days = daysData ?? MOCK_RESULTS;
+    const allMatches = days.flatMap(d => d.matches)
+      .filter(m => m.status === "FT" || m.status === "FINISHED")
+      .slice(-8)
+      .reverse();
+    return allMatches;
+  }, [daysData]);
+
+  const round = matches[0]?.round ?? 1;
 
 
   return (
