@@ -24,6 +24,7 @@ import { TalentsModule }     from './talents/talents.module';
 import { HallOfFameModule }  from './hall-of-fame/hall-of-fame.module';
 import { CultureStoriesModule } from './culture-stories/culture-stories.module';
 import { HomepageLayoutModule } from './homepage-layout/homepage-layout.module';
+import { CoachesModule }        from './coaches/coaches.module';
 import { APP_GUARD }         from '@nestjs/core';
 import { ThrottlerGuard }    from '@nestjs/throttler';
 
@@ -102,6 +103,7 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     HallOfFameModule,
     CultureStoriesModule,
     HomepageLayoutModule,
+    CoachesModule,
   ],
   providers: [
     {

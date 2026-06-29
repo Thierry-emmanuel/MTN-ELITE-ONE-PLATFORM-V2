@@ -194,17 +194,129 @@ export const layoutApi = {
     await apiClient.delete(`/talents/${id}`);
   },
 
-  // Metadata Helpers
+  // ── Seasons CRUD ────────────────────────────────────────────────────────────
   getSeasons: async (): Promise<any[]> => {
     const res = await apiClient.get<any[]>('/seasons');
     return res.data;
   },
-  getClubs: async (): Promise<any> => {
-    const res = await apiClient.get('/clubs');
-    return res.data; // PaginatedResponse of clubs
+  createSeason: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/seasons', dto);
+    return res.data;
   },
+  updateSeason: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/seasons/${id}`, dto);
+    return res.data;
+  },
+  activateSeason: async (id: string): Promise<any> => {
+    const res = await apiClient.patch(`/seasons/${id}/activate`);
+    return res.data;
+  },
+  closeSeason: async (id: string): Promise<any> => {
+    const res = await apiClient.patch(`/seasons/${id}/close`);
+    return res.data;
+  },
+  initStandings: async (id: string): Promise<any> => {
+    const res = await apiClient.post(`/seasons/${id}/initialize-standings`);
+    return res.data;
+  },
+  deleteSeason: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/seasons/${id}`);
+    return res.data;
+  },
+
+  // ── Clubs CRUD ──────────────────────────────────────────────────────────────
+  getClubs: async (params?: any): Promise<any> => {
+    const res = await apiClient.get('/clubs', { params });
+    return res.data;
+  },
+  createClub: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/clubs', dto);
+    return res.data;
+  },
+  updateClub: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/clubs/${id}`, dto);
+    return res.data;
+  },
+  deleteClub: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/clubs/${id}`);
+    return res.data;
+  },
+
+  // ── Players CRUD ─────────────────────────────────────────────────────────────
   getPlayers: async (params?: any): Promise<any> => {
     const res = await apiClient.get('/players', { params });
-    return res.data; // PaginatedResponse of players
+    return res.data;
+  },
+  createPlayer: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/players', dto);
+    return res.data;
+  },
+  updatePlayer: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/players/${id}`, dto);
+    return res.data;
+  },
+  transferPlayer: async (playerId: string, clubId: string): Promise<any> => {
+    const res = await apiClient.patch(`/players/${playerId}/transfer/${clubId}`);
+    return res.data;
+  },
+  deletePlayer: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/players/${id}`);
+    return res.data;
+  },
+
+  // ── Coaches CRUD ─────────────────────────────────────────────────────────────
+  getCoaches: async (params?: any): Promise<any> => {
+    const res = await apiClient.get('/coaches', { params });
+    return res.data;
+  },
+  createCoach: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/coaches', dto);
+    return res.data;
+  },
+  updateCoach: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/coaches/${id}`, dto);
+    return res.data;
+  },
+  assignCoach: async (coachId: string, clubId: string): Promise<any> => {
+    const res = await apiClient.patch(`/coaches/${coachId}/assign/${clubId}`);
+    return res.data;
+  },
+  unassignCoach: async (coachId: string): Promise<any> => {
+    const res = await apiClient.patch(`/coaches/${coachId}/unassign`);
+    return res.data;
+  },
+  deleteCoach: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/coaches/${id}`);
+    return res.data;
+  },
+
+  // ── Users CRUD (Admin) ───────────────────────────────────────────────────────
+  getUsers: async (params?: any): Promise<any> => {
+    const res = await apiClient.get('/users', { params });
+    return res.data;
+  },
+  createAdminUser: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/users/admin-create', dto);
+    return res.data;
+  },
+  updateUser: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/users/${id}`, dto);
+    return res.data;
+  },
+  toggleUserActive: async (id: string): Promise<any> => {
+    const res = await apiClient.patch(`/users/${id}/toggle-active`);
+    return res.data;
+  },
+  approveEditor: async (id: string): Promise<any> => {
+    const res = await apiClient.patch(`/users/${id}/approve-editor`);
+    return res.data;
+  },
+  resetUserPassword: async (id: string, newPassword: string): Promise<any> => {
+    const res = await apiClient.patch(`/users/${id}/reset-password`, { newPassword });
+    return res.data;
+  },
+  deleteUser: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/users/${id}`);
+    return res.data;
   },
 };

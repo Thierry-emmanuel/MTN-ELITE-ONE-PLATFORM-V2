@@ -1,5 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Shield, Home, Layers, Image, Calendar, Award, FileText, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Shield, LayoutDashboard, Layers, Image, Calendar,
+  Trophy, FileText, Star, BarChart2, ExternalLink,
+  ChevronRight,
+} from 'lucide-react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -7,88 +12,143 @@ interface AdminLayoutProps {
   setActiveTab: (tab: string) => void;
 }
 
-export default function AdminLayout({ children, activeTab, setActiveTab }: AdminLayoutProps) {
-  const tabs = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: Home },
-    { id: 'layout', label: 'Mise en page', icon: Layers },
-    { id: 'hero', label: 'Bannières Hero', icon: Image },
-    { id: 'matches', label: 'Matchs & Résultats', icon: Calendar },
-    { id: 'awards', label: 'Awards & Ballon d\'or', icon: Award },
-    { id: 'news', label: 'Actualités & News', icon: FileText },
-    { id: 'halloffame', label: 'Légendes & Talents', icon: Star },
-  ];
+const NAV_GROUPS = [
+  {
+    group: 'Général',
+    items: [
+      { id: 'dashboard',  label: 'Tableau de bord', icon: LayoutDashboard },
+      { id: 'layout',     label: 'Mise en page',    icon: Layers },
+    ],
+  },
+  {
+    group: 'Contenu',
+    items: [
+      { id: 'hero',       label: 'Bannières Hero',         icon: Image },
+      { id: 'matches',    label: 'Matchs & Résultats',     icon: Calendar },
+      { id: 'news',       label: 'Actualités & Presse',    icon: FileText },
+    ],
+  },
+  {
+    group: 'Compétition',
+    items: [
+      { id: 'awards',     label: "Awards & Ballon d'Or",   icon: Trophy },
+      { id: 'stats',      label: 'Statistiques',           icon: BarChart2 },
+      { id: 'halloffame', label: 'Légendes & Talents',     icon: Star },
+    ],
+  },
+];
 
+export default function AdminLayout({ children, activeTab, setActiveTab }: AdminLayoutProps) {
   return (
-    <div className="min-h-screen bg-[#0B0F13] text-white flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#0F141C] border-r border-white/5 flex flex-col shrink-0">
+    <div className="min-h-screen bg-[#0A0E14] text-white flex overflow-hidden">
+
+      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
+      <aside className="w-60 bg-[#0D1219] border-r border-white/[0.05] flex flex-col shrink-0 fixed h-full z-40">
+
         {/* Brand */}
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-white/5">
-          <div className="h-8 w-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
+        <div className="h-16 flex items-center gap-3 px-5 border-b border-white/[0.05]">
+          <div className="h-8 w-8 rounded-xl bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
             <Shield className="h-4 w-4 text-accent" />
           </div>
-          <div>
-            <h1 className="text-sm font-display font-bold uppercase tracking-wider text-white">Elite CMS</h1>
-            <p className="text-[9px] uppercase tracking-widest text-accent font-bold">Administrateur</p>
+          <div className="min-w-0">
+            <p className="text-[11px] font-display font-bold uppercase tracking-[0.15em] text-white leading-none">Elite CMS</p>
+            <p className="text-[8px] uppercase tracking-[0.2em] text-accent/80 font-bold mt-0.5">Administration</p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold tracking-wide transition-all ${
-                  isActive
-                    ? 'bg-accent text-black shadow-[0_0_15px_rgba(252,209,22,0.15)]'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.group}>
+              <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/20 px-3 mb-2">{group.group}</p>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[11px] font-semibold tracking-wide transition-all duration-150 ${
+                        isActive
+                          ? 'bg-accent text-black'
+                          : 'text-white/45 hover:text-white/80 hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeNav"
+                          className="absolute inset-0 rounded-xl bg-accent"
+                          style={{ zIndex: -1 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                        />
+                      )}
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {isActive && <ChevronRight className="h-3 w-3 opacity-60" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        {/* Footer info */}
-        <div className="p-4 border-t border-white/5">
+        {/* Footer */}
+        <div className="p-3 border-t border-white/[0.05] space-y-2">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+            <div className="h-7 w-7 rounded-full bg-accent/20 border border-accent/30 grid place-items-center text-accent font-bold text-[10px] shrink-0">AD</div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold text-white/80 truncate">Administrateur</p>
+              <p className="text-[8px] text-accent/70 font-semibold uppercase tracking-wider">Super Admin</p>
+            </div>
+          </div>
           <Link
             to="/"
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/10 hover:border-white/25 text-xs text-white/70 hover:text-white transition-all bg-white/5 hover:bg-white/10"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-white/8 hover:border-white/20 text-[10px] text-white/40 hover:text-white/70 transition-all bg-transparent hover:bg-white/[0.04]"
           >
-            Quitter le CMS
+            <ExternalLink className="h-3 w-3" /> Voir le Site
           </Link>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Header */}
-        <header className="h-16 border-b border-white/5 bg-[#0F141C]/80 backdrop-blur-md sticky top-0 z-30 px-8 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] uppercase font-bold tracking-widest text-white/40">Serveur en ligne</span>
+      {/* ── Main Content ─────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 ml-60">
+
+        {/* Top Header */}
+        <header className="h-16 border-b border-white/[0.05] bg-[#0D1219]/90 backdrop-blur-xl sticky top-0 z-30 px-8 flex items-center justify-between">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-white/25 font-medium">CMS</span>
+            <span className="text-white/15">/</span>
+            <span className="text-white/70 font-semibold capitalize">{activeTab}</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-xs font-bold text-white/90">Administrateur</p>
-              <p className="text-[9px] text-accent font-semibold uppercase tracking-wider">Super Admin</p>
+          {/* Status & Actions */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">Serveur actif</span>
             </div>
-            <div className="h-8 w-8 rounded-full bg-accent/20 border border-accent/40 grid place-items-center text-accent font-bold text-xs">
-              AD
+            <div className="h-4 w-px bg-white/8" />
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-white/60 leading-none">Administrateur</p>
+              <p className="text-[8px] text-accent/80 font-bold uppercase tracking-widest mt-0.5">Super Admin</p>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-8 max-w-6xl mx-auto w-full">
-          {children}
+        <main className="flex-1 overflow-y-auto">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="p-8 max-w-7xl mx-auto w-full"
+          >
+            {children}
+          </motion.div>
         </main>
       </div>
     </div>

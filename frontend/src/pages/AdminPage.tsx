@@ -1,878 +1,1072 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, Star, CalendarDays, BarChart2, Radio,
-  Award, Shield, FileText, CheckCircle2, AlertCircle,
-  Plus, Edit3, Trash2, GripVertical, Save, ArrowLeftRight, Flame
+  Users, Star, CalendarDays, BarChart2, Award, FileText, Plus, Edit3,
+  Trash2, GripVertical, Save, TrendingUp, CheckCircle2, AlertCircle,
+  Target, Flame, ShieldCheck, Medal, Clock, Flag, Trophy,
+  Download, Upload, RefreshCw, Eye, EyeOff,
 } from 'lucide-react';
 import AdminLayout from '@/layout/AdminLayout';
 import {
-  AdminCard, SwitchToggle, FormField,
-  AdminButton, DashboardStatCard
+  AdminCard, SwitchToggle, FormField, AdminButton,
+  DashboardStatCard, BulkImportExport, DataTable,
+  StatusBadge, SectionHeader, Toast, StatBar, Paginator
 } from '@/components/ui/AdminUI';
 import { layoutApi, HomepageLayout, HeroBanner, Award as AwardType, Match, Article, HallOfFameLegend, TalentProfile } from '@/services/layoutApi';
 import { apiClient } from '@/services/api';
 
+/* ─── Types ─────────────────────────────────────────────────────────────────── */
+type ToastState = { msg: string; type: 'success' | 'error' | 'info' };
+
 const SECTION_LABELS: Record<string, string> = {
-  hero: 'Bannière Hero (Dynamic Slideshow)',
-  matches: 'Matchs en direct & récents',
-  standings: 'Mini-classement & Actualités',
-  stats: 'Saison en chiffres (Statistiques globales)',
-  explore: 'Raccourcis d\'exploration (Explorer)',
-  awards: 'Votes & Trophées (Ballon d\'or, Equipe de la semaine)',
-  halloffame: 'Temple de la renommée (Hall of fame)',
-  roadtolions: 'En route vers les Lions (Road to Lions)',
+  hero: 'Bannière Hero',
+  matches: 'Matchs en direct',
+  standings: 'Mini-classement',
+  stats: 'Saison en chiffres',
+  explore: 'Explorer',
+  awards: 'Awards & Votes',
+  halloffame: 'Hall of Fame',
+  roadtolions: 'Road to Lions',
 };
 
+/* ─── Main AdminPage ─────────────────────────────────────────────────────────── */
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Global Metadata
+  /* Metadata */
   const [seasons, setSeasons] = useState<any[]>([]);
   const [clubs, setClubs] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
+  const [currentSeasonId, setCurrentSeasonId] = useState('');
 
-  // Statistics
-  const [stats, setStats] = useState({
-    users: 0,
-    clubs: 0,
-    players: 0,
-    matches: 0,
-    votes: 0,
-    articles: 0,
-  });
+  /* Dashboard */
+  const [stats, setStats] = useState({ users: 0, clubs: 0, players: 0, matches: 0, votes: 0, articles: 0 });
 
-  // Section Layout
-  const [layout, setLayout] = useState<HomepageLayout>({
-    section_order: [],
-    section_visibility: {},
-  });
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  /* Layout */
+  const [layout, setLayout] = useState<HomepageLayout>({ section_order: [], section_visibility: {} });
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
-  // Hero Banners
+  /* Hero Banners */
   const [banners, setBanners] = useState<HeroBanner[]>([]);
   const [editingBanner, setEditingBanner] = useState<Partial<HeroBanner> | null>(null);
+  const [importingBanners, setImportingBanners] = useState(false);
 
-  // Matches
+  /* Matches */
   const [matches, setMatches] = useState<Match[]>([]);
+  const [matchPage, setMatchPage] = useState(1);
+  const [matchTotal, setMatchTotal] = useState(0);
+  const [matchStatus, setMatchStatus] = useState('');
   const [editingMatch, setEditingMatch] = useState<Partial<Match> | null>(null);
+  const [importingMatches, setImportingMatches] = useState(false);
 
-  // Awards
+  /* Awards */
   const [awards, setAwards] = useState<AwardType[]>([]);
   const [editingAward, setEditingAward] = useState<Partial<AwardType> | null>(null);
-  const [selectedAwardForNominees, setSelectedAwardForNominees] = useState<AwardType | null>(null);
-  const [selectedPlayerForNomination, setSelectedPlayerForNomination] = useState<string>('');
+  const [selectedAward, setSelectedAward] = useState<AwardType | null>(null);
+  const [nomineePlayerId, setNomineePlayerId] = useState('');
+  const [importingAwards, setImportingAwards] = useState(false);
 
-  // Articles / News
+  /* Articles */
   const [articles, setArticles] = useState<Article[]>([]);
+  const [articlePage, setArticlePage] = useState(1);
+  const [articleTotal, setArticleTotal] = useState(0);
+  const [articleStatus, setArticleStatus] = useState('');
   const [editingArticle, setEditingArticle] = useState<Partial<Article> | null>(null);
+  const [importingArticles, setImportingArticles] = useState(false);
 
-  // Legends (Hall of Fame)
+  /* Legends */
   const [legends, setLegends] = useState<HallOfFameLegend[]>([]);
   const [editingLegend, setEditingLegend] = useState<Partial<HallOfFameLegend> | null>(null);
 
-  // Talents (Road to Lions / Watchlist)
+  /* Talents */
   const [talents, setTalents] = useState<TalentProfile[]>([]);
   const [editingTalent, setEditingTalent] = useState<Partial<TalentProfile> | null>(null);
 
-  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
+  /* Stats Panel */
+  const [topScorers, setTopScorers]   = useState<any[]>([]);
+  const [topAssisters, setTopAssisters] = useState<any[]>([]);
+  const [seasonSummary, setSeasonSummary] = useState<any>(null);
+  const [teamStats, setTeamStats]     = useState<any[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  /* ─── Helpers ─────────────────────────────────────────────────────────────── */
+  const showToast = useCallback((msg: string, type: ToastState['type'] = 'success') => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // Fetch Meta & Dashboard Data on mount
+  const withLoading = async (fn: () => Promise<void>) => {
+    setLoading(true);
+    try { await fn(); } catch (e: any) { showToast(e?.response?.data?.message || e.message || 'Erreur.', 'error'); }
+    finally { setLoading(false); }
+  };
+
+  /* ─── Initial Load ────────────────────────────────────────────────────────── */
   useEffect(() => {
-    // 1. Fetch metadata
-    layoutApi.getSeasons().then(setSeasons).catch(e => console.error(e));
-    layoutApi.getClubs().then(res => setClubs(res.data || res)).catch(e => console.error(e));
-    layoutApi.getPlayers().then(res => setPlayers(res.data || res)).catch(e => console.error(e));
+    // Metadata
+    layoutApi.getSeasons().then(res => {
+      setSeasons(res);
+      const current = res.find((s: any) => s.status === 'ONGOING') || res[0];
+      if (current) setCurrentSeasonId(current.id);
+    }).catch(console.error);
 
-    // 2. Fetch stats
-    apiClient.get('/admin/dashboard-stats')
-      .then(res => setStats(res.data))
-      .catch(err => console.error('Error dashboard stats', err));
+    layoutApi.getClubs().then(res => setClubs(res.data ?? res)).catch(console.error);
+    layoutApi.getPlayers({ limit: 500 }).then(res => setPlayers(res.data ?? res)).catch(console.error);
 
-    // 3. Fetch layout
-    layoutApi.getHomepageLayout().then(setLayout).catch(e => console.error(e));
+    // Dashboard stats
+    apiClient.get('/admin/dashboard-stats').then(r => setStats(r.data)).catch(console.error);
 
-    // 4. Fetch Hero banners
-    layoutApi.getHeroBanners().then(setBanners).catch(e => console.error(e));
+    // Layout
+    layoutApi.getHomepageLayout().then(setLayout).catch(console.error);
 
-    // 5. Fetch matches
-    layoutApi.getMatches({ limit: 100 }).then(res => setMatches(res.data || res)).catch(e => console.error(e));
+    // Banners
+    layoutApi.getHeroBanners().then(setBanners).catch(console.error);
 
-    // 6. Fetch awards
-    layoutApi.getAwards().then(setAwards).catch(e => console.error(e));
+    // Awards
+    layoutApi.getAwards().then(setAwards).catch(console.error);
 
-    // 7. Fetch articles
-    layoutApi.getArticles({ limit: 100 }).then(res => setArticles(res.data || res)).catch(e => console.error(e));
-
-    // 8. Fetch Hall of Fame
-    layoutApi.getHallOfFame().then(setLegends).catch(e => console.error(e));
-
-    // 9. Fetch Talents
-    layoutApi.getTalents().then(setTalents).catch(e => console.error(e));
+    // Legends & Talents
+    layoutApi.getHallOfFame().then(setLegends).catch(console.error);
+    layoutApi.getTalents().then(setTalents).catch(console.error);
   }, []);
 
-  // Refresh helper
-  const refreshStats = () => {
-    apiClient.get('/admin/dashboard-stats').then(res => setStats(res.data)).catch(e => console.error(e));
-  };
+  /* ─── Load Matches (with filters / pagination) ────────────────────────────── */
+  useEffect(() => {
+    if (activeTab !== 'matches') return;
+    layoutApi.getMatches({ page: matchPage, limit: 20, ...(matchStatus ? { status: matchStatus } : {}) })
+      .then(res => { setMatches(res.data ?? res); setMatchTotal(res.total ?? res.length ?? 0); })
+      .catch(console.error);
+  }, [activeTab, matchPage, matchStatus]);
 
-  // ─── Layout Handlers ───
-  const handleSaveLayout = async () => {
-    try {
-      const updated = await layoutApi.updateHomepageLayout(layout);
-      setLayout(updated);
-      showToast('Structure de la page d\'accueil mise à jour !');
-    } catch (e) {
-      showToast('Erreur lors de la sauvegarde.', 'error');
-    }
-  };
+  /* ─── Load Articles ───────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (activeTab !== 'news') return;
+    layoutApi.getArticles({ page: articlePage, limit: 20, ...(articleStatus ? { status: articleStatus } : {}) })
+      .then(res => { setArticles(res.data ?? res); setArticleTotal(res.total ?? res.length ?? 0); })
+      .catch(console.error);
+  }, [activeTab, articlePage, articleStatus]);
 
-  const handleDragStart = (index: number) => setDraggedIndex(index);
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  /* ─── Load Stats ──────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (activeTab !== 'stats' || !currentSeasonId) return;
+    setStatsLoading(true);
+    Promise.all([
+      apiClient.get(`/stats/season/${currentSeasonId}/summary`),
+      apiClient.get(`/stats/top-scorers?seasonId=${currentSeasonId}&limit=10`),
+      apiClient.get(`/stats/top-assisters?seasonId=${currentSeasonId}&limit=10`),
+      apiClient.get(`/stats/teams?seasonId=${currentSeasonId}`),
+    ]).then(([summary, scorers, assisters, teams]) => {
+      setSeasonSummary(summary.data);
+      setTopScorers(scorers.data ?? []);
+      setTopAssisters(assisters.data ?? []);
+      setTeamStats(teams.data ?? []);
+    }).catch(console.error)
+      .finally(() => setStatsLoading(false));
+  }, [activeTab, currentSeasonId]);
+
+  /* ─── Layout Handlers ─────────────────────────────────────────────────────── */
+  const saveLayout = () => withLoading(async () => {
+    const updated = await layoutApi.updateHomepageLayout(layout);
+    setLayout(updated);
+    showToast('Structure de la page d\'accueil sauvegardée !');
+  });
+
+  const handleDragStart = (i: number) => setDraggedIdx(i);
+  const handleDragOver  = (e: React.DragEvent, i: number) => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-    const newOrder = [...layout.section_order];
-    const item = newOrder.splice(draggedIndex, 1)[0];
-    newOrder.splice(index, 0, item);
-    setDraggedIndex(index);
-    setLayout({ ...layout, section_order: newOrder });
-  };
-  const handleDragEnd = () => setDraggedIndex(null);
-  const toggleSectionVisibility = (section: string) => {
-    setLayout(prev => ({
-      ...prev,
-      section_visibility: { ...prev.section_visibility, [section]: !prev.section_visibility[section] }
-    }));
+    if (draggedIdx === null || draggedIdx === i) return;
+    const order = [...layout.section_order];
+    const [item] = order.splice(draggedIdx, 1);
+    order.splice(i, 0, item);
+    setDraggedIdx(i);
+    setLayout(p => ({ ...p, section_order: order }));
   };
 
-  // ─── Hero CRUD Handlers ───
-  const handleSaveBanner = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingBanner?.title?.fr || !editingBanner.image_url) {
-      showToast('Titre (FR) et URL de l\'image sont requis.', 'error');
-      return;
+  /* ─── Banner Handlers ─────────────────────────────────────────────────────── */
+  const saveBanner = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
+    const p = {
+      title:    editingBanner!.title    as any,
+      subtitle: editingBanner!.subtitle || { fr: '', en: '' },
+      image_url: editingBanner!.image_url!,
+      link_url:  editingBanner!.link_url || '',
+      priority:  editingBanner!.priority || 0,
+      active:    editingBanner!.active !== false,
+      type:      editingBanner!.type || 'news',
+    };
+    if (editingBanner!._id) {
+      const r = await layoutApi.updateHeroBanner(editingBanner!._id, p);
+      setBanners(prev => prev.map(b => b._id === r._id ? r : b));
+    } else {
+      const r = await layoutApi.createHeroBanner(p);
+      setBanners(prev => [...prev, r]);
     }
-    try {
-      const payload = {
-        title: editingBanner.title as any,
-        subtitle: editingBanner.subtitle || { fr: '', en: '' },
-        image_url: editingBanner.image_url,
-        link_url: editingBanner.link_url || '',
-        priority: editingBanner.priority || 0,
-        active: editingBanner.active !== false,
-        type: editingBanner.type || 'news',
-      };
-      if (editingBanner._id) {
-        const res = await layoutApi.updateHeroBanner(editingBanner._id, payload);
-        setBanners(prev => prev.map(b => b._id === res._id ? res : b));
-        showToast('Bannière mise à jour.');
-      } else {
-        const res = await layoutApi.createHeroBanner(payload);
-        setBanners(prev => [...prev, res]);
-        showToast('Bannière créée.');
-      }
-      setEditingBanner(null);
-    } catch {
-      showToast('Erreur lors de l\'enregistrement de la bannière.', 'error');
+    setEditingBanner(null);
+    showToast(editingBanner?._id ? 'Bannière mise à jour.' : 'Bannière créée.');
+  }); };
+
+  const deleteBanner = (id: string) => { if (!confirm('Supprimer cette bannière ?')) return; withLoading(async () => {
+    await layoutApi.deleteHeroBanner(id);
+    setBanners(prev => prev.filter(b => b._id !== id));
+    showToast('Bannière supprimée.');
+  }); };
+
+  const importBanners = async (rows: any[]) => {
+    setImportingBanners(true);
+    let ok = 0;
+    for (const row of rows) {
+      try {
+        await layoutApi.createHeroBanner({ ...row, title: typeof row.title === 'string' ? { fr: row.title, en: row.title } : row.title, subtitle: { fr: row.subtitle || '', en: '' }, active: row.active !== 'false', priority: Number(row.priority || 0) });
+        ok++;
+      } catch { /* skip invalid row */ }
     }
+    const res = await layoutApi.getHeroBanners();
+    setBanners(res);
+    showToast(`${ok} bannière(s) importée(s).`);
+    setImportingBanners(false);
   };
 
-  const handleDeleteBanner = async (id: string) => {
-    if (!confirm('Supprimer cette bannière ?')) return;
-    try {
-      await layoutApi.deleteHeroBanner(id);
-      setBanners(prev => prev.filter(b => b._id !== id));
-      showToast('Bannière supprimée.');
-    } catch {
-      showToast('Erreur lors de la suppression.', 'error');
+  /* ─── Match Handlers ──────────────────────────────────────────────────────── */
+  const saveMatch = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
+    const p = {
+      homeClubId: editingMatch!.homeClubId!,
+      awayClubId: editingMatch!.awayClubId!,
+      homeScore:  editingMatch!.homeScore !== undefined ? Number(editingMatch!.homeScore) : undefined,
+      awayScore:  editingMatch!.awayScore !== undefined ? Number(editingMatch!.awayScore) : undefined,
+      status:     editingMatch!.status || 'SCHEDULED',
+      round:      Number(editingMatch!.round || 1),
+      kickoff:    editingMatch!.kickoff || new Date().toISOString(),
+      venue:      editingMatch!.venue || '',
+      seasonId:   editingMatch!.seasonId || currentSeasonId,
+    };
+    if (editingMatch!.id) {
+      const r = await layoutApi.updateMatch(editingMatch!.id, p);
+      setMatches(prev => prev.map(m => m.id === r.id ? r : m));
+    } else {
+      const r = await layoutApi.createMatch(p);
+      setMatches(prev => [r, ...prev]);
     }
+    setEditingMatch(null);
+    showToast(editingMatch?.id ? 'Match mis à jour.' : 'Match programmé.');
+    apiClient.get('/admin/dashboard-stats').then(r => setStats(r.data)).catch(() => {});
+  }); };
+
+  const deleteMatch = (id: string) => { if (!confirm('Supprimer ce match ?')) return; withLoading(async () => {
+    await layoutApi.deleteMatch(id);
+    setMatches(prev => prev.filter(m => m.id !== id));
+    showToast('Match supprimé.');
+  }); };
+
+  const importMatches = async (rows: any[]) => {
+    setImportingMatches(true);
+    let ok = 0;
+    for (const row of rows) {
+      try {
+        await layoutApi.createMatch({
+          homeClubId: row.homeClubId, awayClubId: row.awayClubId,
+          status: row.status || 'SCHEDULED', round: Number(row.round || 1),
+          kickoff: row.kickoff, venue: row.venue, seasonId: row.seasonId || currentSeasonId,
+          homeScore: row.homeScore !== undefined ? Number(row.homeScore) : undefined,
+          awayScore: row.awayScore !== undefined ? Number(row.awayScore) : undefined,
+        }); ok++;
+      } catch { /* skip */ }
+    }
+    layoutApi.getMatches({ page: 1, limit: 20 }).then(r => { setMatches(r.data ?? r); setMatchTotal(r.total ?? r.length ?? 0); });
+    showToast(`${ok} match(s) importé(s).`);
+    setImportingMatches(false);
   };
 
-  // ─── Match CRUD Handlers ───
-  const handleSaveMatch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingMatch?.homeClubId || !editingMatch?.awayClubId || !editingMatch?.seasonId) {
-      showToast('Clubs et Saison requis.', 'error');
-      return;
+  /* ─── Award Handlers ──────────────────────────────────────────────────────── */
+  const saveAward = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
+    const p = {
+      category:    editingAward!.category!,
+      periodStart: editingAward!.periodStart || new Date().toISOString(),
+      periodEnd:   editingAward!.periodEnd   || new Date().toISOString(),
+      status:      editingAward!.status      || 'CLOSED',
+      seasonId:    editingAward!.seasonId    || currentSeasonId,
+      winnerId:    editingAward!.winnerId    || null,
+    };
+    if (editingAward!.id) {
+      const r = await layoutApi.updateAward(editingAward!.id, p);
+      setAwards(prev => prev.map(a => a.id === r.id ? r : a));
+    } else {
+      const r = await layoutApi.createAward(p);
+      setAwards(prev => [...prev, r]);
     }
-    try {
-      const payload = {
-        homeClubId: editingMatch.homeClubId,
-        awayClubId: editingMatch.awayClubId,
-        homeScore: editingMatch.homeScore !== undefined ? Number(editingMatch.homeScore) : undefined,
-        awayScore: editingMatch.awayScore !== undefined ? Number(editingMatch.awayScore) : undefined,
-        status: editingMatch.status || 'SCHEDULED',
-        round: Number(editingMatch.round || 1),
-        kickoff: editingMatch.kickoff || new Date().toISOString(),
-        venue: editingMatch.venue || 'Stade Municipal',
-        seasonId: editingMatch.seasonId,
-      };
-      if (editingMatch.id) {
-        const res = await layoutApi.updateMatch(editingMatch.id, payload);
-        setMatches(prev => prev.map(m => m.id === res.id ? res : m));
-        showToast('Match mis à jour.');
-      } else {
-        const res = await layoutApi.createMatch(payload);
-        setMatches(prev => [...prev, res]);
-        showToast('Match programmé.');
-      }
-      setEditingMatch(null);
-      refreshStats();
-    } catch {
-      showToast('Erreur lors de l\'enregistrement du match.', 'error');
+    setEditingAward(null);
+    showToast(editingAward?.id ? 'Award mis à jour.' : 'Award créé.');
+  }); };
+
+  const deleteAward = (id: string) => { if (!confirm('Supprimer cet award ?')) return; withLoading(async () => {
+    await layoutApi.deleteAward(id);
+    setAwards(prev => prev.filter(a => a.id !== id));
+    showToast('Award supprimé.');
+  }); };
+
+  const addNomination = () => withLoading(async () => {
+    if (!selectedAward || !nomineePlayerId) return;
+    await layoutApi.addNomination(selectedAward.id!, { playerId: nomineePlayerId });
+    const res = await apiClient.get(`/awards/${selectedAward.id}`);
+    const updated = res.data;
+    setSelectedAward(updated);
+    setAwards(prev => prev.map(a => a.id === updated.id ? updated : a));
+    setNomineePlayerId('');
+    showToast('Nomination ajoutée.');
+  });
+
+  const removeNomination = (nomId: string) => withLoading(async () => {
+    if (!selectedAward) return;
+    await layoutApi.deleteNomination(selectedAward.id!, nomId);
+    const res = await apiClient.get(`/awards/${selectedAward.id}`);
+    const updated = res.data;
+    setSelectedAward(updated);
+    setAwards(prev => prev.map(a => a.id === updated.id ? updated : a));
+    showToast('Nomination retirée.');
+  });
+
+  const importAwards = async (rows: any[]) => {
+    setImportingAwards(true);
+    let ok = 0;
+    for (const row of rows) {
+      try {
+        await layoutApi.createAward({ category: row.category, periodStart: row.periodStart, periodEnd: row.periodEnd, status: row.status || 'CLOSED', seasonId: row.seasonId || currentSeasonId });
+        ok++;
+      } catch { /* skip */ }
     }
+    layoutApi.getAwards().then(setAwards);
+    showToast(`${ok} award(s) importé(s).`);
+    setImportingAwards(false);
   };
 
-  const handleDeleteMatch = async (id: string) => {
-    if (!confirm('Supprimer ce match ?')) return;
-    try {
-      await layoutApi.deleteMatch(id);
-      setMatches(prev => prev.filter(m => m.id !== id));
-      showToast('Match supprimé.');
-      refreshStats();
-    } catch {
-      showToast('Erreur lors de la suppression.', 'error');
+  /* ─── Article Handlers ────────────────────────────────────────────────────── */
+  const saveArticle = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
+    const p = { title: editingArticle!.title!, summary: editingArticle!.summary || '', content: editingArticle!.content!, image_url: editingArticle!.image_url || '', category: editingArticle!.category || 'NEWS', status: editingArticle!.status || 'DRAFT', featured: editingArticle!.featured || false };
+    if (editingArticle!._id) {
+      const r = await layoutApi.updateArticle(editingArticle!._id, p);
+      setArticles(prev => prev.map(a => a._id === r._id ? r : a));
+    } else {
+      const r = await layoutApi.createArticle(p);
+      setArticles(prev => [r, ...prev]);
     }
+    setEditingArticle(null);
+    showToast(editingArticle?._id ? 'Article mis à jour.' : 'Article enregistré.');
+    apiClient.get('/admin/dashboard-stats').then(r => setStats(r.data)).catch(() => {});
+  }); };
+
+  const deleteArticle = (id: string) => { if (!confirm('Supprimer cet article ?')) return; withLoading(async () => {
+    await layoutApi.deleteArticle(id);
+    setArticles(prev => prev.filter(a => a._id !== id));
+    showToast('Article supprimé.');
+  }); };
+
+  const importArticles = async (rows: any[]) => {
+    setImportingArticles(true);
+    let ok = 0;
+    for (const row of rows) {
+      try {
+        await layoutApi.createArticle({ title: row.title, content: row.content, summary: row.summary || '', image_url: row.image_url || '', category: row.category || 'NEWS', status: row.status || 'DRAFT' });
+        ok++;
+      } catch { /* skip */ }
+    }
+    layoutApi.getArticles({ page: 1, limit: 20 }).then(r => { setArticles(r.data ?? r); setArticleTotal(r.total ?? r.length ?? 0); });
+    showToast(`${ok} article(s) importé(s).`);
+    setImportingArticles(false);
   };
 
-  // ─── Award CRUD Handlers ───
-  const handleSaveAward = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingAward?.category || !editingAward?.seasonId) {
-      showToast('Catégorie et Saison requis.', 'error');
-      return;
+  /* ─── Legend Handlers ─────────────────────────────────────────────────────── */
+  const saveLegend = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
+    const p = { name: editingLegend!.name!, bio: editingLegend!.bio as any, era: editingLegend!.era || '80', achievements: editingLegend!.achievements || [], image_url: editingLegend!.image_url || '', club_ids: editingLegend!.club_ids || [] };
+    if (editingLegend!._id) {
+      const r = await layoutApi.updateHallOfFame(editingLegend!._id, p);
+      setLegends(prev => prev.map(l => l._id === r._id ? r : l));
+    } else {
+      const r = await layoutApi.createHallOfFame(p);
+      setLegends(prev => [...prev, r]);
     }
-    try {
-      const payload = {
-        category: editingAward.category,
-        periodStart: editingAward.periodStart || new Date().toISOString(),
-        periodEnd: editingAward.periodEnd || new Date().toISOString(),
-        status: editingAward.status || 'CLOSED',
-        seasonId: editingAward.seasonId,
-        winnerId: editingAward.winnerId || null,
-      };
-      if (editingAward.id) {
-        const res = await layoutApi.updateAward(editingAward.id, payload);
-        setAwards(prev => prev.map(a => a.id === res.id ? res : a));
-        showToast('Award mis à jour.');
-      } else {
-        const res = await layoutApi.createAward(payload);
-        setAwards(prev => [...prev, res]);
-        showToast('Award créé.');
-      }
-      setEditingAward(null);
-      refreshStats();
-    } catch {
-      showToast('Erreur lors de l\'enregistrement de l\'award.', 'error');
-    }
-  };
+    setEditingLegend(null);
+    showToast(editingLegend?._id ? 'Légende mise à jour.' : 'Légende intronisée.');
+  }); };
 
-  const handleDeleteAward = async (id: string) => {
-    if (!confirm('Supprimer cet award ?')) return;
-    try {
-      await layoutApi.deleteAward(id);
-      setAwards(prev => prev.filter(a => a.id !== id));
-      showToast('Award supprimé.');
-      refreshStats();
-    } catch {
-      showToast('Erreur lors de la suppression.', 'error');
-    }
-  };
+  const deleteLegend = (id: string) => { if (!confirm('Supprimer ?')) return; withLoading(async () => {
+    await layoutApi.deleteHallOfFame(id);
+    setLegends(prev => prev.filter(l => l._id !== id));
+    showToast('Légende supprimée.');
+  }); };
 
-  const handleAddNomination = async () => {
-    if (!selectedAwardForNominees || !selectedPlayerForNomination) return;
-    try {
-      await layoutApi.addNomination(selectedAwardForNominees.id!, { playerId: selectedPlayerForNomination });
-      showToast('Nomination ajoutée !');
-      // Refresh current award relations
-      const updatedAward = await layoutApi.findOne(selectedAwardForNominees.id!);
-      setSelectedAwardForNominees(updatedAward);
-      setAwards(prev => prev.map(a => a.id === updatedAward.id ? updatedAward : a));
-    } catch (e: any) {
-      showToast(e.message || 'Erreur lors de la nomination.', 'error');
+  /* ─── Talent Handlers ─────────────────────────────────────────────────────── */
+  const saveTalent = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
+    const p = { playerId: editingTalent!.playerId!, highlightVideoUrl: editingTalent!.highlightVideoUrl || '', status: editingTalent!.status || 'WATCHLIST', scoutingNotes: editingTalent!.scoutingNotes || '', rating: Number(editingTalent!.rating || 5) };
+    if (editingTalent!._id) {
+      const r = await layoutApi.updateTalent(editingTalent!._id, p);
+      setTalents(prev => prev.map(t => t._id === r._id ? r : t));
+    } else {
+      const r = await layoutApi.createTalent(p);
+      setTalents(prev => [...prev, r]);
     }
-  };
+    setEditingTalent(null);
+    showToast(editingTalent?._id ? 'Profil mis à jour.' : 'Talent ajouté.');
+  }); };
 
-  const handleDeleteNomination = async (nominationId: string) => {
-    if (!selectedAwardForNominees) return;
-    try {
-      await layoutApi.deleteNomination(selectedAwardForNominees.id!, nominationId);
-      showToast('Nomination retirée.');
-      const updatedAward = await layoutApi.findOne(selectedAwardForNominees.id!);
-      setSelectedAwardForNominees(updatedAward);
-      setAwards(prev => prev.map(a => a.id === updatedAward.id ? updatedAward : a));
-    } catch {
-      showToast('Erreur lors du retrait.', 'error');
-    }
-  };
+  const deleteTalent = (id: string) => { if (!confirm('Retirer ce talent ?')) return; withLoading(async () => {
+    await layoutApi.deleteTalent(id);
+    setTalents(prev => prev.filter(t => t._id !== id));
+    showToast('Talent retiré.');
+  }); };
 
-  // ─── News CRUD Handlers ───
-  const handleSaveArticle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingArticle?.title || !editingArticle?.content) {
-      showToast('Titre et contenu requis.', 'error');
-      return;
-    }
-    try {
-      const payload = {
-        title: editingArticle.title,
-        summary: editingArticle.summary || '',
-        content: editingArticle.content,
-        image_url: editingArticle.image_url || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2',
-        category: editingArticle.category || 'NEWS',
-        status: editingArticle.status || 'DRAFT',
-        featured: editingArticle.featured || false,
-      };
-      if (editingArticle._id) {
-        const res = await layoutApi.updateArticle(editingArticle._id, payload);
-        setArticles(prev => prev.map(a => a._id === res._id ? res : a));
-        showToast('Article mis à jour.');
-      } else {
-        const res = await layoutApi.createArticle(payload);
-        setArticles(prev => [...prev, res]);
-        showToast('Article publié/enregistré.');
-      }
-      setEditingArticle(null);
-      refreshStats();
-    } catch {
-      showToast('Erreur lors de l\'enregistrement de l\'article.', 'error');
-    }
-  };
-
-  const handleDeleteArticle = async (id: string) => {
-    if (!confirm('Supprimer cet article ?')) return;
-    try {
-      await layoutApi.deleteArticle(id);
-      setArticles(prev => prev.filter(a => a._id !== id));
-      showToast('Article supprimé.');
-      refreshStats();
-    } catch {
-      showToast('Erreur de suppression.', 'error');
-    }
-  };
-
-  // ─── Legends CRUD Handlers ───
-  const handleSaveLegend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingLegend?.name || !editingLegend?.bio?.fr) {
-      showToast('Nom et Biographie (FR) requis.', 'error');
-      return;
-    }
-    try {
-      const payload = {
-        name: editingLegend.name,
-        bio: editingLegend.bio as any,
-        era: editingLegend.era || '80',
-        achievements: editingLegend.achievements || [],
-        image_url: editingLegend.image_url || '',
-        club_ids: editingLegend.club_ids || [],
-      };
-      if (editingLegend._id) {
-        const res = await layoutApi.updateHallOfFame(editingLegend._id, payload);
-        setLegends(prev => prev.map(l => l._id === res._id ? res : l));
-        showToast('Légende mise à jour.');
-      } else {
-        const res = await layoutApi.createHallOfFame(payload);
-        setLegends(prev => [...prev, res]);
-        showToast('Légende ajoutée au Hall of Fame.');
-      }
-      setEditingLegend(null);
-    } catch {
-      showToast('Erreur de sauvegarde.', 'error');
-    }
-  };
-
-  const handleDeleteLegend = async (id: string) => {
-    if (!confirm('Supprimer cette légende ?')) return;
-    try {
-      await layoutApi.deleteHallOfFame(id);
-      setLegends(prev => prev.filter(l => l._id !== id));
-      showToast('Légende supprimée.');
-    } catch {
-      showToast('Erreur de suppression.', 'error');
-    }
-  };
-
-  // ─── Talents CRUD Handlers ───
-  const handleSaveTalent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTalent?.playerId) {
-      showToast('Joueur requis.', 'error');
-      return;
-    }
-    try {
-      const payload = {
-        playerId: editingTalent.playerId,
-        highlightVideoUrl: editingTalent.highlightVideoUrl || '',
-        status: editingTalent.status || 'WATCHLIST',
-        scoutingNotes: editingTalent.scoutingNotes || '',
-        rating: Number(editingTalent.rating || 5),
-      };
-      if (editingTalent._id) {
-        const res = await layoutApi.updateTalent(editingTalent._id, payload);
-        setTalents(prev => prev.map(t => t._id === res._id ? res : t));
-        showToast('Profil de talent mis à jour.');
-      } else {
-        const res = await layoutApi.createTalent(payload);
-        setTalents(prev => [...prev, res]);
-        showToast('Talent ajouté.');
-      }
-      setEditingTalent(null);
-    } catch {
-      showToast('Erreur lors de la sauvegarde.', 'error');
-    }
-  };
-
-  const handleDeleteTalent = async (id: string) => {
-    if (!confirm('Retirer ce talent ?')) return;
-    try {
-      await layoutApi.deleteTalent(id);
-      setTalents(prev => prev.filter(t => t._id !== id));
-      showToast('Talent retiré.');
-    } catch {
-      showToast('Erreur de suppression.', 'error');
-    }
-  };
-
+  /* ─── Render ──────────────────────────────────────────────────────────────── */
   return (
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-6 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-xl border text-sm font-semibold shadow-2xl ${
-              toast.type === 'success'
-                ? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-300'
-                : 'bg-red-950/80 border-red-500/30 text-red-300'
-            }`}
-          >
-            {toast.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Toast message={toast?.msg || ''} type={toast?.type || 'success'} visible={!!toast} />
 
-      <div className="space-y-8">
-        {/* Tab 1: Dashboard */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="font-display text-2xl uppercase tracking-wider text-white">Tableau de bord</h2>
-              <p className="text-sm text-white/40">Vue globale des activités et statistiques du championnat</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <DashboardStatCard label="Membres inscrits" value={stats.users} icon={Users} color="text-sky-400" index={0} />
-              <DashboardStatCard label="Clubs Elite One" value={stats.clubs} icon={Star} color="text-accent" index={1} />
-              <DashboardStatCard label="Joueurs enregistrés" value={stats.players} icon={Users} color="text-emerald-400" index={2} />
-              <DashboardStatCard label="Matchs de la saison" value={stats.matches} icon={CalendarDays} color="text-red-400" index={3} />
-              <DashboardStatCard label="Ballons d'or votés" value={stats.votes} icon={Award} color="text-amber-400" index={4} />
-              <DashboardStatCard label="Articles de presse" value={stats.articles} icon={FileText} color="text-purple-400" index={5} />
-            </div>
+      {/* ── DASHBOARD ──────────────────────────────────────────────────────── */}
+      {activeTab === 'dashboard' && (
+        <div className="space-y-8">
+          <SectionHeader
+            title="Tableau de bord"
+            subtitle="Vue globale des activités et statistiques du championnat"
+            icon={LayoutDashboard_}
+            actions={
+              <AdminButton size="sm" variant="secondary" onClick={() => apiClient.get('/admin/dashboard-stats').then(r => setStats(r.data))}>
+                <RefreshCw className="h-3 w-3" /> Actualiser
+              </AdminButton>
+            }
+          />
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+            <DashboardStatCard label="Membres inscrits"   value={stats.users}    icon={Users}       color="text-sky-400"     index={0} subtitle="Comptes enregistrés" />
+            <DashboardStatCard label="Clubs Elite One"    value={stats.clubs}    icon={ShieldCheck} color="text-accent"      index={1} subtitle="16 clubs actifs" />
+            <DashboardStatCard label="Joueurs"            value={stats.players}  icon={Users}       color="text-emerald-400" index={2} subtitle="Sous contrat" />
+            <DashboardStatCard label="Matchs de saison"   value={stats.matches}  icon={CalendarDays} color="text-red-400"   index={3} subtitle="Saison 2024/25" />
+            <DashboardStatCard label="Votes Ballon d'Or"  value={stats.votes}    icon={Medal}       color="text-amber-400"   index={4} subtitle="Depuis ouverture" />
+            <DashboardStatCard label="Articles de presse" value={stats.articles} icon={FileText}    color="text-purple-400"  index={5} subtitle="Publiés + brouillons" />
           </div>
-        )}
 
-        {/* Tab 2: Dynamic Layout */}
-        {activeTab === 'layout' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-2xl uppercase tracking-wider text-white">Structure de l'accueil</h2>
-                <p className="text-sm text-white/40">Gérez l'agencement et la visibilité des sections par drag-and-drop</p>
+          {/* Quick Sections Status */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <AdminCard title="Sections de l'accueil" subtitle="Statut de visibilité actuel">
+              <div className="space-y-2">
+                {layout.section_order.slice(0, 6).map((s) => (
+                  <div key={s} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                    <span className="text-xs text-white/60 font-medium">{SECTION_LABELS[s] || s}</span>
+                    <StatusBadge status={layout.section_visibility[s] !== false ? 'PUBLISHED' : 'DRAFT'} />
+                  </div>
+                ))}
               </div>
-              <AdminButton onClick={handleSaveLayout}><Save className="h-4 w-4" /> Enregistrer la structure</AdminButton>
-            </div>
-            <AdminCard title="Ordonner les rubriques de la Page d'accueil">
-              <div className="space-y-3">
-                {layout.section_order.map((section, index) => {
-                  const isVisible = layout.section_visibility[section] !== false;
-                  return (
-                    <div
-                      key={section}
-                      draggable
-                      onDragStart={() => handleDragStart(index)}
-                      onDragOver={(e) => handleDragOver(e, index)}
-                      onDragEnd={handleDragEnd}
-                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
-                        draggedIndex === index
-                          ? 'border-accent bg-accent/5 opacity-50 scale-[0.98]'
-                          : 'border-white/5 bg-white/5 hover:border-white/10 hover:bg-white/[0.07]'
-                      }`}
-                    >
-                      <div className="cursor-grab active:cursor-grabbing text-white/30"><GripVertical className="h-4 w-4" /></div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-white">{SECTION_LABELS[section] || section}</p>
-                        <p className="text-[10px] text-white/30 mt-0.5 uppercase tracking-widest">{section}</p>
-                      </div>
-                      <SwitchToggle checked={isVisible} onChange={() => toggleSectionVisibility(section)} />
-                    </div>
-                  );
-                })}
+            </AdminCard>
+            <AdminCard title="Awards actifs" subtitle="Campagnes de votes en cours">
+              <div className="space-y-2">
+                {awards.filter(a => a.status === 'OPEN').map((a) => (
+                  <div key={a.id} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                    <span className="text-xs text-white/60 font-medium">{a.category}</span>
+                    <span className="text-[10px] text-accent font-bold">{a.nominations?.length || 0} nommés</span>
+                  </div>
+                ))}
+                {awards.filter(a => a.status === 'OPEN').length === 0 && (
+                  <p className="text-xs text-white/25 text-center py-4">Aucun vote ouvert actuellement</p>
+                )}
               </div>
             </AdminCard>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Tab 3: Hero Banners */}
-        {activeTab === 'hero' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-2xl uppercase tracking-wider text-white">Diaporamas Hero</h2>
-                <p className="text-sm text-white/40">Gérez le défilement dynamique de la bannière principale</p>
-              </div>
-              {!editingBanner && (
+      {/* ── LAYOUT ─────────────────────────────────────────────────────────── */}
+      {activeTab === 'layout' && (
+        <div className="space-y-6">
+          <SectionHeader
+            title="Structure de l'accueil"
+            subtitle="Ordonnez et activez les rubriques par drag-and-drop"
+            icon={Layers_}
+            actions={<AdminButton onClick={saveLayout} loading={loading}><Save className="h-3.5 w-3.5" /> Enregistrer</AdminButton>}
+          />
+          <AdminCard title="Rubriques de la Page d'accueil" subtitle="Glissez-déposez pour réordonner · Toggle pour activer/désactiver">
+            <div className="space-y-2">
+              {layout.section_order.map((section, index) => {
+                const visible = layout.section_visibility[section] !== false;
+                return (
+                  <div
+                    key={section}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={() => setDraggedIdx(null)}
+                    className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-150 cursor-grab active:cursor-grabbing ${
+                      draggedIdx === index
+                        ? 'border-accent/30 bg-accent/5 opacity-60 scale-[0.99]'
+                        : visible
+                          ? 'border-white/[0.07] bg-white/[0.025] hover:border-white/12'
+                          : 'border-white/[0.03] bg-transparent opacity-50'
+                    }`}
+                  >
+                    <GripVertical className="h-4 w-4 text-white/20 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-white/80">{SECTION_LABELS[section] || section}</p>
+                      <p className="text-[9px] text-white/25 uppercase tracking-wider mt-0.5 font-mono">{section}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${visible ? 'text-emerald-400' : 'text-white/20'}`}>{visible ? 'Visible' : 'Masqué'}</span>
+                      <SwitchToggle checked={visible} onChange={() => setLayout(p => ({ ...p, section_visibility: { ...p.section_visibility, [section]: !p.section_visibility[section] } }))} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </AdminCard>
+        </div>
+      )}
+
+      {/* ── HERO BANNERS ───────────────────────────────────────────────────── */}
+      {activeTab === 'hero' && (
+        <div className="space-y-6">
+          <SectionHeader
+            title="Bannières Hero"
+            subtitle="Gérez le diaporama principal de la page d'accueil"
+            icon={Image_}
+            actions={
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <BulkImportExport
+                  entityName="Hero Banners"
+                  data={banners}
+                  templateFields={['title_fr','title_en','subtitle_fr','subtitle_en','image_url','link_url','type','priority','active']}
+                  onImport={importBanners}
+                  importLoading={importingBanners}
+                />
                 <AdminButton onClick={() => setEditingBanner({ title: { fr: '', en: '' }, subtitle: { fr: '', en: '' }, image_url: '', link_url: '', priority: 0, active: true, type: 'news' })}>
-                  <Plus className="h-4 w-4" /> Nouvelle diapositive
+                  <Plus className="h-3.5 w-3.5" /> Nouvelle diapositive
                 </AdminButton>
-              )}
-            </div>
-
-            {editingBanner && (
-              <AdminCard title={editingBanner._id ? 'Modifier la Diapositive' : 'Créer une Diapositive'}>
-                <form onSubmit={handleSaveBanner} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Titre (FR)" value={editingBanner.title?.fr || ''} onChange={(v) => setEditingBanner(p => ({ ...p, title: { ...p.title, fr: v } as any }))} required />
-                    <FormField label="Titre (EN)" value={editingBanner.title?.en || ''} onChange={(v) => setEditingBanner(p => ({ ...p, title: { ...p.title, en: v } as any }))} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Sous-titre (FR)" type="textarea" value={editingBanner.subtitle?.fr || ''} onChange={(v) => setEditingBanner(p => ({ ...p, subtitle: { ...p.subtitle, fr: v } as any }))} />
-                    <FormField label="Sous-titre (EN)" type="textarea" value={editingBanner.subtitle?.en || ''} onChange={(v) => setEditingBanner(p => ({ ...p, subtitle: { ...p.subtitle, en: v } as any }))} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Image URL" value={editingBanner.image_url || ''} onChange={(v) => setEditingBanner(p => ({ ...p, image_url: v }))} required />
-                    <FormField label="Lien de redirection" value={editingBanner.link_url || ''} onChange={(v) => setEditingBanner(p => ({ ...p, link_url: v }))} />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 items-end">
-                    <FormField label="Type" type="select" value={editingBanner.type || 'news'} onChange={(v) => setEditingBanner(p => ({ ...p, type: v }))} options={[{ value: 'match', label: 'Match' }, { value: 'player', label: 'Joueur' }, { value: 'news', label: 'Actualité' }]} />
-                    <FormField label="Priorité" type="number" value={editingBanner.priority || 0} onChange={(v) => setEditingBanner(p => ({ ...p, priority: Number(v) }))} />
-                    <div className="pb-3"><SwitchToggle label="Actif" checked={editingBanner.active !== false} onChange={(v) => setEditingBanner(p => ({ ...p, active: v }))} /></div>
-                  </div>
-                  <div className="flex justify-end gap-3"><AdminButton variant="secondary" onClick={() => setEditingBanner(null)}>Annuler</AdminButton><AdminButton type="submit">Sauvegarder</AdminButton></div>
-                </form>
-              </AdminCard>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {banners.map((b) => (
-                <div key={b._id} className="bg-[#151D24] border border-white/5 rounded-2xl overflow-hidden shadow-xl p-4 flex gap-4 items-center">
-                  <img src={b.image_url} alt={b.title.fr} className="h-16 w-16 object-cover rounded-xl shrink-0 bg-white/5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">{b.title.fr}</p>
-                    <p className="text-[10px] text-white/40 truncate">{b.subtitle?.fr}</p>
-                    <span className="text-[9px] text-accent font-semibold">{b.type} · Priority: {b.priority}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingBanner(b)} className="p-1.5 bg-white/5 border border-white/10 hover:text-accent rounded"><Edit3 className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleDeleteBanner(b._id!)} className="p-1.5 bg-white/5 border border-white/10 hover:text-red-500 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 4: Matches CRUD */}
-        {activeTab === 'matches' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-2xl uppercase tracking-wider text-white">Matchs & Calendrier</h2>
-                <p className="text-sm text-white/40">Programmez et mettez à jour les matchs en direct</p>
               </div>
-              {!editingMatch && (
-                <AdminButton onClick={() => setEditingMatch({ homeClubId: '', awayClubId: '', homeScore: 0, awayScore: 0, status: 'SCHEDULED', round: 1, kickoff: new Date().toISOString(), venue: '', seasonId: seasons[0]?.id || '' })}>
-                  <Plus className="h-4 w-4" /> Planifier un Match
-                </AdminButton>
-              )}
-            </div>
+            }
+          />
 
-            {editingMatch && (
-              <AdminCard title={editingMatch.id ? 'Modifier Match' : 'Planifier un Match'}>
-                <form onSubmit={handleSaveMatch} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Club Domicile" type="select" value={editingMatch.homeClubId || ''} onChange={(v) => setEditingMatch(p => ({ ...p, homeClubId: v }))} options={clubs.map(c => ({ value: c.id, label: c.name }))} required />
-                    <FormField label="Club Extérieur" type="select" value={editingMatch.awayClubId || ''} onChange={(v) => setEditingMatch(p => ({ ...p, awayClubId: v }))} options={clubs.map(c => ({ value: c.id, label: c.name }))} required />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField label="Score Domicile" type="number" value={editingMatch.homeScore ?? 0} onChange={(v) => setEditingMatch(p => ({ ...p, homeScore: v }))} />
-                    <FormField label="Score Extérieur" type="number" value={editingMatch.awayScore ?? 0} onChange={(v) => setEditingMatch(p => ({ ...p, awayScore: v }))} />
-                    <FormField label="Statut" type="select" value={editingMatch.status || 'SCHEDULED'} onChange={(v) => setEditingMatch(p => ({ ...p, status: v as any }))} options={[{ value: 'SCHEDULED', label: 'Programmé' }, { value: 'LIVE', label: 'En Cours (LIVE)' }, { value: 'HT', label: 'Mi-Temps' }, { value: 'FT', label: 'Terminé' }, { value: 'POSTPONED', label: 'Reporté' }]} />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField label="Journée (Round)" type="number" value={editingMatch.round || 1} onChange={(v) => setEditingMatch(p => ({ ...p, round: v }))} />
-                    <FormField label="Coup d'envoi (Kickoff)" value={editingMatch.kickoff || ''} onChange={(v) => setEditingMatch(p => ({ ...p, kickoff: v }))} placeholder="YYYY-MM-DD HH:MM:SS" />
-                    <FormField label="Stade / Lieu" value={editingMatch.venue || ''} onChange={(v) => setEditingMatch(p => ({ ...p, venue: v }))} />
-                  </div>
-                  <FormField label="Saison" type="select" value={editingMatch.seasonId || ''} onChange={(v) => setEditingMatch(p => ({ ...p, seasonId: v }))} options={seasons.map(s => ({ value: s.id, label: `${s.name} (${s.year})` }))} />
-                  <div className="flex justify-end gap-3"><AdminButton variant="secondary" onClick={() => setEditingMatch(null)}>Annuler</AdminButton><AdminButton type="submit">Sauvegarder</AdminButton></div>
-                </form>
-              </AdminCard>
-            )}
-
-            <div className="space-y-3">
-              {matches.map((m) => (
-                <div key={m.id} className="bg-[#151D24] border border-white/5 rounded-xl p-4 flex items-center justify-between gap-4">
-                  <div className="flex-1 grid grid-cols-3 items-center text-center gap-2">
-                    <div className="text-right text-xs font-bold text-white">{m.homeClub?.name || 'Home'}</div>
-                    <div className="bg-white/5 border border-white/10 rounded px-3 py-1 font-display text-sm font-bold text-accent inline-block mx-auto">
-                      {m.status === 'SCHEDULED' ? 'VS' : `${m.homeScore} - ${m.awayScore}`}
-                    </div>
-                    <div className="text-left text-xs font-bold text-white">{m.awayClub?.name || 'Away'}</div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[10px] text-white/40 block">J{m.round} · {m.venue}</span>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${m.status === 'LIVE' ? 'bg-live text-white animate-pulse' : 'bg-white/5 text-white/55'}`}>{m.status}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingMatch(m)} className="p-1.5 bg-white/5 border border-white/10 hover:text-accent rounded"><Edit3 className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleDeleteMatch(m.id!)} className="p-1.5 bg-white/5 border border-white/10 hover:text-red-500 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
-                  </div>
+          {editingBanner && (
+            <AdminCard title={editingBanner._id ? 'Modifier la Diapositive' : 'Créer une Diapositive'} accent>
+              <form onSubmit={saveBanner} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Titre (Français)" value={editingBanner.title?.fr || ''} onChange={(v) => setEditingBanner(p => ({ ...p, title: { ...(p?.title as any), fr: v } }))} required />
+                  <FormField label="Titre (Anglais)" value={editingBanner.title?.en || ''} onChange={(v) => setEditingBanner(p => ({ ...p, title: { ...(p?.title as any), en: v } }))} />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 5: Awards & Ballon d'Or */}
-        {activeTab === 'awards' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-2xl uppercase tracking-wider text-white">Awards, Ballon d'Or & Nominations</h2>
-                <p className="text-sm text-white/40">Gérez les campagnes de distinctions individuelles</p>
-              </div>
-              {!editingAward && !selectedAwardForNominees && (
-                <AdminButton onClick={() => setEditingAward({ category: '', status: 'CLOSED', seasonId: seasons[0]?.id || '' })}>
-                  <Plus className="h-4 w-4" /> Créer une Distinction
-                </AdminButton>
-              )}
-            </div>
-
-            {editingAward && (
-              <AdminCard title={editingAward.id ? 'Modifier Distinction' : 'Créer une Distinction'}>
-                <form onSubmit={handleSaveAward} className="space-y-4">
-                  <FormField label="Catégorie (ex: Ballon d'Or, Entraîneur de la Semaine)" value={editingAward.category || ''} onChange={(v) => setEditingAward(p => ({ ...p, category: v }))} required />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Début des votes" value={editingAward.periodStart || ''} onChange={(v) => setEditingAward(p => ({ ...p, periodStart: v }))} />
-                    <FormField label="Fin des votes" value={editingAward.periodEnd || ''} onChange={(v) => setEditingAward(p => ({ ...p, periodEnd: v }))} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField label="Statut" type="select" value={editingAward.status || 'CLOSED'} onChange={(v) => setEditingAward(p => ({ ...p, status: v as any }))} options={[{ value: 'OPEN', label: 'Votes Ouverts' }, { value: 'CLOSED', label: 'Votes Fermés' }, { value: 'ANNOUNCED', label: 'Vainqueur Annoncé' }]} />
-                    <FormField label="Saison" type="select" value={editingAward.seasonId || ''} onChange={(v) => setEditingAward(p => ({ ...p, seasonId: v }))} options={seasons.map(s => ({ value: s.id, label: s.name }))} />
-                  </div>
-                  <FormField label="Vainqueur (Optionnel)" type="select" value={editingAward.winnerId || ''} onChange={(v) => setEditingAward(p => ({ ...p, winnerId: v }))} options={[{ value: '', label: 'Aucun' }, ...players.map(p => ({ value: p.id, label: p.name }))]} />
-                  <div className="flex justify-end gap-3"><AdminButton variant="secondary" onClick={() => setEditingAward(null)}>Annuler</AdminButton><AdminButton type="submit">Sauvegarder</AdminButton></div>
-                </form>
-              </AdminCard>
-            )}
-
-            {selectedAwardForNominees && (
-              <AdminCard title={`Gestion des Nominations - ${selectedAwardForNominees.category}`} action={<AdminButton variant="secondary" onClick={() => setSelectedAwardForNominees(null)}>Retour</AdminButton>}>
-                <div className="space-y-4">
-                  <div className="flex gap-3 items-end">
-                    <FormField label="Sélectionner un Joueur Nommé" type="select" value={selectedPlayerForNomination} onChange={setSelectedPlayerForNomination} options={[{ value: '', label: 'Choisissez...' }, ...players.map(p => ({ value: p.id, label: `${p.name} (${p.club?.short || ''})` }))]} />
-                    <AdminButton onClick={handleAddNomination} disabled={!selectedPlayerForNomination}><Plus className="h-4 w-4" /> Ajouter</AdminButton>
-                  </div>
-
-                  <div className="space-y-2 mt-4">
-                    <h4 className="text-xs uppercase font-bold text-white/50">Candidats actuels</h4>
-                    {selectedAwardForNominees.nominations?.map((nom: any) => (
-                      <div key={nom.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/5 rounded-xl text-xs">
-                        <div>
-                          <p className="font-semibold text-white">{nom.player?.name}</p>
-                          <p className="text-[10px] text-white/30">{nom.player?.club?.name}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="font-display font-bold text-accent tabular-nums">{nom.voteCount} votes</span>
-                          <button onClick={() => handleDeleteNomination(nom.id)} className="p-1 hover:text-red-500 bg-white/5 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Sous-titre (FR)" type="textarea" value={editingBanner.subtitle?.fr || ''} onChange={(v) => setEditingBanner(p => ({ ...p, subtitle: { ...(p?.subtitle as any), fr: v } }))} />
+                  <FormField label="Sous-titre (EN)" type="textarea" value={editingBanner.subtitle?.en || ''} onChange={(v) => setEditingBanner(p => ({ ...p, subtitle: { ...(p?.subtitle as any), en: v } }))} />
                 </div>
-              </AdminCard>
-            )}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Image URL" value={editingBanner.image_url || ''} onChange={(v) => setEditingBanner(p => ({ ...p, image_url: v }))} required hint="URL absolue vers l'image" />
+                  <FormField label="URL de redirection" value={editingBanner.link_url || ''} onChange={(v) => setEditingBanner(p => ({ ...p, link_url: v }))} hint="Lien au clic (optionnel)" />
+                </div>
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <FormField label="Type de contenu" type="select" value={editingBanner.type || 'news'} onChange={(v) => setEditingBanner(p => ({ ...p, type: v }))} options={[{value:'match',label:'Match'},{value:'player',label:'Joueur'},{value:'news',label:'Actualité'},{value:'award',label:'Award'}]} />
+                  <FormField label="Priorité d'affichage" type="number" value={editingBanner.priority || 0} onChange={(v) => setEditingBanner(p => ({ ...p, priority: Number(v) }))} hint="Plus élevé = affiché en premier" />
+                  <div className="pb-2"><SwitchToggle label="Diapositive active" checked={editingBanner.active !== false} onChange={(v) => setEditingBanner(p => ({ ...p, active: v }))} /></div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                  <AdminButton variant="secondary" onClick={() => setEditingBanner(null)}>Annuler</AdminButton>
+                  <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+                </div>
+              </form>
+            </AdminCard>
+          )}
 
-            {!selectedAwardForNominees && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {awards.map((a) => (
-                  <div key={a.id} className="bg-[#151D24] border border-white/5 rounded-2xl p-5 flex flex-col justify-between">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {banners.map((b, i) => (
+              <motion.div key={b._id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                className="group bg-[#111820] border border-white/[0.06] rounded-2xl overflow-hidden hover:border-white/12 transition-all">
+                <div className="relative h-28 bg-white/[0.03]">
+                  <img src={b.image_url} alt={b.title.fr} className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
                     <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold text-white">{a.category}</p>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${a.status === 'OPEN' ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400' : 'bg-white/5 text-white/40'}`}>{a.status}</span>
-                      </div>
-                      <p className="text-[10px] text-white/40 mt-1">Candidats: {a.nominations?.length || 0}</p>
+                      <p className="text-xs font-bold text-white leading-tight">{b.title.fr}</p>
+                      <p className="text-[10px] text-white/60 truncate">{b.subtitle?.fr}</p>
                     </div>
-                    <div className="flex gap-2 mt-4 pt-3 border-t border-white/5 justify-end">
-                      <AdminButton variant="secondary" onClick={() => setSelectedAwardForNominees(a)} className="text-[10px] py-1 px-3">Gérer Nommés</AdminButton>
-                      <button onClick={() => setEditingAward(a)} className="p-1.5 bg-white/5 border border-white/10 hover:text-accent rounded"><Edit3 className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => handleDeleteAward(a.id!)} className="p-1.5 bg-white/5 border border-white/10 hover:text-red-500 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab 6: News / Articles */}
-        {activeTab === 'news' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-display text-2xl uppercase tracking-wider text-white">Articles & Presse</h2>
-                <p className="text-sm text-white/40">Gérez le fil d\'actualités et les communiqués de presse</p>
-              </div>
-              {!editingArticle && (
-                <AdminButton onClick={() => setEditingArticle({ title: '', summary: '', content: '', image_url: '', category: 'NEWS', status: 'DRAFT', featured: false })}>
-                  <Plus className="h-4 w-4" /> Rédiger un Article
-                </AdminButton>
-              )}
-            </div>
-
-            {editingArticle && (
-              <AdminCard title={editingArticle._id ? 'Modifier l\'Article' : 'Rédiger un Article'}>
-                <form onSubmit={handleSaveArticle} className="space-y-4">
-                  <FormField label="Titre" value={editingArticle.title || ''} onChange={(v) => setEditingArticle(p => ({ ...p, title: v }))} required />
-                  <FormField label="Résumé court" value={editingArticle.summary || ''} onChange={(v) => setEditingArticle(p => ({ ...p, summary: v }))} />
-                  <FormField label="Contenu de l'article" type="textarea" value={editingArticle.content || ''} onChange={(v) => setEditingArticle(p => ({ ...p, content: v }))} required />
-                  <FormField label="Image URL" value={editingArticle.image_url || ''} onChange={(v) => setEditingArticle(p => ({ ...p, image_url: v }))} />
-                  <div className="grid grid-cols-3 gap-4 items-end">
-                    <FormField label="Catégorie" type="select" value={editingArticle.category || 'NEWS'} onChange={(v) => setEditingArticle(p => ({ ...p, category: v }))} options={[{ value: 'NEWS', label: 'Actualité' }, { value: 'MATCH_REPORT', label: 'Compte-rendu' }, { value: 'NATIONAL_TEAM', label: 'Lions Indomptables' }]} />
-                    <FormField label="Statut" type="select" value={editingArticle.status || 'DRAFT'} onChange={(v) => setEditingArticle(p => ({ ...p, status: v as any }))} options={[{ value: 'DRAFT', label: 'Brouillon' }, { value: 'PUBLISHED', label: 'Publié' }]} />
-                    <div className="pb-3"><SwitchToggle label="À la une (Featured)" checked={editingArticle.featured || false} onChange={(v) => setEditingArticle(p => ({ ...p, featured: v }))} /></div>
-                  </div>
-                  <div className="flex justify-end gap-3"><AdminButton variant="secondary" onClick={() => setEditingArticle(null)}>Annuler</AdminButton><AdminButton type="submit">Sauvegarder</AdminButton></div>
-                </form>
-              </AdminCard>
-            )}
-
-            <div className="space-y-3">
-              {articles.map((art) => (
-                <div key={art._id} className="bg-[#151D24] border border-white/5 rounded-xl p-4 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-white truncate">{art.title}</p>
-                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${art.status === 'PUBLISHED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/40'}`}>{art.status}</span>
-                      {art.featured && <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent">A LA UNE</span>}
-                    </div>
-                    <p className="text-[10px] text-white/40 truncate mt-1">{art.summary}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingArticle(art)} className="p-1.5 bg-white/5 border border-white/10 hover:text-accent rounded"><Edit3 className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleDeleteArticle(art._id!)} className="p-1.5 bg-white/5 border border-white/10 hover:text-red-500 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <StatusBadge status={b.active ? 'PUBLISHED' : 'DRAFT'} />
                   </div>
                 </div>
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-[10px] text-white/35">
+                    <span className="capitalize font-semibold text-white/50">{b.type}</span>
+                    <span>Priorité: {b.priority}</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <AdminButton size="sm" variant="secondary" onClick={() => setEditingBanner(b)}><Edit3 className="h-3 w-3" /></AdminButton>
+                    <AdminButton size="sm" variant="danger" onClick={() => deleteBanner(b._id!)}><Trash2 className="h-3 w-3" /></AdminButton>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── MATCHES ────────────────────────────────────────────────────────── */}
+      {activeTab === 'matches' && (
+        <div className="space-y-6">
+          <SectionHeader
+            title="Matchs & Résultats"
+            subtitle="Planifiez et gérez tous les matchs de la saison"
+            icon={Calendar_}
+            actions={
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <BulkImportExport
+                  entityName="Matches"
+                  data={matches}
+                  templateFields={['homeClubId','awayClubId','kickoff','venue','round','status','homeScore','awayScore','seasonId']}
+                  onImport={importMatches}
+                  importLoading={importingMatches}
+                />
+                <AdminButton onClick={() => setEditingMatch({ homeClubId: '', awayClubId: '', status: 'SCHEDULED', round: 1, kickoff: new Date().toISOString(), venue: '', seasonId: currentSeasonId })}>
+                  <Plus className="h-3.5 w-3.5" /> Planifier un Match
+                </AdminButton>
+              </div>
+            }
+          />
+
+          {/* Filter bar */}
+          <div className="flex items-center gap-3">
+            {['', 'SCHEDULED', 'LIVE', 'HT', 'FT', 'POSTPONED'].map(s => (
+              <button key={s} onClick={() => { setMatchStatus(s); setMatchPage(1); }}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${matchStatus === s ? 'bg-accent text-black' : 'bg-white/5 border border-white/8 text-white/40 hover:text-white'}`}>
+                {s || 'Tous'}
+              </button>
+            ))}
+          </div>
+
+          {editingMatch && (
+            <AdminCard title={editingMatch.id ? 'Modifier Match' : 'Planifier un Match'} accent>
+              <form onSubmit={saveMatch} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Club Domicile" type="select" value={editingMatch.homeClubId || ''} onChange={v => setEditingMatch(p => ({ ...p, homeClubId: v }))} options={clubs.map(c => ({ value: c.id, label: c.name }))} required />
+                  <FormField label="Club Extérieur" type="select" value={editingMatch.awayClubId || ''} onChange={v => setEditingMatch(p => ({ ...p, awayClubId: v }))} options={clubs.map(c => ({ value: c.id, label: c.name }))} required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Score Domicile" type="number" value={editingMatch.homeScore ?? ''} onChange={v => setEditingMatch(p => ({ ...p, homeScore: v }))} />
+                  <FormField label="Score Extérieur" type="number" value={editingMatch.awayScore ?? ''} onChange={v => setEditingMatch(p => ({ ...p, awayScore: v }))} />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField label="Statut" type="select" value={editingMatch.status || 'SCHEDULED'} onChange={v => setEditingMatch(p => ({ ...p, status: v as any }))} options={[{value:'SCHEDULED',label:'Programmé'},{value:'LIVE',label:'LIVE'},{value:'HT',label:'Mi-temps'},{value:'FT',label:'Terminé'},{value:'POSTPONED',label:'Reporté'},{value:'CANCELLED',label:'Annulé'}]} />
+                  <FormField label="Journée" type="number" value={editingMatch.round || 1} onChange={v => setEditingMatch(p => ({ ...p, round: v }))} />
+                  <FormField label="Coup d'envoi" type="datetime-local" value={(editingMatch.kickoff || '').replace('Z','').slice(0,16)} onChange={v => setEditingMatch(p => ({ ...p, kickoff: new Date(v).toISOString() }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Stade / Lieu" value={editingMatch.venue || ''} onChange={v => setEditingMatch(p => ({ ...p, venue: v }))} />
+                  <FormField label="Saison" type="select" value={editingMatch.seasonId || ''} onChange={v => setEditingMatch(p => ({ ...p, seasonId: v }))} options={seasons.map(s => ({ value: s.id, label: s.name }))} />
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                  <AdminButton variant="secondary" onClick={() => setEditingMatch(null)}>Annuler</AdminButton>
+                  <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+                </div>
+              </form>
+            </AdminCard>
+          )}
+
+          <AdminCard noPadding>
+            <DataTable
+              columns={[
+                { key: 'round', label: 'J.', align: 'center', render: r => <span className="font-display font-bold text-white/70">{r.round}</span> },
+                { key: 'home', label: 'Domicile', render: r => <span className="font-semibold text-white/80">{r.homeClub?.name || '—'}</span> },
+                { key: 'score', label: 'Score', align: 'center', render: r => (
+                  <span className={`font-display font-bold ${r.status === 'LIVE' ? 'text-red-400' : 'text-white'}`}>
+                    {r.status === 'SCHEDULED' ? 'VS' : `${r.homeScore ?? '?'} – ${r.awayScore ?? '?'}`}
+                  </span>
+                )},
+                { key: 'away', label: 'Extérieur', render: r => <span className="font-semibold text-white/80">{r.awayClub?.name || '—'}</span> },
+                { key: 'venue', label: 'Stade' },
+                { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
+                { key: 'kickoff', label: 'Coup d\'envoi', render: r => <span className="text-white/40 text-[10px]">{r.kickoff ? new Date(r.kickoff).toLocaleDateString('fr-FR') : '—'}</span> },
+              ]}
+              data={matches}
+              keyField="id"
+              onEdit={r => setEditingMatch(r)}
+              onDelete={r => deleteMatch(r.id!)}
+            />
+            <div className="px-4 pb-4"><Paginator page={matchPage} total={matchTotal} limit={20} onChange={setMatchPage} /></div>
+          </AdminCard>
+        </div>
+      )}
+
+      {/* ── AWARDS ─────────────────────────────────────────────────────────── */}
+      {activeTab === 'awards' && (
+        <div className="space-y-6">
+          <SectionHeader
+            title="Awards & Ballon d'Or"
+            subtitle="Gérez les campagnes de votes et les distinctions individuelles"
+            icon={Trophy_}
+            actions={
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <BulkImportExport
+                  entityName="Awards"
+                  data={awards}
+                  templateFields={['category','periodStart','periodEnd','status','seasonId']}
+                  onImport={importAwards}
+                  importLoading={importingAwards}
+                />
+                {!selectedAward && <AdminButton onClick={() => setEditingAward({ category: '', status: 'CLOSED', seasonId: currentSeasonId })}>
+                  <Plus className="h-3.5 w-3.5" /> Créer un Award
+                </AdminButton>}
+              </div>
+            }
+          />
+
+          {editingAward && (
+            <AdminCard title={editingAward.id ? 'Modifier Award' : 'Créer un Award'} accent>
+              <form onSubmit={saveAward} className="space-y-4">
+                <FormField label="Catégorie (ex: Ballon d'Or Elite One 2025)" value={editingAward.category || ''} onChange={v => setEditingAward(p => ({ ...p, category: v }))} required />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Début des votes" type="datetime-local" value={(editingAward.periodStart || '').replace('Z','').slice(0,16)} onChange={v => setEditingAward(p => ({ ...p, periodStart: new Date(v).toISOString() }))} />
+                  <FormField label="Fin des votes" type="datetime-local" value={(editingAward.periodEnd || '').replace('Z','').slice(0,16)} onChange={v => setEditingAward(p => ({ ...p, periodEnd: new Date(v).toISOString() }))} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Statut" type="select" value={editingAward.status || 'CLOSED'} onChange={v => setEditingAward(p => ({ ...p, status: v as any }))} options={[{value:'OPEN',label:'Votes Ouverts'},{value:'CLOSED',label:'Votes Fermés'},{value:'ANNOUNCED',label:'Vainqueur Annoncé'}]} />
+                  <FormField label="Saison" type="select" value={editingAward.seasonId || ''} onChange={v => setEditingAward(p => ({ ...p, seasonId: v }))} options={seasons.map(s => ({ value: s.id, label: s.name }))} />
+                </div>
+                <FormField label="Vainqueur (optionnel)" type="select" value={editingAward.winnerId || ''} onChange={v => setEditingAward(p => ({ ...p, winnerId: v || null }))} options={[{value:'',label:'Non encore désigné'},...players.map(p => ({value:p.id,label:p.name}))]} />
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                  <AdminButton variant="secondary" onClick={() => setEditingAward(null)}>Annuler</AdminButton>
+                  <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+                </div>
+              </form>
+            </AdminCard>
+          )}
+
+          {/* Nominee management panel */}
+          {selectedAward && (
+            <AdminCard title={`Nominations — ${selectedAward.category}`} subtitle={`${selectedAward.nominations?.length || 0} candidats • Statut: ${selectedAward.status}`} action={<AdminButton variant="secondary" size="sm" onClick={() => setSelectedAward(null)}>← Retour</AdminButton>} accent>
+              <div className="space-y-4">
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <FormField label="Ajouter un joueur nommé" type="select" value={nomineePlayerId} onChange={setNomineePlayerId} options={[{value:'',label:'Choisissez un joueur...'},...players.map(p => ({value:p.id,label:`${p.name} • ${p.club?.name || ''}`}))]} />
+                  </div>
+                  <AdminButton onClick={addNomination} disabled={!nomineePlayerId} loading={loading}><Plus className="h-3.5 w-3.5" /> Nommer</AdminButton>
+                </div>
+                <div className="space-y-1 mt-2">
+                  {(selectedAward.nominations || []).sort((a: any, b: any) => b.voteCount - a.voteCount).map((nom: any, i: number) => (
+                    <div key={nom.id} className="flex items-center gap-3 p-3 bg-white/[0.025] rounded-xl border border-white/[0.04]">
+                      <span className={`text-[11px] font-display font-bold w-5 text-center ${i < 3 ? 'text-accent' : 'text-white/25'}`}>{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white">{nom.player?.name}</p>
+                        <p className="text-[10px] text-white/35">{nom.player?.club?.name}</p>
+                      </div>
+                      <div className="text-right mr-4">
+                        <p className="font-display font-bold text-accent text-sm tabular-nums">{nom.voteCount}</p>
+                        <p className="text-[9px] text-white/25">votes</p>
+                      </div>
+                      <AdminButton size="sm" variant="danger" onClick={() => removeNomination(nom.id)}><Trash2 className="h-3 w-3" /></AdminButton>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </AdminCard>
+          )}
+
+          {!selectedAward && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {awards.map((a, i) => (
+                <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                  className="bg-[#111820] border border-white/[0.06] rounded-2xl p-5 flex flex-col gap-4 hover:border-white/12 transition-all">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-bold text-white/85 leading-tight">{a.category}</p>
+                      <p className="text-[10px] text-white/30 mt-1">{a.nominations?.length || 0} candidats</p>
+                    </div>
+                    <StatusBadge status={a.status} />
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-white/[0.05]">
+                    <AdminButton size="sm" variant="secondary" onClick={() => setSelectedAward(a)} className="flex-1">Nominations</AdminButton>
+                    <AdminButton size="sm" variant="ghost" onClick={() => setEditingAward(a)}><Edit3 className="h-3 w-3" /></AdminButton>
+                    <AdminButton size="sm" variant="danger" onClick={() => deleteAward(a.id!)}><Trash2 className="h-3 w-3" /></AdminButton>
+                  </div>
+                </motion.div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {/* Tab 7: Legends & Talents */}
-        {activeTab === 'halloffame' && (
-          <div className="space-y-8">
-            {/* Legends */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-display text-2xl uppercase tracking-wider text-white">Temple de la renommée (Hall of Fame)</h2>
-                  <p className="text-sm text-white/40">Consacrez les figures historiques du football camerounais</p>
+      {/* ── STATISTICS ─────────────────────────────────────────────────────── */}
+      {activeTab === 'stats' && (
+        <div className="space-y-6">
+          <SectionHeader
+            title="Statistiques de la Saison"
+            subtitle="Vue analytique des performances — Meilleurs buteurs, passeurs, clubs"
+            icon={BarChart2_}
+            actions={
+              <div className="flex items-center gap-2">
+                <FormField label="" type="select" value={currentSeasonId} onChange={v => setCurrentSeasonId(v)}
+                  options={seasons.map(s => ({ value: s.id, label: s.name }))} />
+                <AdminButton size="sm" variant="secondary" onClick={() => { /* triggers useEffect */ setCurrentSeasonId(s => s); }}><RefreshCw className="h-3 w-3" /></AdminButton>
+              </div>
+            }
+          />
+
+          {/* Season Summary Cards */}
+          {seasonSummary && (
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+              {[
+                { label: 'Matchs joués', val: seasonSummary.matchesPlayed, icon: CalendarDays, color: 'text-sky-400' },
+                { label: 'Buts marqués', val: seasonSummary.totalGoals,    icon: Target,      color: 'text-accent' },
+                { label: 'Buts / match', val: seasonSummary.avgGoalsPerMatch?.toFixed(1), icon: Flame, color: 'text-red-400' },
+                { label: 'Cartons rouges', val: seasonSummary.totalRedCards, icon: Flag,     color: 'text-orange-400' },
+              ].map((item, i) => (
+                <DashboardStatCard key={item.label} label={item.label} value={item.val ?? '—'} icon={item.icon} color={item.color} index={i} />
+              ))}
+            </div>
+          )}
+
+          {statsLoading ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {[0,1].map(i => <div key={i} className="h-64 bg-white/[0.03] rounded-2xl animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Top Scorers */}
+              <AdminCard title="Classement Buteurs" subtitle={`Top ${topScorers.length} de la saison`}>
+                <div className="space-y-2">
+                  {topScorers.map((p: any, i) => (
+                    <div key={p.playerId || i} className="flex items-center gap-3">
+                      <span className={`text-[11px] font-display font-bold w-5 text-center ${i < 3 ? 'text-accent' : 'text-white/25'}`}>{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white/80 truncate">{p.playerName || p.name}</p>
+                        <p className="text-[9px] text-white/30 truncate">{p.clubName}</p>
+                      </div>
+                      <StatBar label="" value={p.goals} max={topScorers[0]?.goals || 1} color={i === 0 ? 'bg-accent' : 'bg-sky-500'} />
+                      <span className="w-8 text-right font-display font-bold text-white tabular-nums text-sm">{p.goals}</span>
+                    </div>
+                  ))}
+                  {!topScorers.length && <p className="text-center text-white/25 text-xs py-8">Aucune donnée disponible</p>}
                 </div>
-                {!editingLegend && (
-                  <AdminButton onClick={() => setEditingLegend({ name: '', bio: { fr: '', en: '' }, era: '80', achievements: [], image_url: '', club_ids: [] })}>
-                    <Plus className="h-4 w-4" /> Introniser une Légende
+              </AdminCard>
+
+              {/* Top Assisters */}
+              <AdminCard title="Classement Passeurs" subtitle={`Top ${topAssisters.length} de la saison`}>
+                <div className="space-y-2">
+                  {topAssisters.map((p: any, i) => (
+                    <div key={p.playerId || i} className="flex items-center gap-3">
+                      <span className={`text-[11px] font-display font-bold w-5 text-center ${i < 3 ? 'text-accent' : 'text-white/25'}`}>{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white/80 truncate">{p.playerName || p.name}</p>
+                        <p className="text-[9px] text-white/30 truncate">{p.clubName}</p>
+                      </div>
+                      <StatBar label="" value={p.assists} max={topAssisters[0]?.assists || 1} color="bg-emerald-500" />
+                      <span className="w-8 text-right font-display font-bold text-white tabular-nums text-sm">{p.assists}</span>
+                    </div>
+                  ))}
+                  {!topAssisters.length && <p className="text-center text-white/25 text-xs py-8">Aucune donnée disponible</p>}
+                </div>
+              </AdminCard>
+
+              {/* Team Stats table */}
+              <AdminCard title="Statistiques des Clubs" subtitle="Buts, victoires, défaites" className="lg:col-span-2" noPadding>
+                <DataTable
+                  columns={[
+                    { key: 'name',      label: 'Club',       render: r => <span className="font-semibold text-white/80">{r.name}</span> },
+                    { key: 'goalsFor',   label: 'Buts marqués', align: 'center', render: r => <span className="font-display font-bold text-accent tabular-nums">{r.goalsFor ?? r.goals_for ?? '—'}</span> },
+                    { key: 'goalsAgainst', label: 'Buts encaissés', align: 'center', render: r => <span className="tabular-nums text-red-400/80 font-bold">{r.goalsAgainst ?? r.goals_against ?? '—'}</span> },
+                    { key: 'wins',   label: 'V', align: 'center', render: r => <span className="text-emerald-400 font-bold">{r.wins ?? '—'}</span> },
+                    { key: 'draws',  label: 'N', align: 'center', render: r => <span className="text-white/50 font-bold">{r.draws ?? '—'}</span> },
+                    { key: 'losses', label: 'D', align: 'center', render: r => <span className="text-red-400 font-bold">{r.losses ?? '—'}</span> },
+                  ]}
+                  data={teamStats}
+                  keyField="clubId"
+                  emptyMessage="Aucune stat d'équipe pour cette saison."
+                />
+              </AdminCard>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── NEWS / ARTICLES ─────────────────────────────────────────────────── */}
+      {activeTab === 'news' && (
+        <div className="space-y-6">
+          <SectionHeader
+            title="Actualités & Presse"
+            subtitle="Rédigez, publiez et gérez les articles du fil d'actualité"
+            icon={FileText_}
+            actions={
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <BulkImportExport
+                  entityName="Articles"
+                  data={articles}
+                  templateFields={['title','summary','content','image_url','category','status','featured']}
+                  onImport={importArticles}
+                  importLoading={importingArticles}
+                />
+                {!editingArticle && (
+                  <AdminButton onClick={() => setEditingArticle({ title: '', summary: '', content: '', image_url: '', category: 'NEWS', status: 'DRAFT', featured: false })}>
+                    <Plus className="h-3.5 w-3.5" /> Rédiger un Article
                   </AdminButton>
                 )}
               </div>
+            }
+          />
 
-              {editingLegend && (
-                <AdminCard title={editingLegend._id ? 'Modifier Légende' : 'Introniser une Légende'}>
-                  <form onSubmit={handleSaveLegend} className="space-y-4">
-                    <FormField label="Nom de la Légende" value={editingLegend.name || ''} onChange={(v) => setEditingLegend(p => ({ ...p, name: v }))} required />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField label="Bio (FR)" type="textarea" value={editingLegend.bio?.fr || ''} onChange={(v) => setEditingLegend(p => ({ ...p, bio: { ...p.bio, fr: v } as any }))} required />
-                      <FormField label="Bio (EN)" type="textarea" value={editingLegend.bio?.en || ''} onChange={(v) => setEditingLegend(p => ({ ...p, bio: { ...p.bio, en: v } as any }))} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <FormField label="Époque (ex: 80, 90)" value={editingLegend.era || ''} onChange={(v) => setEditingLegend(p => ({ ...p, era: v }))} />
-                      <FormField label="Palmarès principaux (Séparés par virgule)" placeholder="Ligue des Champions, Ballon d'or" value={editingLegend.achievements?.join(', ') || ''} onChange={(v) => setEditingLegend(p => ({ ...p, achievements: v.split(',').map(s => s.trim()) }))} />
-                      <FormField label="Image URL" value={editingLegend.image_url || ''} onChange={(v) => setEditingLegend(p => ({ ...p, image_url: v }))} />
-                    </div>
-                    <div className="flex justify-end gap-3"><AdminButton variant="secondary" onClick={() => setEditingLegend(null)}>Annuler</AdminButton><AdminButton type="submit">Sauvegarder</AdminButton></div>
-                  </form>
-                </AdminCard>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {legends.map((l) => (
-                  <div key={l._id} className="bg-[#151D24] border border-white/5 rounded-2xl p-4 flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-bold text-white">{l.name}</p>
-                      <p className="text-[10px] text-white/40">Époque: {l.era}s</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditingLegend(l)} className="p-1.5 bg-white/5 border border-white/10 hover:text-accent rounded"><Edit3 className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => handleDeleteLegend(l._id!)} className="p-1.5 bg-white/5 border border-white/10 hover:text-red-500 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Talents Watchlist */}
-            <div className="space-y-6 pt-6 border-t border-white/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-display text-2xl uppercase tracking-wider text-white">Jeunes Talents & Road to Lions</h2>
-                  <p className="text-sm text-white/40">Suivez et configurez les espoirs locaux et leur statut</p>
-                </div>
-                {!editingTalent && (
-                  <AdminButton onClick={() => setEditingTalent({ playerId: '', highlightVideoUrl: '', status: 'WATCHLIST', scoutingNotes: '', rating: 5 })}>
-                    <Plus className="h-4 w-4" /> Suivre un Nouveau Talent
-                  </AdminButton>
-                )}
-              </div>
-
-              {editingTalent && (
-                <AdminCard title={editingTalent._id ? 'Modifier Talent' : 'Suivre un Talent'}>
-                  <form onSubmit={handleSaveTalent} className="space-y-4">
-                    <FormField label="Joueur" type="select" value={editingTalent.playerId || ''} onChange={(v) => setEditingTalent(p => ({ ...p, playerId: v }))} options={players.map(pl => ({ value: pl.id, label: pl.name }))} required />
-                    <div className="grid grid-cols-3 gap-4">
-                      <FormField label="Statut de promotion" type="select" value={editingTalent.status || 'WATCHLIST'} onChange={(v) => setEditingTalent(p => ({ ...p, status: v as any }))} options={[{ value: 'WATCHLIST', label: 'Watchlist Espoirs' }, { value: 'PROMOTED', label: 'Promu d\'Élite' }, { value: 'NATIONAL_TEAM', label: 'Convoqué chez les Lions 🇨🇲' }]} />
-                      <FormField label="Note globale (1-10)" type="number" value={editingTalent.rating || 5} onChange={(v) => setEditingTalent(p => ({ ...p, rating: Number(v) }))} />
-                      <FormField label="Lien vidéo Highlights" value={editingTalent.highlightVideoUrl || ''} onChange={(v) => setEditingTalent(p => ({ ...p, highlightVideoUrl: v }))} />
-                    </div>
-                    <FormField label="Notes d'observation de scouting" type="textarea" value={editingTalent.scoutingNotes || ''} onChange={(v) => setEditingTalent(p => ({ ...p, scoutingNotes: v }))} />
-                    <div className="flex justify-end gap-3"><AdminButton variant="secondary" onClick={() => setEditingTalent(null)}>Annuler</AdminButton><AdminButton type="submit">Sauvegarder</AdminButton></div>
-                  </form>
-                </AdminCard>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {talents.map((t) => (
-                  <div key={t._id} className="bg-[#151D24] border border-white/5 rounded-2xl p-4 flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-bold text-white">{t.player?.name || 'Joueur'}</p>
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded bg-white/5 text-accent`}>{t.status}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditingTalent(t)} className="p-1.5 bg-white/5 border border-white/10 hover:text-accent rounded"><Edit3 className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => handleDeleteTalent(t._id!)} className="p-1.5 bg-white/5 border border-white/10 hover:text-red-500 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Status filter */}
+          <div className="flex items-center gap-2">
+            {['','PUBLISHED','DRAFT'].map(s => (
+              <button key={s} onClick={() => { setArticleStatus(s); setArticlePage(1); }}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${articleStatus === s ? 'bg-accent text-black' : 'bg-white/5 border border-white/8 text-white/40 hover:text-white'}`}>
+                {s || 'Tous'}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+
+          {editingArticle && (
+            <AdminCard title={editingArticle._id ? 'Modifier l\'Article' : 'Rédiger un Article'} accent>
+              <form onSubmit={saveArticle} className="space-y-4">
+                <FormField label="Titre de l'article" value={editingArticle.title || ''} onChange={v => setEditingArticle(p => ({ ...p, title: v }))} required />
+                <FormField label="Résumé / chapeau" value={editingArticle.summary || ''} onChange={v => setEditingArticle(p => ({ ...p, summary: v }))} hint="Affiché en aperçu dans les listings" />
+                <FormField label="Contenu de l'article" type="textarea" value={editingArticle.content || ''} onChange={v => setEditingArticle(p => ({ ...p, content: v }))} required />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Image de couverture (URL)" value={editingArticle.image_url || ''} onChange={v => setEditingArticle(p => ({ ...p, image_url: v }))} />
+                  <FormField label="Catégorie" type="select" value={editingArticle.category || 'NEWS'} onChange={v => setEditingArticle(p => ({ ...p, category: v }))} options={[{value:'NEWS',label:'Actualité générale'},{value:'MATCH_REPORT',label:'Compte-rendu'},{value:'NATIONAL_TEAM',label:'Lions Indomptables'},{value:'TRANSFER',label:'Transfert'},{value:'INTERVIEW',label:'Interview'}]} />
+                </div>
+                <div className="flex items-center gap-6">
+                  <FormField label="Statut de publication" type="select" value={editingArticle.status || 'DRAFT'} onChange={v => setEditingArticle(p => ({ ...p, status: v as any }))} options={[{value:'DRAFT',label:'Brouillon'},{value:'PUBLISHED',label:'Publié'}]} />
+                  <SwitchToggle label="À la une (Featured)" checked={editingArticle.featured || false} onChange={v => setEditingArticle(p => ({ ...p, featured: v }))} />
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                  <AdminButton variant="secondary" onClick={() => setEditingArticle(null)}>Annuler</AdminButton>
+                  <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+                </div>
+              </form>
+            </AdminCard>
+          )}
+
+          <AdminCard noPadding>
+            <DataTable
+              columns={[
+                { key: 'title', label: 'Titre', render: r => <span className="font-semibold text-white/85">{r.title}</span> },
+                { key: 'category', label: 'Catégorie', render: r => <span className="text-white/45 text-[10px] font-medium uppercase">{r.category}</span> },
+                { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
+                { key: 'featured', label: 'À la une', align: 'center', render: r => r.featured ? <span className="text-accent text-[10px] font-bold">✦</span> : <span className="text-white/15">—</span> },
+              ]}
+              data={articles}
+              keyField="_id"
+              onEdit={r => setEditingArticle(r)}
+              onDelete={r => deleteArticle(r._id!)}
+            />
+            <div className="px-4 pb-4"><Paginator page={articlePage} total={articleTotal} limit={20} onChange={setArticlePage} /></div>
+          </AdminCard>
+        </div>
+      )}
+
+      {/* ── HALL OF FAME & TALENTS ──────────────────────────────────────────── */}
+      {activeTab === 'halloffame' && (
+        <div className="space-y-10">
+          {/* Legends */}
+          <div className="space-y-5">
+            <SectionHeader
+              title="Temple de la Renommée"
+              subtitle="Consacrez les figures historiques du football camerounais"
+              icon={Star_}
+              actions={
+                <AdminButton onClick={() => setEditingLegend({ name: '', bio: { fr: '', en: '' }, era: '80', achievements: [], image_url: '', club_ids: [] })}>
+                  <Plus className="h-3.5 w-3.5" /> Introniser une Légende
+                </AdminButton>
+              }
+            />
+
+            {editingLegend && (
+              <AdminCard title={editingLegend._id ? 'Modifier Légende' : 'Introniser une Légende'} accent>
+                <form onSubmit={saveLegend} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Nom de la légende" value={editingLegend.name || ''} onChange={v => setEditingLegend(p => ({ ...p, name: v }))} required />
+                    <FormField label="Époque (ex: 80, 90, 2000)" value={editingLegend.era || ''} onChange={v => setEditingLegend(p => ({ ...p, era: v }))} hint="Décennie de gloire" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Biographie (Français)" type="textarea" value={editingLegend.bio?.fr || ''} onChange={v => setEditingLegend(p => ({ ...p, bio: { ...(p?.bio as any), fr: v } }))} required />
+                    <FormField label="Biographie (Anglais)" type="textarea" value={editingLegend.bio?.en || ''} onChange={v => setEditingLegend(p => ({ ...p, bio: { ...(p?.bio as any), en: v } }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Palmarès (séparés par virgule)" value={editingLegend.achievements?.join(', ') || ''} onChange={v => setEditingLegend(p => ({ ...p, achievements: v.split(',').map((s: string) => s.trim()).filter(Boolean) }))} hint="Ex: CAN 2000, Coupe du Cameroun x3" />
+                    <FormField label="Photo URL" value={editingLegend.image_url || ''} onChange={v => setEditingLegend(p => ({ ...p, image_url: v }))} />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                    <AdminButton variant="secondary" onClick={() => setEditingLegend(null)}>Annuler</AdminButton>
+                    <AdminButton type="submit" loading={loading}>Introniser</AdminButton>
+                  </div>
+                </form>
+              </AdminCard>
+            )}
+
+            <AdminCard noPadding>
+              <DataTable
+                columns={[
+                  { key: 'name', label: 'Légende', render: r => (
+                    <div className="flex items-center gap-3">
+                      {r.image_url && <img src={r.image_url} className="h-8 w-8 rounded-full object-cover bg-white/5" alt={r.name} />}
+                      <span className="font-semibold text-white/85">{r.name}</span>
+                    </div>
+                  )},
+                  { key: 'era', label: 'Époque', render: r => <span className="text-accent font-bold text-[10px]">{r.era}s</span> },
+                  { key: 'achievements', label: 'Palmarès', render: r => <span className="text-white/40 text-[10px]">{r.achievements?.slice(0,2).join(' · ')}</span> },
+                ]}
+                data={legends}
+                keyField="_id"
+                onEdit={r => setEditingLegend(r)}
+                onDelete={r => deleteLegend(r._id!)}
+              />
+            </AdminCard>
+          </div>
+
+          {/* Talents */}
+          <div className="space-y-5 pt-6 border-t border-white/[0.05]">
+            <SectionHeader
+              title="Jeunes Talents & Road to Lions"
+              subtitle="Suivez les espoirs locaux et gérez leur statut de promotion"
+              icon={TrendingUp_}
+              actions={
+                <AdminButton onClick={() => setEditingTalent({ playerId: '', highlightVideoUrl: '', status: 'WATCHLIST', scoutingNotes: '', rating: 5 })}>
+                  <Plus className="h-3.5 w-3.5" /> Suivre un Talent
+                </AdminButton>
+              }
+            />
+
+            {editingTalent && (
+              <AdminCard title={editingTalent._id ? 'Modifier Profil Talent' : 'Suivre un Nouveau Talent'} accent>
+                <form onSubmit={saveTalent} className="space-y-4">
+                  <FormField label="Joueur" type="select" value={editingTalent.playerId || ''} onChange={v => setEditingTalent(p => ({ ...p, playerId: v }))} options={[{value:'',label:'Sélectionner un joueur'},...players.map(p => ({value:p.id,label:`${p.name} • ${p.club?.name || ''}`}))]} required />
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Statut" type="select" value={editingTalent.status || 'WATCHLIST'} onChange={v => setEditingTalent(p => ({ ...p, status: v as any }))} options={[{value:'WATCHLIST',label:'Watchlist Espoirs'},{value:'PROMOTED',label:'Promu d\'Élite'},{value:'NATIONAL_TEAM',label:'Convoqué Lions 🇨🇲'}]} />
+                    <FormField label="Note globale (1–10)" type="number" value={editingTalent.rating || 5} onChange={v => setEditingTalent(p => ({ ...p, rating: Number(v) }))} />
+                    <FormField label="Lien vidéo highlights" type="url" value={editingTalent.highlightVideoUrl || ''} onChange={v => setEditingTalent(p => ({ ...p, highlightVideoUrl: v }))} hint="YouTube, Vimeo..." />
+                  </div>
+                  <FormField label="Notes d'observation (Scout notes)" type="textarea" value={editingTalent.scoutingNotes || ''} onChange={v => setEditingTalent(p => ({ ...p, scoutingNotes: v }))} />
+                  <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                    <AdminButton variant="secondary" onClick={() => setEditingTalent(null)}>Annuler</AdminButton>
+                    <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+                  </div>
+                </form>
+              </AdminCard>
+            )}
+
+            <AdminCard noPadding>
+              <DataTable
+                columns={[
+                  { key: 'player', label: 'Joueur', render: r => <span className="font-semibold text-white/85">{r.player?.name || '—'}</span> },
+                  { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
+                  { key: 'rating', label: 'Note', align: 'center', render: r => <span className="font-display font-bold text-accent tabular-nums">{r.rating}/10</span> },
+                  { key: 'scoutingNotes', label: 'Observations', render: r => <span className="text-white/35 text-[10px] line-clamp-1">{r.scoutingNotes || '—'}</span> },
+                ]}
+                data={talents}
+                keyField="_id"
+                onEdit={r => setEditingTalent(r)}
+                onDelete={r => deleteTalent(r._id!)}
+              />
+            </AdminCard>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
+
+/* ─── Stub icon aliases (avoid import duplication for layoutId motion) ─────── */
+const LayoutDashboard_  = ({ className }: { className?: string }) => <BarChart2 className={className} />;
+const Layers_           = ({ className }: { className?: string }) => <BarChart2 className={className} />;
+const Image_            = ({ className }: { className?: string }) => <BarChart2 className={className} />;
+const Calendar_         = ({ className }: { className?: string }) => <CalendarDays className={className} />;
+const Trophy_           = ({ className }: { className?: string }) => <Trophy className={className} />;
+const BarChart2_        = ({ className }: { className?: string }) => <BarChart2 className={className} />;
+const FileText_         = ({ className }: { className?: string }) => <FileText className={className} />;
+const Star_             = ({ className }: { className?: string }) => <Star className={className} />;
+const TrendingUp_       = ({ className }: { className?: string }) => <TrendingUp className={className} />;
