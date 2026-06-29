@@ -1,6 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Shield, Home, RefreshCw, Layers, Award, Image, Settings } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Shield, Home, Layers, Image, Calendar, Award, FileText, Star } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -13,7 +12,10 @@ export default function AdminLayout({ children, activeTab, setActiveTab }: Admin
     { id: 'dashboard', label: 'Tableau de bord', icon: Home },
     { id: 'layout', label: 'Mise en page', icon: Layers },
     { id: 'hero', label: 'Bannières Hero', icon: Image },
-    { id: 'awards', label: 'Trophées & Légendes', icon: Award },
+    { id: 'matches', label: 'Matchs & Résultats', icon: Calendar },
+    { id: 'awards', label: 'Awards & Ballon d\'or', icon: Award },
+    { id: 'news', label: 'Actualités & News', icon: FileText },
+    { id: 'halloffame', label: 'Légendes & Talents', icon: Star },
   ];
 
   return (
@@ -32,7 +34,7 @@ export default function AdminLayout({ children, activeTab, setActiveTab }: Admin
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5">
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
