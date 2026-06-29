@@ -4,7 +4,7 @@ import {
   Search, LogIn, Menu, X, ChevronDown, Radio,
   Trophy, Calendar, Users, ArrowLeftRight,
   Activity, Star, Award, BarChart2, Newspaper, Edit3,
-  Vote, Circle,
+  Vote, Circle, Shield,
 } from "lucide-react";
 import { tickerItems } from "./data";
 import { Link, useLocation } from "react-router-dom";
@@ -434,6 +434,15 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
             >
               <LogIn className="h-3.5 w-3.5" />
               <span className="hidden md:inline">Connexion</span>
+            </Link>
+
+            <Link
+              to="/admin"
+              title="Administration CMS"
+              className="hidden sm:flex items-center gap-1.5 h-8 px-3 rounded-xl text-[11px] font-medium text-accent/70 hover:text-accent border border-accent/10 hover:border-accent/30 hover:bg-accent/5 transition-all"
+            >
+              <Shield className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Admin</span>
             </Link>
 
             <Link

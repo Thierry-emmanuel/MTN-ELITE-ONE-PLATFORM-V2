@@ -4,7 +4,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import {
   Wifi, WifiOff, Sparkles, Vote, ChevronRight,
   Trophy, Users, Shield, ClipboardList, CircleDot,
-  Award, Crown,
+  Award as AwardIcon, Crown,
 } from 'lucide-react';
 import { useAwards, useTeamOfWeek, useRealtimeVotes } from '@/hooks/useAwards';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '@/store/awards.store';

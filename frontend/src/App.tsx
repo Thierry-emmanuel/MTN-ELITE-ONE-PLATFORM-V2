@@ -15,6 +15,7 @@ const StatsPage       = lazy(() => import("./pages/StatsPage"));
 const NewsPage        = lazy(() => import("./pages/NewsPage"));
 const ArticlePage     = lazy(() => import("./pages/ArticlePage"));
 const EditorPage      = lazy(() => import("./pages/EditorPage"));
+const AdminPage       = lazy(() => import("./pages/AdminPage"));
 const AwardsPage      = lazy(() => import("./pages/AwardsPage"));
 const BallonDorPage   = lazy(() => import("./pages/BallonDorPage"));
 const VotePage        = lazy(() => import("./pages/VotePage"));
@@ -58,6 +59,7 @@ const App = () => (
         <Route path="/news"                element={<PageLayout><NewsPage /></PageLayout>} />
         <Route path="/news/:slug"          element={<PageLayout><ArticlePage /></PageLayout>} />
         <Route path="/editor"              element={<PageLayout><EditorPage /></PageLayout>} />
+        <Route path="/admin"               element={<AdminPage />} />
         <Route path="/awards"              element={<PageLayout><AwardsPage /></PageLayout>} />
         <Route path="/awards/ballon-dor"   element={<PageLayout><BallonDorPage /></PageLayout>} />
         <Route path="/awards/team-of-week" element={<PageLayout><TeamOfWeekPage /></PageLayout>} />
