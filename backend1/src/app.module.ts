@@ -5,6 +5,8 @@ import { MongooseModule }  from '@nestjs/mongoose';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CacheModule }     from '@nestjs/cache-manager';
 import { redisStore }      from 'cache-manager-redis-yet';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 // Modules
 import { AuthModule }        from './auth/auth.module';
@@ -25,6 +27,7 @@ import { HallOfFameModule }  from './hall-of-fame/hall-of-fame.module';
 import { CultureStoriesModule } from './culture-stories/culture-stories.module';
 import { HomepageLayoutModule } from './homepage-layout/homepage-layout.module';
 import { CoachesModule }        from './coaches/coaches.module';
+import { UploadsModule }        from './uploads/uploads.module';
 import { APP_GUARD }         from '@nestjs/core';
 import { ThrottlerGuard }    from '@nestjs/throttler';
 
@@ -32,6 +35,12 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
   imports: [
     // ── Global config (.env) ────────────────────────────────────────────────
     ConfigModule.forRoot({ isGlobal: true }),
+
+    // ── Static assets serving ────────────────────────────────────────────────
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
     
     // ── PostgreSQL (TypeORM) ─────────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
@@ -104,6 +113,7 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     CultureStoriesModule,
     HomepageLayoutModule,
     CoachesModule,
+    UploadsModule,
   ],
   providers: [
     {

@@ -36,6 +36,16 @@ const NAV_GROUPS = [
       { id: 'halloffame', label: 'Légendes & Talents',     icon: Star },
     ],
   },
+  {
+    group: 'Entités du Club',
+    items: [
+      { id: 'seasons',    label: 'Saisons',                icon: Calendar },
+      { id: 'clubs',      label: 'Clubs',                  icon: Shield },
+      { id: 'players',    label: 'Joueurs',                icon: Star },
+      { id: 'coaches',    label: 'Entraîneurs',            icon: Star },
+      { id: 'users',      label: 'Utilisateurs',           icon: Star },
+    ],
+  },
 ];
 
 export default function AdminLayout({ children, activeTab, setActiveTab }: AdminLayoutProps) {

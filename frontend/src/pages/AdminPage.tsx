@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/AdminUI';
 import { layoutApi, HomepageLayout, HeroBanner, Award as AwardType, Match, Article, HallOfFameLegend, TalentProfile } from '@/services/layoutApi';
 import { apiClient } from '@/services/api';
+import { SeasonsTab, ClubsTab, PlayersTab, CoachesTab, UsersTab } from './AdminEntityTabs';
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 type ToastState = { msg: string; type: 'success' | 'error' | 'info' };
@@ -1055,6 +1056,31 @@ export default function AdminPage() {
             </AdminCard>
           </div>
         </div>
+      )}
+
+      {/* ── SEASONS ────────────────────────────────────────────────────────── */}
+      {activeTab === 'seasons' && (
+        <SeasonsTab showToast={showToast} />
+      )}
+
+      {/* ── CLUBS ──────────────────────────────────────────────────────────── */}
+      {activeTab === 'clubs' && (
+        <ClubsTab showToast={showToast} />
+      )}
+
+      {/* ── PLAYERS ────────────────────────────────────────────────────────── */}
+      {activeTab === 'players' && (
+        <PlayersTab clubs={clubs} showToast={showToast} />
+      )}
+
+      {/* ── COACHES ────────────────────────────────────────────────────────── */}
+      {activeTab === 'coaches' && (
+        <CoachesTab clubs={clubs} showToast={showToast} />
+      )}
+
+      {/* ── USERS ──────────────────────────────────────────────────────────── */}
+      {activeTab === 'users' && (
+        <UsersTab showToast={showToast} />
       )}
     </AdminLayout>
   );

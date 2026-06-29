@@ -11,7 +11,7 @@ export class CoachesService {
   ) {}
 
   async create(dto: any): Promise<Coach> {
-    const coach = this.coachRepo.create(dto);
+    const coach = this.coachRepo.create(dto) as any;
     return this.coachRepo.save(coach);
   }
 
