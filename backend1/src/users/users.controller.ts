@@ -3,7 +3,7 @@ import {
   Param, Body, Query, ParseUUIDPipe, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { UsersService, CreateUserAdminDto, UpdateUserAdminDto } from './users.service';
+import { UsersService } from './users.service';
 import { UserRole } from './user.entity';
 
 @ApiTags('users')
@@ -43,7 +43,7 @@ export class UsersController {
   // POST /users/admin-create
   @Post('admin-create')
   @ApiOperation({ summary: 'Admin creates a user directly (bypasses email verify)' })
-  adminCreate(@Body() dto: CreateUserAdminDto) {
+  adminCreate(@Body() dto: any) {
     return this.usersService.adminCreate(dto);
   }
 
@@ -52,7 +52,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user profile, role, or status' })
   adminUpdate(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateUserAdminDto,
+    @Body() dto: any,
   ) {
     return this.usersService.adminUpdate(id, dto);
   }
