@@ -491,3 +491,127 @@ export const Paginator = memo(({ page, total, limit, onChange }: PaginatorProps)
   );
 });
 Paginator.displayName = 'Paginator';
+
+// ─── MediaUploader ─────────────────────────────────────────────────────────────
+interface MediaUploaderProps {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  acceptType?: 'image' | 'video' | 'all';
+  hint?: string;
+}
+
+export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all', hint }: MediaUploaderProps) => {
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await apiClient.post('/uploads/file', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      // The API returns the relative path, e.g. /uploads/filename.png
+      // We prepend the backend URL if it's not absolute
+      const fileUrl = res.data.url.startsWith('http')
+        ? res.data.url
+        : `${apiClient.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3000'}${res.data.url}`;
+      onChange(fileUrl);
+    } catch (e: any) {
+      alert(e?.response?.data?.message || 'Erreur lors de l\'upload du fichier.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleUpload(e.target.files[0]);
+    }
+  };
+
+  const isVideo = value.match(/\.(mp4|mov|avi|webm|mpeg)$/i) || value.includes('/video');
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">{label}</label>
+      
+      <div 
+        onDragEnter={handleDrag}
+        onDragOver={handleDrag}
+        onDragLeave={handleDrag}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`relative rounded-xl border-2 border-dashed p-4 flex flex-col items-center justify-center gap-2 cursor-pointer min-h-[100px] transition-all duration-200 ${
+          dragActive 
+            ? 'border-accent bg-accent/5' 
+            : value 
+              ? 'border-white/10 bg-white/[0.02] hover:border-white/20' 
+              : 'border-white/8 bg-white/[0.04] hover:border-white/12'
+        }`}
+      >
+        <input 
+          ref={fileInputRef}
+          type="file" 
+          className="hidden" 
+          accept={acceptType === 'image' ? 'image/*' : acceptType === 'video' ? 'video/*' : 'image/*,video/*'}
+          onChange={handleFileChange}
+          disabled={uploading}
+        />
+
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+            <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Téléchargement...</span>
+          </div>
+        ) : value ? (
+          <div className="w-full flex flex-col items-center gap-2">
+            {isVideo ? (
+              <video src={value} controls className="max-h-32 rounded-lg object-contain bg-black/40 w-full" onClick={e => e.stopPropagation()} />
+            ) : (
+              <img src={value} alt="Preview" className="max-h-32 rounded-lg object-contain bg-white/5" />
+            )}
+            <div className="text-center">
+              <p className="text-[9px] text-white/40 truncate max-w-[200px]">{value.split('/').pop()}</p>
+              <p className="text-[9px] text-accent font-bold uppercase tracking-wider mt-1">Cliquez ou glissez pour remplacer</p>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-2">
+            <p className="text-xs text-white/60 font-semibold">
+              Glissez-déposez votre fichier ici, ou <span className="text-accent hover:underline">parcourez</span>
+            </p>
+            <p className="text-[9px] text-white/25 mt-1">
+              {acceptType === 'image' ? 'Images (JPEG, PNG, WEBP, GIF)' : acceptType === 'video' ? 'Vidéos (MP4, MOV, AVI)' : 'Images et Vidéos'} jusqu'à 50 Mo
+            </p>
+          </div>
+        )}
+      </div>
+      {hint && <span className="text-[9px] text-white/25">{hint}</span>}
+    </div>
+  );
+});
+MediaUploader.displayName = 'MediaUploader';
+

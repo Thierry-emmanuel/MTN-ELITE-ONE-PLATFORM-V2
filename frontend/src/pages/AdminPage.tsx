@@ -10,7 +10,8 @@ import AdminLayout from '@/layout/AdminLayout';
 import {
   AdminCard, SwitchToggle, FormField, AdminButton,
   DashboardStatCard, BulkImportExport, DataTable,
-  StatusBadge, SectionHeader, Toast, StatBar, Paginator
+  StatusBadge, SectionHeader, Toast, StatBar, Paginator,
+  MediaUploader
 } from '@/components/ui/AdminUI';
 import { layoutApi, HomepageLayout, HeroBanner, Award as AwardType, Match, Article, HallOfFameLegend, TalentProfile } from '@/services/layoutApi';
 import { apiClient } from '@/services/api';
@@ -341,8 +342,44 @@ export default function AdminPage() {
   };
 
   /* ─── Article Handlers ────────────────────────────────────────────────────── */
+  const [articleTab, setArticleTab] = useState('Contenu');
+  const ARTICLE_TABS = ['Contenu', 'Médias', 'SEO & Meta', 'Relations', 'Publication'];
+
+  const emptyArticle = (): Partial<Article> => ({
+    articleType: 'STANDARD', category: 'CLUB_NEWS',
+    title: { fr: '', en: '' }, subtitle: { fr: '', en: '' },
+    body: { fr: '', en: '' }, author: '',
+    slug: '', tags: [], gallery: [], cover_image: '', videoUrl: '',
+    relatedMatchId: '', relatedClubIds: [], relatedPlayerIds: [],
+    metaDescription: { fr: '', en: '' }, location: '', sourceCredit: '',
+    status: 'DRAFT', featured: false, isPremium: false, isBreaking: false, read_time: 3,
+  });
+
   const saveArticle = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
-    const p = { title: editingArticle!.title!, summary: editingArticle!.summary || '', content: editingArticle!.content!, image_url: editingArticle!.image_url || '', category: editingArticle!.category || 'NEWS', status: editingArticle!.status || 'DRAFT', featured: editingArticle!.featured || false };
+    const p: any = {
+      articleType:    editingArticle!.articleType || 'STANDARD',
+      category:       editingArticle!.category || 'CLUB_NEWS',
+      title:          editingArticle!.title,
+      subtitle:       editingArticle!.subtitle,
+      body:           editingArticle!.body,
+      author:         editingArticle!.author || 'Rédaction',
+      slug:           editingArticle!.slug || `article-${Date.now()}`,
+      cover_image:    editingArticle!.cover_image || editingArticle!.image_url || '',
+      gallery:        editingArticle!.gallery || [],
+      videoUrl:       editingArticle!.videoUrl || '',
+      tags:           editingArticle!.tags || [],
+      relatedMatchId: editingArticle!.relatedMatchId || undefined,
+      relatedClubIds: editingArticle!.relatedClubIds || [],
+      relatedPlayerIds: editingArticle!.relatedPlayerIds || [],
+      metaDescription: editingArticle!.metaDescription,
+      location:       editingArticle!.location || '',
+      sourceCredit:   editingArticle!.sourceCredit || '',
+      status:         editingArticle!.status || 'DRAFT',
+      featured:       editingArticle!.featured || false,
+      isPremium:      editingArticle!.isPremium || false,
+      isBreaking:     editingArticle!.isBreaking || false,
+      read_time:      editingArticle!.read_time || 3,
+    };
     if (editingArticle!._id) {
       const r = await layoutApi.updateArticle(editingArticle!._id, p);
       setArticles(prev => prev.map(a => a._id === r._id ? r : a));
@@ -366,14 +403,18 @@ export default function AdminPage() {
     let ok = 0;
     for (const row of rows) {
       try {
-        await layoutApi.createArticle({ title: row.title, content: row.content, summary: row.summary || '', image_url: row.image_url || '', category: row.category || 'NEWS', status: row.status || 'DRAFT' });
-        ok++;
+        await layoutApi.createArticle({
+          title: row.title, body: row.body || { fr: row.content || '', en: '' },
+          slug: row.slug || `import-${Date.now()}`, author: row.author || 'Import',
+          category: row.category || 'CLUB_NEWS', status: row.status || 'DRAFT',
+        } as any); ok++;
       } catch { /* skip */ }
     }
     layoutApi.getArticles({ page: 1, limit: 20 }).then(r => { setArticles(r.data ?? r); setArticleTotal(r.total ?? r.length ?? 0); });
     showToast(`${ok} article(s) importé(s).`);
     setImportingArticles(false);
   };
+
 
   /* ─── Legend Handlers ─────────────────────────────────────────────────────── */
   const saveLegend = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
@@ -550,8 +591,8 @@ export default function AdminPage() {
                   <FormField label="Sous-titre (FR)" type="textarea" value={editingBanner.subtitle?.fr || ''} onChange={(v) => setEditingBanner(p => ({ ...p, subtitle: { ...(p?.subtitle as any), fr: v } }))} />
                   <FormField label="Sous-titre (EN)" type="textarea" value={editingBanner.subtitle?.en || ''} onChange={(v) => setEditingBanner(p => ({ ...p, subtitle: { ...(p?.subtitle as any), en: v } }))} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Image URL" value={editingBanner.image_url || ''} onChange={(v) => setEditingBanner(p => ({ ...p, image_url: v }))} required hint="URL absolue vers l'image" />
+                <div className="grid grid-cols-2 gap-4 items-end">
+                  <MediaUploader label="Image de la bannière" value={editingBanner.image_url || ''} onChange={(v) => setEditingBanner(p => ({ ...p, image_url: v }))} acceptType="image" hint="Image de la diapositive (PNG, JPEG, WEBP)" />
                   <FormField label="URL de redirection" value={editingBanner.link_url || ''} onChange={(v) => setEditingBanner(p => ({ ...p, link_url: v }))} hint="Lien au clic (optionnel)" />
                 </div>
                 <div className="grid grid-cols-3 gap-4 items-end">
@@ -880,19 +921,19 @@ export default function AdminPage() {
         <div className="space-y-6">
           <SectionHeader
             title="Actualités & Presse"
-            subtitle="Rédigez, publiez et gérez les articles du fil d'actualité"
+            subtitle="Rédigez, publiez et gérez les articles avec galerie, vidéo et SEO complet"
             icon={FileText_}
             actions={
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 <BulkImportExport
                   entityName="Articles"
                   data={articles}
-                  templateFields={['title','summary','content','image_url','category','status','featured']}
+                  templateFields={['title_fr','title_en','body_fr','body_en','author','slug','category','articleType','status','cover_image','featured']}
                   onImport={importArticles}
                   importLoading={importingArticles}
                 />
                 {!editingArticle && (
-                  <AdminButton onClick={() => setEditingArticle({ title: '', summary: '', content: '', image_url: '', category: 'NEWS', status: 'DRAFT', featured: false })}>
+                  <AdminButton onClick={() => { setEditingArticle(emptyArticle()); setArticleTab('Contenu'); }}>
                     <Plus className="h-3.5 w-3.5" /> Rédiger un Article
                   </AdminButton>
                 )}
@@ -901,11 +942,11 @@ export default function AdminPage() {
           />
 
           {/* Status filter */}
-          <div className="flex items-center gap-2">
-            {['','PUBLISHED','DRAFT'].map(s => (
+          <div className="flex items-center gap-2 flex-wrap">
+            {[['', 'Tous'], ['PUBLISHED', 'Publiés'], ['DRAFT', 'Brouillons'], ['ARCHIVED', 'Archivés']].map(([s, label]) => (
               <button key={s} onClick={() => { setArticleStatus(s); setArticlePage(1); }}
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${articleStatus === s ? 'bg-accent text-black' : 'bg-white/5 border border-white/8 text-white/40 hover:text-white'}`}>
-                {s || 'Tous'}
+                {label}
               </button>
             ))}
           </div>
@@ -913,18 +954,188 @@ export default function AdminPage() {
           {editingArticle && (
             <AdminCard title={editingArticle._id ? 'Modifier l\'Article' : 'Rédiger un Article'} accent>
               <form onSubmit={saveArticle} className="space-y-4">
-                <FormField label="Titre de l'article" value={editingArticle.title || ''} onChange={v => setEditingArticle(p => ({ ...p, title: v }))} required />
-                <FormField label="Résumé / chapeau" value={editingArticle.summary || ''} onChange={v => setEditingArticle(p => ({ ...p, summary: v }))} hint="Affiché en aperçu dans les listings" />
-                <FormField label="Contenu de l'article" type="textarea" value={editingArticle.content || ''} onChange={v => setEditingArticle(p => ({ ...p, content: v }))} required />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Image de couverture (URL)" value={editingArticle.image_url || ''} onChange={v => setEditingArticle(p => ({ ...p, image_url: v }))} />
-                  <FormField label="Catégorie" type="select" value={editingArticle.category || 'NEWS'} onChange={v => setEditingArticle(p => ({ ...p, category: v }))} options={[{value:'NEWS',label:'Actualité générale'},{value:'MATCH_REPORT',label:'Compte-rendu'},{value:'NATIONAL_TEAM',label:'Lions Indomptables'},{value:'TRANSFER',label:'Transfert'},{value:'INTERVIEW',label:'Interview'}]} />
+                {/* Tab nav */}
+                <div className="flex gap-1 border-b border-white/[0.06] mb-4 -mx-1 px-1">
+                  {['Contenu', 'Médias', 'SEO & Meta', 'Relations', 'Publication'].map(t => (
+                    <button key={t} type="button" onClick={() => setArticleTab(t)}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-t-lg ${
+                        articleTab === t ? 'text-accent border-b-2 border-accent bg-accent/5' : 'text-white/30 hover:text-white/60'
+                      }`}>{t}</button>
+                  ))}
                 </div>
-                <div className="flex items-center gap-6">
-                  <FormField label="Statut de publication" type="select" value={editingArticle.status || 'DRAFT'} onChange={v => setEditingArticle(p => ({ ...p, status: v as any }))} options={[{value:'DRAFT',label:'Brouillon'},{value:'PUBLISHED',label:'Publié'}]} />
-                  <SwitchToggle label="À la une (Featured)" checked={editingArticle.featured || false} onChange={v => setEditingArticle(p => ({ ...p, featured: v }))} />
-                </div>
-                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+
+                {/* ── Contenu ── */}
+                {articleTab === 'Contenu' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField label="Type d'article" type="select" value={editingArticle.articleType || 'STANDARD'}
+                        onChange={v => setEditingArticle(p => ({ ...p, articleType: v as any }))}
+                        options={[
+                          { value: 'STANDARD', label: '📰 Standard' },
+                          { value: 'BREAKING', label: '🔴 Breaking News' },
+                          { value: 'OPINION', label: '💬 Opinion' },
+                          { value: 'VIDEO', label: '🎥 Vidéo' },
+                          { value: 'PHOTO_GALLERY', label: '📸 Galerie photo' },
+                          { value: 'LIVE_BLOG', label: '📡 Live Blog' },
+                        ]} />
+                      <FormField label="Catégorie" type="select" value={editingArticle.category || 'CLUB_NEWS'}
+                        onChange={v => setEditingArticle(p => ({ ...p, category: v }))}
+                        options={[
+                          { value: 'CLUB_NEWS', label: 'Actualité Club' },
+                          { value: 'MATCH_REPORT', label: 'Compte-rendu match' },
+                          { value: 'TRANSFERS', label: 'Transferts' },
+                          { value: 'NATIONAL_TEAM', label: 'Lions Indomptables' },
+                          { value: 'INTERVIEW', label: 'Interview' },
+                          { value: 'ANALYSIS', label: 'Analyse tactique' },
+                          { value: 'OPINION', label: 'Tribune / Opinion' },
+                          { value: 'FEATURE', label: 'Grand format' },
+                        ]} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField label="Auteur" value={editingArticle.author || ''} onChange={v => setEditingArticle(p => ({ ...p, author: v }))} hint="Nom du journaliste ou 'Rédaction'" />
+                      <FormField label="Slug (URL)" value={editingArticle.slug || ''} onChange={v => setEditingArticle(p => ({ ...p, slug: v }))} hint="Ex: canon-bousculant-coton-sport" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField label="Titre (Français) *" value={editingArticle.title?.fr || ''} onChange={v => setEditingArticle(p => ({ ...p, title: { ...(p?.title as any), fr: v } }))} required />
+                      <FormField label="Titre (Anglais)" value={editingArticle.title?.en || ''} onChange={v => setEditingArticle(p => ({ ...p, title: { ...(p?.title as any), en: v } }))} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField label="Sous-titre / Deck (FR)" value={editingArticle.subtitle?.fr || ''} onChange={v => setEditingArticle(p => ({ ...p, subtitle: { ...(p?.subtitle as any), fr: v } }))} hint="Ligne d'accroche sous le titre" />
+                      <FormField label="Sous-titre / Deck (EN)" value={editingArticle.subtitle?.en || ''} onChange={v => setEditingArticle(p => ({ ...p, subtitle: { ...(p?.subtitle as any), en: v } }))} />
+                    </div>
+                    <FormField label="Corps de l'article (Français) *" type="textarea" value={editingArticle.body?.fr || ''} onChange={v => setEditingArticle(p => ({ ...p, body: { ...(p?.body as any), fr: v } }))} required />
+                    <FormField label="Corps de l'article (Anglais)" type="textarea" value={editingArticle.body?.en || ''} onChange={v => setEditingArticle(p => ({ ...p, body: { ...(p?.body as any), en: v } }))} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField label="Lieu de l'événement" value={editingArticle.location || ''} onChange={v => setEditingArticle(p => ({ ...p, location: v }))} hint="Ex: Douala, Stade Omnisports" />
+                      <FormField label="Crédit source" value={editingArticle.sourceCredit || ''} onChange={v => setEditingArticle(p => ({ ...p, sourceCredit: v }))} hint="Ex: Source: FECAFOOT, AFP" />
+                    </div>
+                    <FormField label="Temps de lecture estimé (minutes)" type="number" value={editingArticle.read_time || 3} onChange={v => setEditingArticle(p => ({ ...p, read_time: Number(v) }))} />
+                  </div>
+                )}
+
+                {/* ── Médias ── */}
+                {articleTab === 'Médias' && (
+                  <div className="space-y-4">
+                    <MediaUploader label="Image de couverture principale" value={editingArticle.cover_image || editingArticle.image_url || ''}
+                      onChange={v => setEditingArticle(p => ({ ...p, cover_image: v, image_url: v }))} acceptType="image" hint="Image hero de l'article (16:9 recommandé)" />
+                    <MediaUploader label="Vidéo principale" value={editingArticle.videoUrl || ''}
+                      onChange={v => setEditingArticle(p => ({ ...p, videoUrl: v }))} acceptType="video" hint="Vidéo embarquée dans l'article (MP4, MOV)" />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Galerie d'images supplémentaires</label>
+                      <p className="text-[9px] text-white/25">Ajoutez jusqu'à 10 images pour créer une galerie photo dans l'article</p>
+                      {(editingArticle.gallery || []).map((img, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <MediaUploader label={`Photo ${i + 1}`} value={img}
+                            onChange={v => setEditingArticle(p => { const g = [...(p?.gallery || [])]; g[i] = v; return { ...p, gallery: g }; })}
+                            acceptType="image" />
+                          <button type="button" onClick={() => setEditingArticle(p => ({ ...p, gallery: (p?.gallery || []).filter((_, j) => j !== i) }))}
+                            className="h-8 w-8 rounded-lg bg-red-500/5 border border-red-500/10 text-red-400 hover:bg-red-500/10 transition-all text-xs flex-shrink-0">×</button>
+                        </div>
+                      ))}
+                      {(editingArticle.gallery || []).length < 10 && (
+                        <AdminButton size="sm" variant="secondary" type="button"
+                          onClick={() => setEditingArticle(p => ({ ...p, gallery: [...(p?.gallery || []), ''] }))}>
+                          <Plus className="h-3 w-3" /> Ajouter une photo
+                        </AdminButton>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── SEO & Meta ── */}
+                {articleTab === 'SEO & Meta' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField label="Méta-description (FR)" type="textarea" value={editingArticle.metaDescription?.fr || ''}
+                        onChange={v => setEditingArticle(p => ({ ...p, metaDescription: { ...(p?.metaDescription as any), fr: v } }))}
+                        hint="160 caractères max — affiché dans les résultats Google" />
+                      <FormField label="Méta-description (EN)" type="textarea" value={editingArticle.metaDescription?.en || ''}
+                        onChange={v => setEditingArticle(p => ({ ...p, metaDescription: { ...(p?.metaDescription as any), en: v } }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Tags / Mots-clés</label>
+                      <div className="flex gap-2">
+                        <input id="tag-input" placeholder="Ex: Canon Yaoundé, Championnat…"
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const v = (e.target as HTMLInputElement).value.trim(); if (v) { setEditingArticle(p => ({ ...p, tags: [...(p?.tags || []), v] })); (e.target as HTMLInputElement).value = ''; } } }}
+                          className="flex-1 h-8 px-3 rounded-xl bg-white/[0.04] border border-white/8 text-xs text-white placeholder:text-white/20 outline-none focus:border-accent/40 transition-colors" />
+                        <AdminButton size="sm" variant="secondary" type="button"
+                          onClick={() => { const el = document.getElementById('tag-input') as HTMLInputElement; if (el?.value.trim()) { setEditingArticle(p => ({ ...p, tags: [...(p?.tags || []), el.value.trim()] })); el.value = ''; } }}>+</AdminButton>
+                      </div>
+                      {(editingArticle.tags || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {(editingArticle.tags || []).map((tag, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-[10px] text-accent">
+                              {tag}
+                              <button type="button" onClick={() => setEditingArticle(p => ({ ...p, tags: (p?.tags || []).filter((_, j) => j !== i) }))} className="hover:text-red-400 transition-colors">×</button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Relations ── */}
+                {articleTab === 'Relations' && (
+                  <div className="space-y-4">
+                    <FormField label="ID du match lié" value={editingArticle.relatedMatchId || ''}
+                      onChange={v => setEditingArticle(p => ({ ...p, relatedMatchId: v || undefined }))} hint="UUID du match PostgreSQL (optionnel)" />
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Clubs associés</label>
+                      <select onChange={e => { const v = e.target.value; if (v && !(editingArticle.relatedClubIds || []).includes(v)) setEditingArticle(p => ({ ...p, relatedClubIds: [...(p?.relatedClubIds || []), v] })); e.target.value = ''; }}
+                        className="w-full h-8 px-3 rounded-xl bg-white/[0.04] border border-white/8 text-xs text-white/70 outline-none focus:border-accent/40">
+                        <option value="">Sélectionner un club…</option>
+                        {clubs.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(editingArticle.relatedClubIds || []).map((id, i) => {
+                          const club = clubs.find(c => c.id === id);
+                          return (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-[10px] text-sky-400">
+                              {club?.name || id}
+                              <button type="button" onClick={() => setEditingArticle(p => ({ ...p, relatedClubIds: (p?.relatedClubIds || []).filter((_, j) => j !== i) }))} className="hover:text-red-400">×</button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Joueurs associés</label>
+                      <select onChange={e => { const v = e.target.value; if (v && !(editingArticle.relatedPlayerIds || []).includes(v)) setEditingArticle(p => ({ ...p, relatedPlayerIds: [...(p?.relatedPlayerIds || []), v] })); e.target.value = ''; }}
+                        className="w-full h-8 px-3 rounded-xl bg-white/[0.04] border border-white/8 text-xs text-white/70 outline-none focus:border-accent/40">
+                        <option value="">Sélectionner un joueur…</option>
+                        {players.map(p => <option key={p.id} value={p.id}>{p.firstName || ''} {p.lastName || p.name || ''} — {p.club?.name || ''}</option>)}
+                      </select>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(editingArticle.relatedPlayerIds || []).map((id, i) => {
+                          const player = players.find(p => p.id === id);
+                          return (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400">
+                              {player ? `${player.firstName || ''} ${player.lastName || player.name || ''}` : id}
+                              <button type="button" onClick={() => setEditingArticle(p => ({ ...p, relatedPlayerIds: (p?.relatedPlayerIds || []).filter((_, j) => j !== i) }))} className="hover:text-red-400">×</button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Publication ── */}
+                {articleTab === 'Publication' && (
+                  <div className="space-y-4">
+                    <FormField label="Statut de publication" type="select" value={editingArticle.status || 'DRAFT'}
+                      onChange={v => setEditingArticle(p => ({ ...p, status: v as any }))}
+                      options={[{ value: 'DRAFT', label: '📝 Brouillon' }, { value: 'PUBLISHED', label: '✅ Publié' }, { value: 'ARCHIVED', label: '📦 Archivé' }]} />
+                    <div className="grid grid-cols-3 gap-4 pt-2">
+                      <SwitchToggle label="À la une (Featured)" checked={editingArticle.featured || false} onChange={v => setEditingArticle(p => ({ ...p, featured: v }))} />
+                      <SwitchToggle label="🔴 Breaking News" checked={editingArticle.isBreaking || false} onChange={v => setEditingArticle(p => ({ ...p, isBreaking: v }))} />
+                      <SwitchToggle label="⭐ Contenu Premium" checked={editingArticle.isPremium || false} onChange={v => setEditingArticle(p => ({ ...p, isPremium: v }))} />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-white/[0.05] mt-4">
                   <AdminButton variant="secondary" onClick={() => setEditingArticle(null)}>Annuler</AdminButton>
                   <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
                 </div>
@@ -935,14 +1146,26 @@ export default function AdminPage() {
           <AdminCard noPadding>
             <DataTable
               columns={[
-                { key: 'title', label: 'Titre', render: r => <span className="font-semibold text-white/85">{r.title}</span> },
+                { key: 'type', label: 'Type', render: r => {
+                  const icons: Record<string, string> = { BREAKING: '🔴', VIDEO: '🎥', PHOTO_GALLERY: '📸', OPINION: '💬', LIVE_BLOG: '📡', STANDARD: '📰' };
+                  return <span className="text-[11px]">{icons[r.articleType] || '📰'}</span>;
+                }},
+                { key: 'title', label: 'Titre', render: r => <span className="font-semibold text-white/85">{r.title?.fr || r.title || '—'}</span> },
+                { key: 'author', label: 'Auteur', render: r => <span className="text-white/40 text-[10px]">{r.author || '—'}</span> },
                 { key: 'category', label: 'Catégorie', render: r => <span className="text-white/45 text-[10px] font-medium uppercase">{r.category}</span> },
                 { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
-                { key: 'featured', label: 'À la une', align: 'center', render: r => r.featured ? <span className="text-accent text-[10px] font-bold">✦</span> : <span className="text-white/15">—</span> },
+                { key: 'flags', label: 'Drapeaux', align: 'center', render: r => (
+                  <div className="flex gap-1 justify-center">
+                    {r.featured && <span title="Featured" className="text-accent text-[10px] font-bold">✦</span>}
+                    {r.isBreaking && <span title="Breaking" className="text-red-400 text-[10px] font-bold">⚡</span>}
+                    {r.isPremium && <span title="Premium" className="text-amber-400 text-[10px] font-bold">★</span>}
+                    {!r.featured && !r.isBreaking && !r.isPremium && <span className="text-white/15">—</span>}
+                  </div>
+                )},
               ]}
               data={articles}
               keyField="_id"
-              onEdit={r => setEditingArticle(r)}
+              onEdit={r => { setEditingArticle(r); setArticleTab('Contenu'); }}
               onDelete={r => deleteArticle(r._id!)}
             />
             <div className="px-4 pb-4"><Paginator page={articlePage} total={articleTotal} limit={20} onChange={setArticlePage} /></div>
@@ -977,9 +1200,9 @@ export default function AdminPage() {
                     <FormField label="Biographie (Français)" type="textarea" value={editingLegend.bio?.fr || ''} onChange={v => setEditingLegend(p => ({ ...p, bio: { ...(p?.bio as any), fr: v } }))} required />
                     <FormField label="Biographie (Anglais)" type="textarea" value={editingLegend.bio?.en || ''} onChange={v => setEditingLegend(p => ({ ...p, bio: { ...(p?.bio as any), en: v } }))} />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 items-end">
                     <FormField label="Palmarès (séparés par virgule)" value={editingLegend.achievements?.join(', ') || ''} onChange={v => setEditingLegend(p => ({ ...p, achievements: v.split(',').map((s: string) => s.trim()).filter(Boolean) }))} hint="Ex: CAN 2000, Coupe du Cameroun x3" />
-                    <FormField label="Photo URL" value={editingLegend.image_url || ''} onChange={v => setEditingLegend(p => ({ ...p, image_url: v }))} />
+                    <MediaUploader label="Photo" value={editingLegend.image_url || ''} onChange={v => setEditingLegend(p => ({ ...p, image_url: v }))} acceptType="image" hint="Portrait de la légende (PNG, JPEG, WEBP)" />
                   </div>
                   <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
                     <AdminButton variant="secondary" onClick={() => setEditingLegend(null)}>Annuler</AdminButton>
@@ -1026,10 +1249,10 @@ export default function AdminPage() {
               <AdminCard title={editingTalent._id ? 'Modifier Profil Talent' : 'Suivre un Nouveau Talent'} accent>
                 <form onSubmit={saveTalent} className="space-y-4">
                   <FormField label="Joueur" type="select" value={editingTalent.playerId || ''} onChange={v => setEditingTalent(p => ({ ...p, playerId: v }))} options={[{value:'',label:'Sélectionner un joueur'},...players.map(p => ({value:p.id,label:`${p.name} • ${p.club?.name || ''}`}))]} required />
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-4 items-end">
                     <FormField label="Statut" type="select" value={editingTalent.status || 'WATCHLIST'} onChange={v => setEditingTalent(p => ({ ...p, status: v as any }))} options={[{value:'WATCHLIST',label:'Watchlist Espoirs'},{value:'PROMOTED',label:'Promu d\'Élite'},{value:'NATIONAL_TEAM',label:'Convoqué Lions 🇨🇲'}]} />
                     <FormField label="Note globale (1–10)" type="number" value={editingTalent.rating || 5} onChange={v => setEditingTalent(p => ({ ...p, rating: Number(v) }))} />
-                    <FormField label="Lien vidéo highlights" type="url" value={editingTalent.highlightVideoUrl || ''} onChange={v => setEditingTalent(p => ({ ...p, highlightVideoUrl: v }))} hint="YouTube, Vimeo..." />
+                    <MediaUploader label="Vidéo highlights" value={editingTalent.highlightVideoUrl || ''} onChange={v => setEditingTalent(p => ({ ...p, highlightVideoUrl: v }))} acceptType="video" hint="Vidéo de highlights (MP4, MOV, AVI)" />
                   </div>
                   <FormField label="Notes d'observation (Scout notes)" type="textarea" value={editingTalent.scoutingNotes || ''} onChange={v => setEditingTalent(p => ({ ...p, scoutingNotes: v }))} />
                   <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">

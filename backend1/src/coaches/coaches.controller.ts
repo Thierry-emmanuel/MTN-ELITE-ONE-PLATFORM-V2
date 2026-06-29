@@ -5,6 +5,8 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CoachesService } from './coaches.service';
 import { CoachStatus } from './coach.entity';
+import { CreateCoachDto } from './dto/create-coach.dto';
+import { UpdateCoachDto } from './dto/update-coach.dto';
 
 @ApiTags('coaches')
 @ApiBearerAuth()
@@ -15,7 +17,7 @@ export class CoachesController {
   // POST /coaches
   @Post()
   @ApiOperation({ summary: 'Register a new coach' })
-  create(@Body() dto: any) {
+  create(@Body() dto: CreateCoachDto) {
     return this.coachesService.create(dto);
   }
 

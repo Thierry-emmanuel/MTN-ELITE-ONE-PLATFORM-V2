@@ -44,14 +44,44 @@ export interface Match {
 
 export interface Article {
   _id?: string;
-  title: string;
-  slug?: string;
-  summary: string;
-  content: string;
-  image_url: string;
+  // Core
+  articleType?: 'STANDARD' | 'BREAKING' | 'OPINION' | 'VIDEO' | 'PHOTO_GALLERY' | 'LIVE_BLOG';
   category: string;
-  status: 'DRAFT' | 'PUBLISHED';
+  // Localised content (new schema)
+  title: any;           // LocalizedString | string (legacy)
+  subtitle?: any;       // LocalizedString
+  body?: any;           // LocalizedString
+  // Legacy flat fields (kept for backward compat)
+  slug?: string;
+  author?: string;
+  summary?: string;
+  content?: string;
+  // Media
+  image_url?: string;
+  cover_image?: string;
+  gallery?: string[];
+  videoUrl?: string;
+  videoThumbnail?: string;
+  // Publishing
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   featured?: boolean;
+  isPremium?: boolean;
+  isBreaking?: boolean;
+  publishedAt?: string;
+  read_time?: number;
+  // Related
+  relatedMatchId?: string;
+  relatedClubIds?: string[];
+  relatedPlayerIds?: string[];
+  // SEO
+  metaDescription?: any; // LocalizedString
+  tags?: string[];
+  location?: string;
+  sourceCredit?: string;
+  // Engagement
+  views?: number;
+  likes?: number;
+  shares?: number;
 }
 
 export interface HallOfFameLegend {

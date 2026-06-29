@@ -11,6 +11,8 @@ export enum ArticleCategory {
   INTERVIEW     = 'INTERVIEW',
   ANALYSIS      = 'ANALYSIS',
   RESULTS       = 'RESULTS',
+  OPINION       = 'OPINION',
+  FEATURE       = 'FEATURE',
 }
 
 export enum ArticleStatus {
@@ -19,7 +21,16 @@ export enum ArticleStatus {
   ARCHIVED  = 'ARCHIVED',
 }
 
-// ─── Localised string (matches DTO shape) ─────────────────────────────────────
+export enum ArticleType {
+  STANDARD       = 'STANDARD',
+  BREAKING       = 'BREAKING',
+  OPINION        = 'OPINION',
+  VIDEO          = 'VIDEO',
+  PHOTO_GALLERY  = 'PHOTO_GALLERY',
+  LIVE_BLOG      = 'LIVE_BLOG',
+}
+
+// ─── Localised string ─────────────────────────────────────────────────────────
 @Schema({ _id: false })
 export class LocalizedString {
   @Prop({ required: true }) fr: string;
@@ -53,47 +64,93 @@ export const CommentSchema = SchemaFactory.createForClass(Comment);
 // ─── Article ──────────────────────────────────────────────────────────────────
 @Schema({ timestamps: true, collection: 'articles' })
 export class Article {
-  // Matches DTO: title is { fr, en }
+  // ── Article Type & Category ──────────────────────────────────
+  @Prop({ type: String, enum: ArticleType, default: ArticleType.STANDARD })
+  articleType: ArticleType;
+
+  @Prop({ type: String, enum: ArticleCategory, default: ArticleCategory.CLUB_NEWS })
+  category: string;
+
+  // ── Titles & Content ─────────────────────────────────────────
   @Prop({ type: LocalizedStringSchema, required: true })
   title: LocalizedString;
 
-  // Matches DTO: body is { fr, en } (the article content)
+  @Prop({ type: LocalizedStringSchema })
+  subtitle?: LocalizedString;   // Deck / sub-headline
+
   @Prop({ type: LocalizedStringSchema, required: true })
   body: LocalizedString;
 
-  // Matches DTO: slug provided by client
+  // ── Publishing ────────────────────────────────────────────────
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   slug: string;
 
   @Prop({ required: true })
   author: string;
 
-  @Prop({ type: String, enum: ArticleCategory, default: ArticleCategory.CLUB_NEWS })
-  category: string;
-
-  // Status managed by service, not in DTO
   @Prop({ type: String, enum: ArticleStatus, default: ArticleStatus.DRAFT })
   status: ArticleStatus;
 
   @Prop({ default: false })
   featured: boolean;
 
-  // Matches DTO: cover_image
+  @Prop({ default: false })
+  isPremium: boolean;           // Paywall article
+
+  @Prop({ default: false })
+  isBreaking: boolean;          // Breaking news flag
+
+  @Prop({ default: () => new Date() })
+  publishedAt: Date;
+
+  // ── Media ─────────────────────────────────────────────────────
   @Prop()
   cover_image?: string;
 
   @Prop({ type: [String], default: [] })
+  gallery: string[];            // Additional images
+
+  @Prop()
+  videoUrl?: string;            // Embedded / uploaded video
+
+  @Prop()
+  videoThumbnail?: string;
+
+  // ── Related Entities (PostgreSQL IDs) ────────────────────────
+  @Prop()
+  relatedMatchId?: string;
+
+  @Prop({ type: [String], default: [] })
+  relatedClubIds: string[];
+
+  @Prop({ type: [String], default: [] })
+  relatedPlayerIds: string[];
+
+  // ── SEO & Metadata ───────────────────────────────────────────
+  @Prop({ type: LocalizedStringSchema })
+  metaDescription?: LocalizedString;
+
+  @Prop({ type: [String], default: [] })
   tags: string[];
 
-  // Matches DTO: read_time
   @Prop({ default: 1 })
-  read_time: number;
+  read_time: number;            // Minutes
 
+  @Prop()
+  location?: string;            // Where event happened
+
+  @Prop()
+  sourceCredit?: string;        // "Source: FECAFOOT"
+
+  // ── Engagement ───────────────────────────────────────────────
   @Prop({ default: 0 })
   views: number;
 
-  @Prop({ default: () => new Date() })
-  publishedAt: Date;
+  @Prop({ default: 0 })
+  likes: number;
+
+  @Prop({ default: 0 })
+  shares: number;
 
   @Prop({ type: [CommentSchema], default: [] })
   comments: Comment[];
@@ -105,5 +162,9 @@ export const ArticleSchema = SchemaFactory.createForClass(Article);
 ArticleSchema.index({ slug: 1 });
 ArticleSchema.index({ status: 1, publishedAt: -1 });
 ArticleSchema.index({ category: 1, status: 1 });
+ArticleSchema.index({ articleType: 1, status: 1 });
 ArticleSchema.index({ featured: 1, status: 1 });
+ArticleSchema.index({ isPremium: 1 });
+ArticleSchema.index({ relatedClubIds: 1 });
+ArticleSchema.index({ relatedPlayerIds: 1 });
 ArticleSchema.index({ 'title.fr': 'text', 'title.en': 'text', 'body.fr': 'text' });

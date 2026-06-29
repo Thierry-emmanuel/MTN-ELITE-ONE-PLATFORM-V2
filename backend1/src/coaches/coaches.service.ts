@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Coach, CoachStatus } from './coach.entity';
+import { CreateCoachDto } from './dto/create-coach.dto';
+import { UpdateCoachDto } from './dto/update-coach.dto';
 
 @Injectable()
 export class CoachesService {
@@ -10,10 +12,11 @@ export class CoachesService {
     private readonly coachRepo: Repository<Coach>,
   ) {}
 
-  async create(dto: any): Promise<Coach> {
-    const coach = this.coachRepo.create(dto) as any;
+  async create(dto: CreateCoachDto): Promise<Coach> {
+    const coach = this.coachRepo.create(dto as any) as unknown as Coach;
     return this.coachRepo.save(coach);
   }
+
 
   async findAll(opts: { page?: number; limit?: number; clubId?: string; status?: CoachStatus }) {
     const page  = opts.page  ?? 1;

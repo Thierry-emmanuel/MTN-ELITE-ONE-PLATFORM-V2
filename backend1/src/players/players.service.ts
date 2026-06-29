@@ -31,8 +31,9 @@ export class PlayersService {
         );
     }
 
-    const player = this.playerRepo.create(dto);
+    const player = this.playerRepo.create(dto as any) as Player;
     return this.playerRepo.save(player);
+
   }
 
   async findAll(
