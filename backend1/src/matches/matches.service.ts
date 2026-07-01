@@ -13,8 +13,8 @@ import { StandingsService }    from '../standings/standings.service';
 export interface MatchFilters {
   status?:    MatchStatus;
   round?:     number;
-  seasonId?:  string;
-  clubId?:    string;
+  seasonId?:  number;
+  clubId?:    number;
   dateFrom?:  string;   // ISO date string
   dateTo?:    string;
 }
@@ -111,7 +111,7 @@ export class MatchesService {
    * Returns all SCHEDULED or LIVE matches for a season, grouped by date.
    * WHY: Grouping in the service avoids the frontend doing date logic.
    */
-  async findFixtures(seasonId: string, limit = 30): Promise<MatchDay[]> {
+  async findFixtures(seasonId: number, limit = 30): Promise<MatchDay[]> {
     const matches = await this.matchRepo
       .createQueryBuilder('match')
       .leftJoinAndSelect('match.homeClub', 'homeClub')
@@ -129,7 +129,7 @@ export class MatchesService {
 
   // ── Results: finished matches grouped by date (most recent first) ──────────
   async findResults(
-    seasonId: string,
+    seasonId: number,
     pagination: PaginationDto,
   ): Promise<PaginatedMatches & { grouped: MatchDay[] }> {
     const qb = this.matchRepo
@@ -156,7 +156,7 @@ export class MatchesService {
     };
   }
 
-  async findOne(id: string): Promise<Match> {
+  async findOne(id: number): Promise<Match> {
     const match = await this.matchRepo.findOne({
       where:     { id },
       relations: ['homeClub', 'awayClub', 'season', 'events', 'events.player', 'stats'],
@@ -169,7 +169,7 @@ export class MatchesService {
   // UPDATE
   // ═══════════════════════════════════════════════════════════════════════════
 
-  async update(id: string, dto: UpdateMatchDto): Promise<Match> {
+  async update(id: number, dto: UpdateMatchDto): Promise<Match> {
     const match = await this.findOne(id);
 
     if (
@@ -185,7 +185,7 @@ export class MatchesService {
   }
 
   async updateScore(
-    id: string,
+    id: number,
     homeScore: number,
     awayScore: number,
   ): Promise<Match> {
@@ -205,7 +205,7 @@ export class MatchesService {
    * WHY: standings update happens HERE, atomically with the match status change.
    * No cron job, no manual trigger needed — standings are always fresh.
    */
-  async finishMatch(id: string): Promise<Match> {
+  async finishMatch(id: number): Promise<Match> {
     const match = await this.findOne(id);
 
     if (match.status === MatchStatus.FINISHED)
@@ -231,7 +231,7 @@ export class MatchesService {
   // DELETE
   // ═══════════════════════════════════════════════════════════════════════════
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(id: number): Promise<{ message: string }> {
     const match = await this.findOne(id);
     if (match.status === MatchStatus.LIVE)
       throw new BadRequestException('Cannot delete a live match');

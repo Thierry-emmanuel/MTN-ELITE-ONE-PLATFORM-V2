@@ -9,7 +9,7 @@ import { MOCK_PLAYER_STATS, MOCK_FIXTURES } from './mockData';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api';
+const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api/v1';
 const DEFAULT_TIMEOUT = 10_000;
 
 // ─── Custom error class ───────────────────────────────────────────────────────

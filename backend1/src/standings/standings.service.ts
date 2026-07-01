@@ -12,7 +12,7 @@ import { Season } from '../seasons/season.entity';
 type FormChar = 'W' | 'D' | 'L';
 
 interface ClubAccumulator {
-  clubId:        string;
+  clubId:        number;
   played:        number;
   won:           number;
   drawn:         number;
@@ -44,7 +44,7 @@ export class StandingsService {
    * Returns the full standings table for a season, ordered by position.
    * WHY: Single JOIN query — avoids N+1 from loading club per standing.
    */
-  async findBySeason(seasonId: string): Promise<Standing[]> {
+  async findBySeason(seasonId: number): Promise<Standing[]> {
     const season = await this.seasonRepo.findOne({ where: { id: seasonId } });
     if (!season) throw new NotFoundException(`Season "${seasonId}" not found`);
 
@@ -58,7 +58,7 @@ export class StandingsService {
   /**
    * Returns the standings row for one club in a season.
    */
-  async findOneByClubAndSeason(clubId: string, seasonId: string): Promise<Standing> {
+  async findOneByClubAndSeason(clubId: number, seasonId: number): Promise<Standing> {
     const standing = await this.standingRepo.findOne({
       where:     { clubId, seasonId },
       relations: ['club', 'season'],
@@ -82,7 +82,7 @@ export class StandingsService {
    *
    * Complexity: O(finished_matches) per call — typically < 200 rows.
    */
-  async recalculateForSeason(seasonId: string): Promise<Standing[]> {
+  async recalculateForSeason(seasonId: number): Promise<Standing[]> {
     this.logger.log(`Recalculating standings for season ${seasonId}`);
 
     // 1 — Load all FINISHED matches for the season (single query, no N+1)
@@ -120,8 +120,8 @@ export class StandingsService {
   // PRIVATE HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  private extractUniqueClubIds(matches: Match[]): string[] {
-    const ids = new Set<string>();
+  private extractUniqueClubIds(matches: Match[]): number[] {
+    const ids = new Set<number>();
     matches.forEach(m => { ids.add(m.homeClubId); ids.add(m.awayClubId); });
     return Array.from(ids);
   }
@@ -131,11 +131,11 @@ export class StandingsService {
    * WHY: Single O(n) pass — no nested loops, no additional DB calls.
    */
   private buildAccumulators(
-    clubIds: string[],
+    clubIds: number[],
     matches: Match[],
-  ): Map<string, ClubAccumulator> {
+  ): Map<number, ClubAccumulator> {
     // Initialise empty accumulators
-    const map = new Map<string, ClubAccumulator>(
+    const map = new Map<number, ClubAccumulator>(
       clubIds.map(id => [id, this.emptyAccumulator(id)]),
     );
 
@@ -201,7 +201,7 @@ export class StandingsService {
    * WHY: If any write fails, the whole batch rolls back — no partial state.
    */
   private async persistStandings(
-    seasonId: string,
+    seasonId: number,
     sorted: ClubAccumulator[],
   ): Promise<Standing[]> {
     return this.dataSource.transaction(async (em) => {
@@ -252,7 +252,7 @@ export class StandingsService {
     return acc.won * 3 + acc.drawn;
   }
 
-  private emptyAccumulator(clubId: string): ClubAccumulator {
+  private emptyAccumulator(clubId: number): ClubAccumulator {
     return {
       clubId, played: 0, won: 0, drawn: 0, lost: 0,
       goalsFor: 0, goalsAgainst: 0,

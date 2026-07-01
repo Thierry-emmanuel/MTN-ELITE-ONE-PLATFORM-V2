@@ -32,7 +32,7 @@ export class AwardsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const award = await this.awardRepo.findOne({
       where: { id },
       relations: ['nominations', 'nominations.player', 'nominations.player.club'],
@@ -53,7 +53,7 @@ export class AwardsService {
     return this.awardRepo.save(award);
   }
 
-  async update(id: string, dto: any): Promise<Award> {
+  async update(id: number, dto: any): Promise<Award> {
     const award = await this.findOne(id);
     if (dto.category !== undefined) award.category = dto.category;
     if (dto.periodStart !== undefined) award.periodStart = new Date(dto.periodStart);
@@ -64,12 +64,12 @@ export class AwardsService {
     return this.awardRepo.save(award);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     const award = await this.findOne(id);
     await this.awardRepo.remove(award);
   }
 
-  async addNomination(awardId: string, playerId: string): Promise<AwardNomination> {
+  async addNomination(awardId: number, playerId: number): Promise<AwardNomination> {
     const award = await this.findOne(awardId);
     
     // Check if nomination already exists
@@ -84,13 +84,13 @@ export class AwardsService {
     return this.nominationRepo.save(nomination);
   }
 
-  async removeNomination(awardId: string, nominationId: string): Promise<void> {
+  async removeNomination(awardId: number, nominationId: number): Promise<void> {
     const nomination = await this.nominationRepo.findOne({ where: { id: nominationId, awardId } });
     if (!nomination) throw new NotFoundException('Nomination not found');
     await this.nominationRepo.remove(nomination);
   }
 
-  async vote(awardId: string, dto: VoteDto, ipAddress: string, userId?: string) {
+  async vote(awardId: number, dto: VoteDto, ipAddress: string, userId?: number) {
     const award = await this.findOne(awardId);
     if (award.status !== AwardStatus.OPEN) {
       throw new BadRequestException('Voting is closed for this award');

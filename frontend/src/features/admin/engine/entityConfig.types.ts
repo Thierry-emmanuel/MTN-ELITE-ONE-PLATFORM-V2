@@ -1,0 +1,71 @@
+// Generic, strictly-typed config contract every admin entity must satisfy.
+// One config file per domain (transfers, injuries, selections, clubs, players, ...)
+// replaces the old pattern of one 200+ line bespoke tab per entity.
+
+export type FieldType =
+  | 'text' | 'textarea' | 'number' | 'select' | 'date' | 'switch'
+  | 'media-image' | 'media-video' | 'tags' | 'richtext'
+  // ── Added for Clubs/Players ──────────────────────────────────────────────
+  // 'nested-object': renders a sub-form for a JSON column (achievements,
+  // socialMedia) using the field's own `subFields` definition, and writes
+  // back a single object under the parent key — no schema change needed
+  // beyond this addition, the entity's DTO already validates the object shape.
+  | 'nested-object'
+  | 'color';
+
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+export interface FieldDef<T> {
+  key: keyof T;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  hint?: string;
+  /** static options, or a key into EntityConfig.lookups for dynamic options (e.g. clubs, players) */
+  optionsKey?: string;
+  options?: SelectOption[];
+  span?: 1 | 2 | 3; // grid columns in the form
+  /**
+   * For type === 'nested-object' only. Each entry is rendered as a plain
+   * number/text input scoped to `parentKey.subKey`. Kept intentionally
+   * simple (no recursion) — these objects are one level deep in every
+   * current entity (achievements, socialMedia).
+   */
+  subFields?: { key: string; label: string; type: 'text' | 'number' }[];
+  /**
+   * Upload scope passed to MediaUploader for type === 'media-image' |
+   * 'media-video'. Maps directly to the backend's POST /uploads/:entity/:field
+   * route, e.g. { entity: 'clubs', field: 'logo' }. Falls back to the legacy
+   * /uploads/file endpoint if omitted, for entities not yet migrated.
+   */
+  uploadScope?: { entity: string; field: string };
+}
+
+export interface ColumnDef<T> {
+  key: keyof T;
+  label: string;
+  align?: 'left' | 'center' | 'right';
+  render?: (row: T) => string;
+}
+
+export interface LookupSource {
+  key: string;            // referenced by FieldDef.optionsKey
+  queryKey: string[];
+  fetch: () => Promise<SelectOption[]>;
+}
+
+export interface EntityConfig<T extends { id?: string; _id?: string }> {
+  name: string;            // 'transfers'
+  labelSingular: string;   // 'Transfert'
+  labelPlural: string;     // 'Transferts'
+  apiBasePath: string;     // '/transfers'
+  idField: 'id' | '_id';
+  columns: ColumnDef<T>[];
+  fields: FieldDef<T>[];
+  lookups?: LookupSource[];
+  emptyRecord: () => Partial<T>;
+  searchableKeys?: (keyof T)[];
+}

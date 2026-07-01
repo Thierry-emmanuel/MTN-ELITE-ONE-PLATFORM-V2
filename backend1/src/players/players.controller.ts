@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, Query, ParseUUIDPipe, HttpCode, HttpStatus,
+  Param, Body, Query, ParseIntPipe, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { PlayersService } from './players.service';
@@ -26,7 +26,7 @@ export class PlayersController {
   @Get()
   @ApiOperation({ summary: 'Get all players with filters' })
   @ApiQuery({ name: 'position', enum: PlayerPosition, required: false })
-  @ApiQuery({ name: 'clubId', required: false, type: String })
+  @ApiQuery({ name: 'clubId', required: false, type: Number })
   @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   findAll(
     @Query() pagination: PaginationDto,
@@ -36,7 +36,7 @@ export class PlayersController {
   ) {
     return this.playersService.findAll(pagination, {
       position,
-      clubId,
+      clubId: clubId ? Number(clubId) : undefined,
       isActive: isActive !== undefined ? isActive === 'true' : undefined,
     });
   }
@@ -44,14 +44,14 @@ export class PlayersController {
   // GET /players/:id
   @Get(':id')
   @ApiOperation({ summary: 'Get a player by ID' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.playersService.findOne(id);
   }
 
   // GET /players/:id/form
   @Get(':id/form')
   @ApiOperation({ summary: 'Get a player\'s form guide (last 5 matches)' })
-  getFormGuide(@Param('id', ParseUUIDPipe) id: string) {
+  getFormGuide(@Param('id', ParseIntPipe) id: number) {
     return this.playersService.getFormGuide(id);
   }
 
@@ -59,7 +59,7 @@ export class PlayersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update player info' })
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePlayerDto,
   ) {
     return this.playersService.update(id, dto);
@@ -68,11 +68,11 @@ export class PlayersController {
   // PATCH /players/:id/transfer/:clubId
   @Patch(':id/transfer/:clubId')
   @ApiOperation({ summary: 'Transfer a player to another club' })
-  @ApiParam({ name: 'id', description: 'Player UUID' })
-  @ApiParam({ name: 'clubId', description: 'Destination club UUID' })
+  @ApiParam({ name: 'id', description: 'Player ID' })
+  @ApiParam({ name: 'clubId', description: 'Destination club ID' })
   transfer(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('clubId', ParseUUIDPipe) clubId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('clubId', ParseIntPipe) clubId: number,
   ) {
     return this.playersService.transfer(id, clubId);
   }
@@ -81,7 +81,7 @@ export class PlayersController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a player' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.playersService.remove(id);
   }
 }

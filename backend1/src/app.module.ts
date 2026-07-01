@@ -8,7 +8,7 @@ import { redisStore }      from 'cache-manager-redis-yet';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
-// Modules
+
 import { AuthModule }        from './auth/auth.module';
 import { UsersModule }       from './users/users.module';
 import { ClubsModule }       from './clubs/clubs.module';
@@ -28,21 +28,23 @@ import { CultureStoriesModule } from './culture-stories/culture-stories.module';
 import { HomepageLayoutModule } from './homepage-layout/homepage-layout.module';
 import { CoachesModule }        from './coaches/coaches.module';
 import { UploadsModule }        from './uploads/uploads.module';
+// ── New domains added by this refactor ──────────────────────────────────────
+import { TransfersModule }   from './transfers/transfers.module';
+import { InjuriesModule }    from './injuries/injuries.module';
+import { SelectionsModule }  from './selections/selections.module';
+import { BigMomentsModule }  from './big-moments/big-moments.module';
 import { APP_GUARD }         from '@nestjs/core';
 import { ThrottlerGuard }    from '@nestjs/throttler';
 
 @Module({
   imports: [
-    // ── Global config (.env) ────────────────────────────────────────────────
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // ── Static assets serving ────────────────────────────────────────────────
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
     }),
-    
-    // ── PostgreSQL (TypeORM) ─────────────────────────────────────────────────
+
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
@@ -53,33 +55,19 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
         password: cfg.get<string>('DB_PASSWORD'),
         database: cfg.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        // IMPORTANT: set DB_SYNCHRONIZE=false in production.
-        // Use migrations instead (see src/migrations/).
         synchronize: cfg.get<string>('DB_SYNCHRONIZE') === 'true',
         logging:     cfg.get<string>('NODE_ENV') === 'development',
-        // Connection pool — prevents exhaustion under load
-        extra: {
-          max: 20,
-          idleTimeoutMillis: 30_000,
-          connectionTimeoutMillis: 2_000,
-        },
+        extra: { max: 20, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 2_000 },
       }),
     }),
 
-    // ── MongoDB (Mongoose) — editorial content ───────────────────────────────
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => ({
-        uri: cfg.get<string>('MONGODB_URI'),
-      }),
+      useFactory: (cfg: ConfigService) => ({ uri: cfg.get<string>('MONGODB_URI') }),
     }),
 
-    // ── Rate limiting ────────────────────────────────────────────────────────
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
 
-    // ── Redis cache (BEFORE: used in-memory, Redis env vars were ignored) ────
-    // AFTER: wired to Redis using cache-manager-redis-yet adapter.
-    // Install: npm install cache-manager-redis-yet
     CacheModule.registerAsync({
       isGlobal: true,
       inject: [ConfigService],
@@ -89,12 +77,11 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
             host: cfg.get<string>('REDIS_HOST', 'localhost'),
             port: cfg.get<number>('REDIS_PORT', 6379),
           },
-          ttl: cfg.get<number>('REDIS_TTL', 300) * 1_000, // redis-yet uses ms
+          ttl: cfg.get<number>('REDIS_TTL', 300) * 1_000,
         }),
       }),
     }),
 
-    // ── Business modules ────────────────────────────────────────────────────
     AuthModule,
     UsersModule,
     ClubsModule,
@@ -114,28 +101,13 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     HomepageLayoutModule,
     CoachesModule,
     UploadsModule,
+    TransfersModule,
+    InjuriesModule,
+    SelectionsModule,
+    BigMomentsModule,
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}
-
-/*
- * ── main.ts reminder ──────────────────────────────────────────────────────────
- * Make sure your main.ts has:
- *
- *   app.useGlobalPipes(new ValidationPipe({
- *     whitelist:        true,   // strips unknown fields
- *     forbidNonWhitelisted: true,
- *     transform:        true,   // enables @Type() for query params
- *     transformOptions: { enableImplicitConversion: true },
- *   }));
- *
- * Without `transform: true`, PaginationDto.page comes in as a string
- * and .skip returns NaN.
- * ─────────────────────────────────────────────────────────────────────────────
- */

@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsUUID, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsEnum, IsNumber, IsOptional, IsDateString } from 'class-validator';
 import { AwardStatus } from '../entities/award.entity';
 
 export class CreateAwardDto {
@@ -14,15 +14,15 @@ export class CreateAwardDto {
   @IsEnum(AwardStatus)
   status: AwardStatus;
 
-  @IsUUID()
-  seasonId: string;
+  @IsNumber()
+  seasonId: number;
 
-  @IsUUID()
+  @IsNumber()
   @IsOptional()
-  winnerId?: string;
+  winnerId?: number;
 }
 
 export class CreateNominationDto {
-  @IsUUID()
-  playerId: string;
+  @IsNumber()
+  playerId: number;
 }

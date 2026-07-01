@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Param, ParseUUIDPipe,
+  Controller, Get, Post, Param, ParseIntPipe,
   UseGuards, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import {
@@ -19,14 +19,14 @@ export class StandingsController {
   @Get(':seasonId')
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({ summary: 'Get full standings table for a season' })
-  @ApiParam({ name: 'seasonId', description: 'Season UUID' })
+  @ApiParam({ name: 'seasonId', description: 'Season ID' })
   @ApiResponse({
     status: 200,
     description: 'Standings ordered by position (pts, GD, GF)',
     type: [Standing],
   })
   async findBySeason(
-    @Param('seasonId', ParseUUIDPipe) seasonId: string,
+    @Param('seasonId', ParseIntPipe) seasonId: number,
   ): Promise<Standing[]> {
     return this.standingsService.findBySeason(seasonId);
   }
@@ -34,11 +34,11 @@ export class StandingsController {
   // ── GET /standings/:seasonId/club/:clubId ─────────────────────────────────
   @Get(':seasonId/club/:clubId')
   @ApiOperation({ summary: 'Get standings row for one club in a season' })
-  @ApiParam({ name: 'seasonId', description: 'Season UUID' })
-  @ApiParam({ name: 'clubId',   description: 'Club UUID' })
+  @ApiParam({ name: 'seasonId', description: 'Season ID' })
+  @ApiParam({ name: 'clubId',   description: 'Club ID' })
   async findOneByClubAndSeason(
-    @Param('seasonId', ParseUUIDPipe) seasonId: string,
-    @Param('clubId',   ParseUUIDPipe) clubId:   string,
+    @Param('seasonId', ParseIntPipe) seasonId: number,
+    @Param('clubId',   ParseIntPipe) clubId:   number,
   ): Promise<Standing> {
     return this.standingsService.findOneByClubAndSeason(clubId, seasonId);
   }
@@ -54,7 +54,7 @@ export class StandingsController {
     summary: 'Admin: force full standings recalculation from match results',
   })
   async recalculate(
-    @Param('seasonId', ParseUUIDPipe) seasonId: string,
+    @Param('seasonId', ParseIntPipe) seasonId: number,
   ): Promise<{ message: string; clubs: number }> {
     const standings = await this.standingsService.recalculateForSeason(seasonId);
     return {

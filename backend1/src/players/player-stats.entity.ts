@@ -7,8 +7,8 @@ import { Season } from '../seasons/season.entity';
 
 @Entity('player_stats')
 export class PlayerStats {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   // ── Core stats (existing) ──────────────────────────────────────────────────
 
@@ -80,10 +80,10 @@ export class PlayerStats {
   // ── Relations ──────────────────────────────────────────────────────────────
 
   @Column({ name: 'player_id' })
-  playerId: string;
+  playerId: number;
 
   @Column({ name: 'season_id' })
-  seasonId: string;
+  seasonId: number;
 
   @ManyToOne(() => Player, (player) => player.stats, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'player_id' })

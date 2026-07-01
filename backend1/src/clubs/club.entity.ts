@@ -19,8 +19,8 @@ export enum ClubStatus {
 
 @Entity('clubs')
 export class Club {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   // ── Core Identity ──────────────────────────────────────────────
   @Column({ length: 100, unique: true })

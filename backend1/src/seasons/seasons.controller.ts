@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, ParseUUIDPipe, HttpCode, HttpStatus,
+  Param, Body, ParseIntPipe, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags, ApiOperation, ApiBearerAuth,
@@ -43,8 +43,8 @@ export class SeasonsController {
   // GET /seasons/:id
   @Get(':id')
   @ApiOperation({ summary: 'Get season by ID with standings and matches' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  @ApiParam({ name: 'id', type: 'number' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.seasonsService.findOne(id);
   }
 
@@ -52,7 +52,7 @@ export class SeasonsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update season details' })
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSeasonDto,
   ) {
     return this.seasonsService.update(id, dto);
@@ -62,14 +62,14 @@ export class SeasonsController {
   @Patch(':id/activate')
   @ApiOperation({ summary: 'Activate a season (sets status to ONGOING)' })
   @ApiResponse({ status: 200, description: 'Season activated' })
-  activate(@Param('id', ParseUUIDPipe) id: string) {
+  activate(@Param('id', ParseIntPipe) id: number) {
     return this.seasonsService.activate(id);
   }
 
   // PATCH /seasons/:id/close
   @Patch(':id/close')
   @ApiOperation({ summary: 'Close the ongoing season (sets status to COMPLETED)' })
-  close(@Param('id', ParseUUIDPipe) id: string) {
+  close(@Param('id', ParseIntPipe) id: number) {
     return this.seasonsService.close(id);
   }
 
@@ -80,7 +80,7 @@ export class SeasonsController {
     description: 'Creates one standing row per active club. Run once at season start.',
   })
   @ApiResponse({ status: 409, description: 'Standings already initialized' })
-  initializeStandings(@Param('id', ParseUUIDPipe) id: string) {
+  initializeStandings(@Param('id', ParseIntPipe) id: number) {
     return this.seasonsService.initializeStandings(id);
   }
 
@@ -88,7 +88,7 @@ export class SeasonsController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a season (only if not ongoing)' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.seasonsService.remove(id);
   }
 }

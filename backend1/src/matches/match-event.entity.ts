@@ -19,8 +19,8 @@ export enum MatchEventType {
 
 @Entity('match_events')
 export class MatchEvent {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ type: 'enum', enum: MatchEventType })
   type: MatchEventType;
@@ -33,13 +33,13 @@ export class MatchEvent {
 
   // ── FK columns ──────────────────────────────────────────────────────────
   @Column({ name: 'match_id' })
-  matchId: string;
+  matchId: number;
 
   @Column({ name: 'player_id' })
-  playerId: string;
+  playerId: number;
 
   @Column({ name: 'club_id' })
-  clubId: string;
+  clubId: number;
 
   // ── Relations ────────────────────────────────────────────────────────────
   @ManyToOne(() => Match, (match) => match.events, { onDelete: 'CASCADE' })

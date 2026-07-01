@@ -4,18 +4,18 @@ import { Player } from '../../players/player.entity';
 
 @Entity('award_nominations')
 export class AwardNomination {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ name: 'vote_count', type: 'int', default: 0 })
   voteCount: number;
 
   // ── FK columns ──
   @Column({ name: 'award_id' })
-  awardId: string;
+  awardId: number;
 
   @Column({ name: 'player_id' })
-  playerId: string;
+  playerId: number;
 
   // ── Relations ──
   @ManyToOne(() => Award, (award) => award.nominations, { onDelete: 'CASCADE' })

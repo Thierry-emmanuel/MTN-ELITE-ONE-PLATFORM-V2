@@ -8,7 +8,7 @@ import {
   Param,
   Body,
   Query,
-  ParseUUIDPipe,
+  ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -49,30 +49,30 @@ export class ClubsController {
   // GET /clubs/:id
   @Get(':id')
   @ApiOperation({ summary: 'Get a club by ID' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'id', type: 'number' })
   @ApiResponse({ status: 404, description: 'Club not found' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.clubsService.findOne(id);
   }
 
   // GET /clubs/:id/squad
   @Get(':id/squad')
   @ApiOperation({ summary: 'Get full squad of a club' })
-  findSquad(@Param('id', ParseUUIDPipe) id: string) {
+  findSquad(@Param('id', ParseIntPipe) id: number) {
     return this.clubsService.findSquad(id);
   }
 
   // GET /clubs/:id/matches
   @Get(':id/matches')
   @ApiOperation({ summary: 'Get all matches of a club' })
-  findMatches(@Param('id', ParseUUIDPipe) id: string) {
+  findMatches(@Param('id', ParseIntPipe) id: number) {
     return this.clubsService.findMatches(id);
   }
 
   // PATCH /clubs/:id
   @Patch(':id')
   @ApiOperation({ summary: 'Update a club' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateClubDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateClubDto) {
     return this.clubsService.update(id, dto);
   }
 
@@ -80,7 +80,7 @@ export class ClubsController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a club' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.clubsService.remove(id);
   }
 }

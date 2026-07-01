@@ -12,8 +12,8 @@ export enum CoachStatus {
 
 @Entity('coaches')
 export class Coach {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   // ── Core Identity ──────────────────────────────────────────────
   @Column({ name: 'first_name', length: 100 })
@@ -81,7 +81,7 @@ export class Coach {
 
   // ── Club ──────────────────────────────────────────────────────
   @Column({ name: 'club_id', nullable: true })
-  clubId: string;
+  clubId: number;
 
   @ManyToOne(() => Club, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'club_id' })

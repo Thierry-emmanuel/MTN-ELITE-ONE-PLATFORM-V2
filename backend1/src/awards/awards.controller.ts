@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AwardsService } from './awards.service';
 import { VoteDto } from './dto/vote.dto';
@@ -24,7 +24,7 @@ export class AwardsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get award details by ID' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.awardsService.findOne(id);
   }
 
@@ -36,31 +36,34 @@ export class AwardsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update an award' })
-  update(@Param('id') id: string, @Body() dto: Partial<CreateAwardDto>) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateAwardDto>) {
     return this.awardsService.update(id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an award' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.awardsService.remove(id);
   }
 
   @Post(':id/nominations')
   @ApiOperation({ summary: 'Add a nomination to an award' })
-  addNomination(@Param('id') id: string, @Body() dto: CreateNominationDto) {
+  addNomination(@Param('id', ParseIntPipe) id: number, @Body() dto: CreateNominationDto) {
     return this.awardsService.addNomination(id, dto.playerId);
   }
 
   @Delete(':id/nominations/:nominationId')
   @ApiOperation({ summary: 'Remove a nomination from an award' })
-  removeNomination(@Param('id') id: string, @Param('nominationId') nominationId: string) {
+  removeNomination(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('nominationId', ParseIntPipe) nominationId: number,
+  ) {
     return this.awardsService.removeNomination(id, nominationId);
   }
 
   @Post(':id/vote')
   @ApiOperation({ summary: 'Vote for an award nomination' })
-  vote(@Param('id') id: string, @Body() dto: VoteDto, @Req() req: Request) {
+  vote(@Param('id', ParseIntPipe) id: number, @Body() dto: VoteDto, @Req() req: Request) {
     // Extract IP address from request
     const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     // User ID is extracted if user is authenticated (Optional)

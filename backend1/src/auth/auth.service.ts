@@ -8,7 +8,7 @@ import { LoginDto, RegisterDto, RegisterEditorDto } from './auth.dto';
 import { UserRole } from '../users/user.entity';
 
 export interface JwtPayload {
-  sub:   string;
+  sub:   number;
   email: string;
   role:  UserRole;
 }

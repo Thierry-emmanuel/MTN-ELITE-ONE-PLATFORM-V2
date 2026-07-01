@@ -31,14 +31,14 @@ export class PlayersService {
         );
     }
 
-    const player = this.playerRepo.create(dto as any) as Player;
+    const player = this.playerRepo.create(dto as any) as unknown as Player;
     return this.playerRepo.save(player);
 
   }
 
   async findAll(
     pagination: PaginationDto,
-    filters?: { position?: PlayerPosition; clubId?: string; isActive?: boolean },
+    filters?: { position?: PlayerPosition; clubId?: number; isActive?: boolean },
   ): Promise<{ data: Player[]; total: number; page: number; limit: number }> {
     const query = this.playerRepo.createQueryBuilder('player')
       .leftJoinAndSelect('player.club', 'club')
@@ -57,7 +57,7 @@ export class PlayersService {
     return { data, total, page: pagination.page ?? 1, limit: pagination.limit ?? 10 };
   }
 
-  async findOne(id: string): Promise<Player> {
+  async findOne(id: number): Promise<Player> {
     const player = await this.playerRepo.findOne({
       where: { id },
       relations: ['club', 'stats', 'matchEvents'],
@@ -66,7 +66,7 @@ export class PlayersService {
     return player;
   }
 
-  async update(id: string, dto: UpdatePlayerDto): Promise<Player> {
+  async update(id: number, dto: UpdatePlayerDto): Promise<Player> {
     const player = await this.findOne(id);
 
     const targetClubId = dto.clubId ?? player.clubId;
@@ -86,20 +86,20 @@ export class PlayersService {
     return this.playerRepo.save(player);
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(id: number): Promise<{ message: string }> {
     const player = await this.findOne(id);
     await this.playerRepo.remove(player);
     return { message: `Player "${player.firstName} ${player.lastName}" deleted successfully` };
   }
 
-  async transfer(id: string, newClubId: string): Promise<Player> {
+  async transfer(id: number, newClubId: number): Promise<Player> {
     const player = await this.findOne(id);
     player.clubId = newClubId;
     player.jerseyNumber = null as any;// reset jersey on transfer
     return this.playerRepo.save(player);
   }
 
-  async getFormGuide(id: string) {
+  async getFormGuide(id: number) {
     const player = await this.findOne(id);
     if (!player.clubId) {
       return { player, form: [] };

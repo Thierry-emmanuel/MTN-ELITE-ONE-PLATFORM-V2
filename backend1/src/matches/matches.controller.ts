@@ -1,7 +1,7 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, Query, ParseUUIDPipe,
-  HttpCode, HttpStatus, ParseIntPipe,
+  Param, Body, Query, ParseIntPipe,
+  HttpCode, HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags, ApiOperation, ApiBearerAuth,
@@ -53,7 +53,12 @@ export class MatchesController {
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo')   dateTo?:   string,
   ): Promise<PaginatedMatches> {
-    const filters: MatchFilters = { status, round, seasonId, clubId, dateFrom, dateTo };
+    const filters: MatchFilters = {
+      status, round,
+      seasonId: seasonId ? Number(seasonId) : undefined,
+      clubId:   clubId   ? Number(clubId)   : undefined,
+      dateFrom, dateTo,
+    };
     return this.matchesService.findAll(pagination, filters);
   }
 
@@ -65,7 +70,7 @@ export class MatchesController {
   @ApiParam({ name: 'seasonId', description: 'Season UUID' })
   @ApiQuery({ name: 'limit', type: Number, required: false, description: 'Max number of matches (default 30)' })
   findFixtures(
-    @Param('seasonId', ParseUUIDPipe) seasonId: string,
+    @Param('seasonId', ParseIntPipe) seasonId: number,
     @Query('limit') limit?: number,
   ): Promise<MatchDay[]> {
     return this.matchesService.findFixtures(seasonId, limit ? +limit : 30);
@@ -78,7 +83,7 @@ export class MatchesController {
   @ApiQuery({ name: 'page',  type: Number, required: false })
   @ApiQuery({ name: 'limit', type: Number, required: false })
   findResults(
-    @Param('seasonId', ParseUUIDPipe) seasonId: string,
+    @Param('seasonId', ParseIntPipe) seasonId: number,
     @Query() pagination: PaginationDto,
   ) {
     return this.matchesService.findResults(seasonId, pagination);
@@ -87,7 +92,7 @@ export class MatchesController {
   // ── GET /matches/:id ──────────────────────────────────────────────────────
   @Get(':id')
   @ApiOperation({ summary: 'Get full match details (events, stats)' })
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Match> {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<Match> {
     return this.matchesService.findOne(id);
   }
 
@@ -96,7 +101,7 @@ export class MatchesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update match info' })
   update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateMatchDto,
   ): Promise<Match> {
     return this.matchesService.update(id, dto);
@@ -107,7 +112,7 @@ export class MatchesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update live match score' })
   updateScore(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: ScoreDto,
   ): Promise<Match> {
     return this.matchesService.updateScore(id, body.homeScore, body.awayScore);
@@ -118,7 +123,7 @@ export class MatchesController {
   @Patch(':id/finish')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark match as finished — triggers standings update' })
-  finishMatch(@Param('id', ParseUUIDPipe) id: string): Promise<Match> {
+  finishMatch(@Param('id', ParseIntPipe) id: number): Promise<Match> {
     return this.matchesService.finishMatch(id);
   }
 
@@ -127,7 +132,7 @@ export class MatchesController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a match (not allowed if LIVE)' })
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
+  remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
     return this.matchesService.remove(id);
   }
 }

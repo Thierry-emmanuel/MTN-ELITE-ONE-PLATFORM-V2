@@ -12,8 +12,8 @@ export enum UserRole {
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   // ── Authentication ─────────────────────────────────────────────
   @Column({ unique: true })
@@ -58,7 +58,7 @@ export class User {
 
   // ── Preferences ───────────────────────────────────────────────
   @Column({ name: 'favorite_club_id', nullable: true })
-  favoriteClubId: string;     // UUID of preferred club
+  favoriteClubId: number;     // UUID of preferred club
 
   @Column({ length: 5, nullable: true, default: 'fr' })
   language: string;           // "fr" | "en"

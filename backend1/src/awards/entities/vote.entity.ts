@@ -5,21 +5,21 @@ import { User } from '../../users/user.entity';
 
 @Entity('votes')
 export class Vote {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ name: 'ip_hash', length: 64 })
   ipHash: string; // for anti-fraud
 
   // ── FK columns ──
   @Column({ name: 'award_id' })
-  awardId: string;
+  awardId: number;
 
   @Column({ name: 'nomination_id' })
-  nominationId: string;
+  nominationId: number;
 
   @Column({ name: 'user_id', nullable: true })
-  userId: string | null;
+  userId: number | null;
 
   // ── Relations ──
   @ManyToOne(() => Award, { onDelete: 'CASCADE' })

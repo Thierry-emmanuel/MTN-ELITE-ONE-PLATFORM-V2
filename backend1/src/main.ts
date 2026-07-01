@@ -11,7 +11,13 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   // Sécurité headers HTTP
-  app.use(helmet());
+  // NOTE: helmet's default Cross-Origin-Resource-Policy is 'same-origin', which blocks the
+  // browser from rendering <img>/<video> tags pointing at this server's static /uploads files
+  // when the frontend runs on a different origin/port (e.g. Vite on :5173 vs API on :3000).
+  // This is separate from CORS (which only governs fetch/XHR) — without this override you'll
+  // see "ERR_BLOCKED_BY_RESPONSE.NotSameOrigin" in the browser console even though uploads
+  // succeed and CORS is configured correctly.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
   // CORS
  /* app.enableCors({

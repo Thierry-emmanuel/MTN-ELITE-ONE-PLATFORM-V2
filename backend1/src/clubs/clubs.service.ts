@@ -32,7 +32,7 @@ export class ClubsService {
     return { data, total, page: pagination.page ?? 1, limit: pagination.limit ?? 10 };
   }
 
-  async findOne(id: string): Promise<Club> {
+  async findOne(id: number): Promise<Club> {
     const club = await this.clubRepo.findOne({
       where: { id },
       relations: ['players', 'standings'],
@@ -41,7 +41,7 @@ export class ClubsService {
     return club;
   }
 
-  async update(id: string, dto: UpdateClubDto): Promise<Club> {
+  async update(id: number, dto: UpdateClubDto): Promise<Club> {
     const club = await this.findOne(id);
 
     if (dto.name && dto.name !== club.name) {
@@ -53,13 +53,13 @@ export class ClubsService {
     return this.clubRepo.save(club);
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(id: number): Promise<{ message: string }> {
     const club = await this.findOne(id);
     await this.clubRepo.remove(club);
     return { message: `Club "${club.name}" deleted successfully` };
   }
 
-  async findSquad(id: string): Promise<Club> {
+  async findSquad(id: number): Promise<Club> {
     const club = await this.clubRepo.findOne({
       where: { id },
       relations: ['players'],
@@ -68,7 +68,7 @@ export class ClubsService {
     return club;
   }
 
-  async findMatches(id: string): Promise<Club> {
+  async findMatches(id: number): Promise<Club> {
     const club = await this.clubRepo.findOne({
       where: { id },
       relations: ['homeMatches', 'awayMatches',

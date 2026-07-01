@@ -1,6 +1,7 @@
-import { memo, useRef } from 'react';
+import { memo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LucideIcon, TrendingUp, TrendingDown, Minus, Upload, Download, AlertCircle } from 'lucide-react';
+import { apiClient } from '@/services/api';
 
 // ─── AdminCard ────────────────────────────────────────────────────────────────
 interface AdminCardProps {
@@ -499,9 +500,10 @@ interface MediaUploaderProps {
   onChange: (url: string) => void;
   acceptType?: 'image' | 'video' | 'all';
   hint?: string;
+  uploadUrl?: string;
 }
 
-export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all', hint }: MediaUploaderProps) => {
+export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all', hint, uploadUrl = '/uploads/file' }: MediaUploaderProps) => {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -511,14 +513,22 @@ export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all',
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await apiClient.post('/uploads/file', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      // IMPORTANT: do not hardcode 'Content-Type': 'multipart/form-data' here.
+      // A multipart body requires a `boundary` param (e.g. "multipart/form-data; boundary=----XYZ"),
+      // which only axios/the browser can generate from the FormData instance itself.
+      // Hardcoding the header (or inheriting apiClient's default 'application/json') strips that
+      // boundary, and NestJS's busboy-based FileInterceptor rejects the request with a 400
+      // ("Multipart: Boundary not found"). Setting it to `undefined` here clears apiClient's
+      // default header for this request and lets axios set the correct one automatically.
+      const res = await apiClient.post(uploadUrl, formData, {
+        headers: { 'Content-Type': undefined },
       });
-      // The API returns the relative path, e.g. /uploads/filename.png
-      // We prepend the backend URL if it's not absolute
+      // The API returns a relative path, e.g. /uploads/clubs/logo/169...-abc.png
+      // We prepend the backend's origin (stripping any /api or /api/v1 suffix) if it's not absolute,
+      // since static files are served from the app root, not under the API prefix.
       const fileUrl = res.data.url.startsWith('http')
         ? res.data.url
-        : `${apiClient.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3000'}${res.data.url}`;
+        : `${apiClient.defaults.baseURL?.replace(/\/api(\/v\d+)?\/?$/, '') || 'http://localhost:3000'}${res.data.url}`;
       onChange(fileUrl);
     } catch (e: any) {
       alert(e?.response?.data?.message || 'Erreur lors de l\'upload du fichier.');
@@ -614,4 +624,3 @@ export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all',
   );
 });
 MediaUploader.displayName = 'MediaUploader';
-

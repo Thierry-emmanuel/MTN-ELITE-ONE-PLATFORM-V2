@@ -44,7 +44,7 @@ export class SeasonsService {
     });
   }
 
-  async findOne(id: string): Promise<Season> {
+  async findOne(id: number): Promise<Season> {
     const season = await this.seasonRepo.findOne({
       where: { id },
       relations: ['matches', 'standings', 'standings.club'],
@@ -64,7 +64,7 @@ export class SeasonsService {
     return season;
   }
 
-  async update(id: string, dto: UpdateSeasonDto): Promise<Season> {
+  async update(id: number, dto: UpdateSeasonDto): Promise<Season> {
     const season = await this.findOne(id);
 
     // Prevent re-opening a completed season
@@ -94,7 +94,7 @@ export class SeasonsService {
     return this.seasonRepo.save(season);
   }
 
-  async activate(id: string): Promise<Season> {
+  async activate(id: number): Promise<Season> {
     // Close any currently ongoing season first
     const ongoing = await this.seasonRepo.findOne({
       where: { status: SeasonStatus.ONGOING },
@@ -109,7 +109,7 @@ export class SeasonsService {
     return this.seasonRepo.save(season);
   }
 
-  async close(id: string): Promise<Season> {
+  async close(id: number): Promise<Season> {
     const season = await this.findOne(id);
     if (season.status !== SeasonStatus.ONGOING)
       throw new BadRequestException('Only an ongoing season can be closed');
@@ -118,7 +118,7 @@ export class SeasonsService {
   }
 
   // Auto-initialize standings for all active clubs when season starts
-  async initializeStandings(id: string): Promise<{ message: string; count: number }> {
+  async initializeStandings(id: number): Promise<{ message: string; count: number }> {
     const season = await this.findOne(id);
 
     const clubs = await this.clubRepo.find({
@@ -156,7 +156,7 @@ export class SeasonsService {
     };
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(id: number): Promise<{ message: string }> {
     const season = await this.findOne(id);
     if (season.status === SeasonStatus.ONGOING)
       throw new BadRequestException('Cannot delete an ongoing season');

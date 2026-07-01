@@ -18,7 +18,7 @@ export class CoachesService {
   }
 
 
-  async findAll(opts: { page?: number; limit?: number; clubId?: string; status?: CoachStatus }) {
+  async findAll(opts: { page?: number; limit?: number; clubId?: number; status?: CoachStatus }) {
     const page  = opts.page  ?? 1;
     const limit = opts.limit ?? 20;
     const where: any = {};
@@ -34,31 +34,31 @@ export class CoachesService {
     return { data, total, page, limit };
   }
 
-  async findOne(id: string): Promise<Coach> {
+  async findOne(id: number): Promise<Coach> {
     const coach = await this.coachRepo.findOne({ where: { id }, relations: ['club'] });
     if (!coach) throw new NotFoundException(`Entraîneur introuvable`);
     return coach;
   }
 
-  async update(id: string, dto: any): Promise<Coach> {
+  async update(id: number, dto: any): Promise<Coach> {
     const coach = await this.findOne(id);
     Object.assign(coach, dto);
     return this.coachRepo.save(coach);
   }
 
-  async assignToClub(id: string, clubId: string): Promise<Coach> {
+  async assignToClub(id: number, clubId: number): Promise<Coach> {
     const coach = await this.findOne(id);
     coach.clubId = clubId;
     return this.coachRepo.save(coach);
   }
 
-  async unassign(id: string): Promise<Coach> {
+  async unassign(id: number): Promise<Coach> {
     const coach = await this.findOne(id);
     coach.clubId = null as any;
     return this.coachRepo.save(coach);
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(id: number): Promise<{ message: string }> {
     const coach = await this.findOne(id);
     await this.coachRepo.remove(coach);
     return { message: `Entraîneur ${coach.firstName} ${coach.lastName} supprimé` };

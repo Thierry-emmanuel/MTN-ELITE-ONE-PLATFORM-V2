@@ -14,8 +14,8 @@ export enum SeasonStatus {
 
 @Entity('seasons')
 export class Season {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ length: 50, unique: true })
   name: string;

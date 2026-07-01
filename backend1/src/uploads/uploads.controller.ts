@@ -1,72 +1,151 @@
 import {
-  Controller, Post, UseInterceptors, UploadedFile,
-  BadRequestException,
+  Controller, Post, Delete, UseInterceptors, UploadedFile,
+  BadRequestException, Param, NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { extname, normalize, join } from 'path';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
+
+const ALLOWED_SCOPES: Record<string, string[]> = {
+  'clubs/logo': ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
+  'clubs/banner': ['image/jpeg', 'image/png', 'image/webp'],
+  'clubs/stadium': ['image/jpeg', 'image/png', 'image/webp'],
+  'clubs/president': ['image/jpeg', 'image/png', 'image/webp'],
+  'clubs/video': ['video/mp4', 'video/quicktime', 'video/x-msvideo'],
+  'players/photo': ['image/jpeg', 'image/png', 'image/webp'],
+  'players/secondary-photo': ['image/jpeg', 'image/png', 'image/webp'],
+  'players/video': ['video/mp4', 'video/quicktime', 'video/x-msvideo'],
+  'coaches/photo': ['image/jpeg', 'image/png', 'image/webp'],
+  'articles/cover': ['image/jpeg', 'image/png', 'image/webp'],
+  'hero-banners/image': ['image/jpeg', 'image/png', 'image/webp'],
+  'hall-of-fame/photo': ['image/jpeg', 'image/png', 'image/webp'],
+  'awards/photo': ['image/jpeg', 'image/png', 'image/webp'],
+  generic: [
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+    'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo',
+  ],
+};
+
+const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
 
 @ApiTags('uploads')
 @Controller('uploads')
 export class UploadsController {
+  // ── Legacy flat endpoint, kept for backward compatibility (Evaluated first to avoid matching :entity/:field) ──
   @Post('file')
-  @ApiOperation({ summary: 'Upload an image or video file (max 50MB)' })
+  @ApiOperation({ summary: '[Legacy] Upload an unscoped file (max 50MB)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
+    schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } },
   })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: (req, file, cb) => {
-          const uploadPath = './uploads';
-          if (!existsSync(uploadPath)) {
-            mkdirSync(uploadPath, { recursive: true });
-          }
+        destination: (_req, _file, cb) => {
+          const uploadPath = './uploads/generic';
+          if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
           cb(null, uploadPath);
         },
-        filename: (req, file, cb) => {
+        filename: (_req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
-      limits: {
-        fileSize: 50 * 1024 * 1024, // 50MB limit
-      },
-      fileFilter: (req, file, cb) => {
-        const allowedMimeTypes = [
-          'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-          'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo',
-        ];
-        if (allowedMimeTypes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(new BadRequestException('Only images (JPEG, PNG, WEBP, GIF) and videos (MP4, MOV, AVI) are allowed'), false);
-        }
+      limits: { fileSize: MAX_SIZE_BYTES },
+      fileFilter: (_req, file, cb) => {
+        const allowed = ALLOWED_SCOPES.generic;
+        if (allowed.includes(file.mimetype)) cb(null, true);
+        else cb(new BadRequestException('Only images and videos are allowed'), false);
       },
     }),
   )
   uploadFile(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-    // Return relative URL that can be accessed via static assets serving
-    const fileUrl = `/uploads/${file.filename}`;
+    if (!file) throw new BadRequestException('No file uploaded');
+    return {
+      url: `/uploads/generic/${file.filename}`,
+      filename: file.filename,
+      mimetype: file.mimetype,
+      size: file.size,
+      scope: 'generic',
+    };
+  }
+
+  // ── Scoped endpoint ──
+  @Post(':entity/:field')
+  @ApiOperation({ summary: 'Upload a file scoped to an entity/field, e.g. clubs/logo' })
+  @ApiParam({ name: 'entity', example: 'clubs' })
+  @ApiParam({ name: 'field', example: 'logo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, _file, cb) => {
+          const { entity, field } = req.params as { entity: string; field: string };
+          const uploadPath = `./uploads/${entity}/${field}`;
+          if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
+          cb(null, uploadPath);
+        },
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: MAX_SIZE_BYTES },
+      fileFilter: (req, file, cb) => {
+        const { entity, field } = req.params as { entity: string; field: string };
+        const scopeKey = `${entity}/${field}`;
+        const allowed = ALLOWED_SCOPES[scopeKey] ?? ALLOWED_SCOPES.generic;
+        if (allowed.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(
+            new BadRequestException(
+              `File type "${file.mimetype}" is not allowed for ${scopeKey}. Allowed: ${allowed.join(', ')}`,
+            ),
+            false,
+          );
+        }
+      },
+    }),
+  )
+  uploadScopedFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('entity') entity: string,
+    @Param('field') field: string,
+  ) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const fileUrl = `/uploads/${entity}/${field}/${file.filename}`;
     return {
       url: fileUrl,
       filename: file.filename,
       mimetype: file.mimetype,
       size: file.size,
+      scope: `${entity}/${field}`,
     };
+  }
+
+  @Delete(':entity/:field/:filename')
+  @ApiOperation({ summary: 'Delete a previously uploaded file' })
+  deleteScopedFile(
+    @Param('entity') entity: string,
+    @Param('field') field: string,
+    @Param('filename') filename: string,
+  ) {
+    const uploadsRoot = normalize(join(process.cwd(), 'uploads'));
+    const target = normalize(join(uploadsRoot, entity, field, filename));
+
+    if (!target.startsWith(uploadsRoot)) {
+      throw new BadRequestException('Invalid file path');
+    }
+    if (!existsSync(target)) {
+      throw new NotFoundException('File not found');
+    }
+    unlinkSync(target);
+    return { message: 'File deleted' };
   }
 }

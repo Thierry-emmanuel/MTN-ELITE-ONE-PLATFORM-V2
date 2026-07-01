@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, Query, ParseUUIDPipe, HttpCode, HttpStatus,
+  Param, Body, Query, ParseIntPipe, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CoachesService } from './coaches.service';
@@ -37,7 +37,7 @@ export class CoachesController {
     return this.coachesService.findAll({
       page:   page  ? Number(page)  : 1,
       limit:  limit ? Number(limit) : 20,
-      clubId,
+      clubId: clubId ? Number(clubId) : undefined,
       status,
     });
   }
@@ -45,14 +45,14 @@ export class CoachesController {
   // GET /coaches/:id
   @Get(':id')
   @ApiOperation({ summary: 'Get a coach by ID' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.coachesService.findOne(id);
   }
 
   // PATCH /coaches/:id
   @Patch(':id')
   @ApiOperation({ summary: 'Update coach info' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: any) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
     return this.coachesService.update(id, dto);
   }
 
@@ -60,8 +60,8 @@ export class CoachesController {
   @Patch(':id/assign/:clubId')
   @ApiOperation({ summary: 'Assign coach to a club' })
   assignToClub(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('clubId', ParseUUIDPipe) clubId: string,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('clubId', ParseIntPipe) clubId: number,
   ) {
     return this.coachesService.assignToClub(id, clubId);
   }
@@ -69,7 +69,7 @@ export class CoachesController {
   // PATCH /coaches/:id/unassign
   @Patch(':id/unassign')
   @ApiOperation({ summary: 'Remove coach from his club' })
-  unassign(@Param('id', ParseUUIDPipe) id: string) {
+  unassign(@Param('id', ParseIntPipe) id: number) {
     return this.coachesService.unassign(id);
   }
 
@@ -77,7 +77,7 @@ export class CoachesController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a coach' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.coachesService.remove(id);
   }
 }

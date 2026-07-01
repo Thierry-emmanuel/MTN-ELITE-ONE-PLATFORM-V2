@@ -1,6 +1,6 @@
 import {
   IsString, IsEnum, IsDateString, IsOptional,
-  IsInt, IsBoolean, IsNumber, IsUUID,
+  IsInt, IsBoolean, IsNumber,
   MaxLength, Min, Max, IsArray, IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -138,7 +138,7 @@ export class CreatePlayerDto {
   socialMedia?: SocialMediaDto;
 
   // ── Club ──────────────────────────────────────────────────────
-  @ApiPropertyOptional({ description: 'UUID of the club' })
-  @IsOptional() @IsUUID()
-  clubId?: string;
+  @ApiPropertyOptional({ description: 'ID of the club' })
+  @IsOptional() @IsInt()
+  clubId?: number;
 }

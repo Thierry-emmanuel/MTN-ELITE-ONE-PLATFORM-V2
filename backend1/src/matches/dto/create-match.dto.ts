@@ -1,6 +1,6 @@
 import {
   IsInt, IsDateString, IsEnum, IsOptional,
-  IsString, IsUUID, MaxLength, Min, Max,
+  IsString, MaxLength, Min, Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MatchStatus } from '../match.entity';
@@ -21,17 +21,17 @@ export class CreateMatchDto {
   @IsEnum(MatchStatus)
   status?: MatchStatus;
 
-  @ApiProperty({ description: 'Home club UUID' })
-  @IsUUID()
-  homeClubId: string;
+  @ApiProperty({ description: 'Home club ID' })
+  @IsInt()
+  homeClubId: number;
 
-  @ApiProperty({ description: 'Away club UUID' })
-  @IsUUID()
-  awayClubId: string;
+  @ApiProperty({ description: 'Away club ID' })
+  @IsInt()
+  awayClubId: number;
 
-  @ApiProperty({ description: 'Season UUID' })
-  @IsUUID()
-  seasonId: string;
+  @ApiProperty({ description: 'Season ID' })
+  @IsInt()
+  seasonId: number;
 
   @ApiPropertyOptional({ example: 'Stade Omnisports Ahmadou Ahidjo' })
   @IsOptional()

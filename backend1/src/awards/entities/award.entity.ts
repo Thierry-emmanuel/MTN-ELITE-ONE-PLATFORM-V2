@@ -10,8 +10,8 @@ export enum AwardStatus {
 
 @Entity('awards')
 export class Award {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ length: 100 })
   category: string; // e.g., 'Player of the Month', 'Young Player of the Year'
@@ -27,10 +27,10 @@ export class Award {
 
   // ── FK columns ──
   @Column({ name: 'season_id' })
-  seasonId: string;
+  seasonId: number;
 
-  @Column({ name: 'winner_id', type: 'varchar', nullable: true })
-  winnerId: string | null;
+  @Column({ name: 'winner_id', type: 'int', nullable: true })
+  winnerId: number | null;
 
   // ── Relations ──
   @ManyToOne(() => Season, { onDelete: 'CASCADE' })

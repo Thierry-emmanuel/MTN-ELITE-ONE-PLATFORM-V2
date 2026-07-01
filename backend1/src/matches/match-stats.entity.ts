@@ -10,8 +10,8 @@ import { Season } from '../seasons/season.entity';
 
 @Entity('match_stats')
 export class MatchStats {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ type: 'int', default: 0 })
   goals: number;
@@ -39,16 +39,16 @@ export class MatchStats {
 
   // ── FK columns ──────────────────────────────────────────────────────────
   @Column({ name: 'match_id' })
-  matchId: string;
+  matchId: number;
 
   @Column({ name: 'player_id' })
-  playerId: string;
+  playerId: number;
 
   @Column({ name: 'club_id' })
-  clubId: string;
+  clubId: number;
 
   @Column({ name: 'season_id' })
-  seasonId: string;
+  seasonId: number;
 
   // ── Relations ────────────────────────────────────────────────────────────
   @ManyToOne(() => Match, (match) => match.stats, { onDelete: 'CASCADE' })

@@ -44,7 +44,7 @@ export class UsersService {
     return this.usersRepo.findOne({ where: { email } });
   }
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: number): Promise<User | null> {
     return this.usersRepo.findOne({ where: { id } });
   }
 
@@ -129,7 +129,7 @@ export class UsersService {
   }
 
   // ── Update ────────────────────────────────────────────────────
-  async adminUpdate(id: string, dto: UpdateUserAdminDto): Promise<Omit<User, 'password'>> {
+  async adminUpdate(id: number, dto: UpdateUserAdminDto): Promise<Omit<User, 'password'>> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Utilisateur introuvable`);
     Object.assign(user, dto);
@@ -137,7 +137,7 @@ export class UsersService {
     return this.sanitize(saved);
   }
 
-  async resetPassword(id: string, newPassword: string): Promise<{ message: string }> {
+  async resetPassword(id: number, newPassword: string): Promise<{ message: string }> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Utilisateur introuvable`);
     if (newPassword.length < 8) throw new BadRequestException('Minimum 8 caractères');
@@ -146,7 +146,7 @@ export class UsersService {
     return { message: 'Mot de passe réinitialisé avec succès' };
   }
 
-  async toggleActive(id: string): Promise<Omit<User, 'password'>> {
+  async toggleActive(id: number): Promise<Omit<User, 'password'>> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Utilisateur introuvable`);
     user.isActive = !user.isActive;
@@ -154,7 +154,7 @@ export class UsersService {
     return this.sanitize(saved);
   }
 
-  async approveEditor(id: string): Promise<Omit<User, 'password'>> {
+  async approveEditor(id: number): Promise<Omit<User, 'password'>> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Utilisateur introuvable`);
     if (user.role !== UserRole.EDITOR) throw new BadRequestException('Cet utilisateur n\'est pas un éditeur');
@@ -164,7 +164,7 @@ export class UsersService {
   }
 
   // ── Delete ────────────────────────────────────────────────────
-  async adminRemove(id: string): Promise<{ message: string }> {
+  async adminRemove(id: number): Promise<{ message: string }> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Utilisateur introuvable`);
     if (user.role === UserRole.ADMIN) throw new BadRequestException('Impossible de supprimer un administrateur');

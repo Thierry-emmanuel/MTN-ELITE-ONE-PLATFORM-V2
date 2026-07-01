@@ -12,8 +12,8 @@ import { Season } from '../seasons/season.entity';
 @Index('idx_standing_season_club',   ['seasonId', 'clubId'], { unique: true })
 @Entity('standings')
 export class Standing {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   // ── Position (persisted + recalculated on every standings update) ─────────
   // WHY: Storing position avoids re-sorting on every read.
@@ -63,10 +63,10 @@ export class Standing {
 
   // ── FKs ──────────────────────────────────────────────────────────────────
   @Column({ name: 'club_id' })
-  clubId: string;
+  clubId: number;
 
   @Column({ name: 'season_id' })
-  seasonId: string;
+  seasonId: number;
 
   @ManyToOne(() => Club, (club) => club.standings, { onDelete: 'CASCADE', eager: false })
   @JoinColumn({ name: 'club_id' })

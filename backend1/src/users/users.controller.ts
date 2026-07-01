@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Param, Body, Query, ParseUUIDPipe, HttpCode, HttpStatus,
+  Param, Body, Query, ParseIntPipe, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -36,7 +36,7 @@ export class UsersController {
   // GET /users/:id
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findById(id);
   }
 
@@ -51,7 +51,7 @@ export class UsersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update user profile, role, or status' })
   adminUpdate(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: any,
   ) {
     return this.usersService.adminUpdate(id, dto);
@@ -60,14 +60,14 @@ export class UsersController {
   // PATCH /users/:id/toggle-active
   @Patch(':id/toggle-active')
   @ApiOperation({ summary: 'Toggle user active/inactive status' })
-  toggleActive(@Param('id', ParseUUIDPipe) id: string) {
+  toggleActive(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.toggleActive(id);
   }
 
   // PATCH /users/:id/approve-editor
   @Patch(':id/approve-editor')
   @ApiOperation({ summary: 'Approve an editor account' })
-  approveEditor(@Param('id', ParseUUIDPipe) id: string) {
+  approveEditor(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.approveEditor(id);
   }
 
@@ -75,7 +75,7 @@ export class UsersController {
   @Patch(':id/reset-password')
   @ApiOperation({ summary: 'Reset user password (admin action)' })
   resetPassword(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body('newPassword') newPassword: string,
   ) {
     return this.usersService.resetPassword(id, newPassword);
@@ -85,7 +85,7 @@ export class UsersController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a user account (admin only, cannot delete admins)' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.adminRemove(id);
   }
 }

@@ -24,8 +24,8 @@ export enum MatchStatus {
 @Index('idx_match_scheduled_at',  ['scheduledAt'])
 @Entity('matches')
 export class Match {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column({ type: 'int' })
   round: number;
@@ -51,13 +51,13 @@ export class Match {
 
   // ── FK columns ──────────────────────────────────────────────────────────────
   @Column({ name: 'home_club_id' })
-  homeClubId: string;
+  homeClubId: number;
 
   @Column({ name: 'away_club_id' })
-  awayClubId: string;
+  awayClubId: number;
 
   @Column({ name: 'season_id' })
-  seasonId: string;
+  seasonId: number;
 
   // ── Relations ────────────────────────────────────────────────────────────────
   @ManyToOne(() => Club, (club) => club.homeMatches, { onDelete: 'CASCADE' })
