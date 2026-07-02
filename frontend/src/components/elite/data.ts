@@ -295,12 +295,25 @@ export type Legend = {
   achievement: string; position: string;
   caps: number; goals: number;
   imgKey: string; club?: string; number: number;
+  quote: string; quoteBy: string;
 };
 
 export const legends: Legend[] = [
-  { id:"milla",  name:"Roger Milla",    era:"1976 — 1996", achievement:"Icône CAN · Coupe du Monde 1990", position:"Attaquant",  caps:81,  goals:28, imgKey:"l2", club:"Canon Yaoundé",  number:1 },
-  { id:"etoo",   name:"Samuel Eto'o",   era:"1996 — 2014", achievement:"Triple Ballon d'Or Africain",      position:"Attaquant",  caps:118, goals:56, imgKey:"l1", club:"Coton Sport",    number:2 },
-  { id:"nkono",  name:"Thomas N'Kono",  era:"1976 — 1994", achievement:"Meilleur gardien africain XXe",    position:"Gardien",    caps:112, goals:0,  imgKey:"l3", club:"Canon Yaoundé",  number:3 },
+  { id:"abega",    name:"Théophile Abega",    era:"1972 — 1988", achievement:"Capitaine · Champion d'Afrique 1984 · Ballon d'Or Africain",
+    position:"Milieu",    caps:96,  goals:14, imgKey:"abega",    club:"Canon Yaoundé", number:10,
+    quote:"Porter le brassard, c'était porter tout un pays sur les épaules.", quoteBy:"Théophile Abega, dit « Doctor »" },
+  { id:"nkono",    name:"Thomas N'Kono",      era:"1976 — 1994", achievement:"Double Champion d'Afrique · Icône mondiale des gardiens",
+    position:"Gardien",   caps:112, goals:0,  imgKey:"nkono",    club:"Canon Yaoundé", number:1,
+    quote:"Entre les poteaux, la peur n'a jamais eu sa place.", quoteBy:"Thomas N'Kono" },
+  { id:"manga",    name:"Jean Manga Onguene", era:"1970 — 1984", achievement:"Ballon d'Or Africain · Légende de Canon Yaoundé",
+    position:"Attaquant", caps:74,  goals:41, imgKey:"manga",    club:"Canon Yaoundé", number:9,
+    quote:"Chaque but marqué était un cadeau que je faisais à mon peuple.", quoteBy:"Jean Manga Onguene" },
+  { id:"idrissou", name:"Mohammed Idrissou",  era:"1998 — 2012", achievement:"Buteur redouté de Bundesliga · International camerounais",
+    position:"Attaquant", caps:38,  goals:12, imgKey:"idrissou", club:"SC Fribourg",   number:11,
+    quote:"Le maillot des Lions se défend avec le cœur avant les jambes.", quoteBy:"Mohammed Idrissou" },
+  { id:"toube",    name:"Toubé Charles",      era:"1980 — 1994", achievement:"Pilier historique de la défense des Lions Indomptables",
+    position:"Défenseur", caps:64,  goals:3,  imgKey:"toube",    club:"Canon Yaoundé", number:4,
+    quote:"On ne franchissait pas ma ligne sans laisser des traces de sueur.", quoteBy:"Toubé Charles" },
 ];
 
 // ─── Transfers & Injuries ─────────────────────────────────────────────────────

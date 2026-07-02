@@ -1,18 +1,21 @@
 import {
-  useState, useEffect, useMemo, useCallback, useRef,
+  useState, useEffect, useMemo, useRef,
 } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Shield, Table2, Target, Zap, BookOpen,
-  ArrowUpRight, Square, Clock, RefreshCw, TrendingUp,
+  ArrowUpRight, Square, Clock, RefreshCw, TrendingUp, Star,
 } from 'lucide-react';
 import { MOCK_PLAYER_STATS, MOCK_CLUB_STATS, DEV_SEASON_ID } from '@/services/mockData';
-import { PageHero }            from '@/components/ui/football';
-import { StatsFilters }        from '@/components/elite/stats/StatsFilters';
-import { PlayerStatsTable }    from '@/components/elite/stats/PlayerStatsTable';
-import { ClubStatsTable }      from '@/components/elite/stats/ClubStatsComponents';
-import { CategoryLeaderboard } from '@/components/elite/stats/CategoryLeaderboard';
+import { PageHero }              from '@/components/ui/football';
+import { StatsFilters }          from '@/components/elite/stats/StatsFilters';
+import { PlayerStatsTable }      from '@/components/elite/stats/PlayerStatsTable';
+import { ClubStatsTable, ClubAttackDefenseChart } from '@/components/elite/stats/ClubStatsComponents';
+import { CategoryLeaderboard }   from '@/components/elite/stats/CategoryLeaderboard';
+import { LeagueLeadersPodium }   from '@/components/elite/stats/LeagueLeadersPodium';
+import { RatingBadge }           from '@/components/elite/stats/RatingBadge';
+import { computeRating }         from '@/lib/statsRating';
 import { usePlayerStats, useClubStats } from '@/hooks/useFootball';
 import type {
   PlayerStat, ClubStat,
@@ -83,10 +86,10 @@ export default function StatsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [tab,            setTab]            = useState<MainTab>((searchParams.get('tab') as MainTab) ?? 'players');
-  const [seasonId,       setSeasonId]       = useState(searchParams.get('season') ?? SEASON_ID);
+  const [seasonId]       = useState(searchParams.get('season') ?? SEASON_ID);
   const [activeCategory, setActiveCategory] = useState<StatCategory>((searchParams.get('cat') as StatCategory) ?? 'goals');
-  const { data: allPlayersData, isLoading: playersLoading } = usePlayerStats(seasonId, { limit: 200 });
-  const { data: allClubsData, isLoading: clubsLoading } = useClubStats(seasonId, { limit: 50 });
+  const { data: allPlayersData, isLoading: playersLoading, refetch: refetchPlayers } = usePlayerStats(seasonId, { limit: 200 });
+  const { data: allClubsData, isLoading: clubsLoading, refetch: refetchClubs } = useClubStats(seasonId, { limit: 50 });
   const allPlayers = allPlayersData ?? MOCK_PLAYER_STATS;
   const allClubs = allClubsData ?? MOCK_CLUB_STATS;
   const loading = playersLoading || clubsLoading;
@@ -131,8 +134,13 @@ export default function StatsPage() {
     : '—';
   const topScorer   = useMemo(() => [...allPlayers].sort((a, b) => b.goals   - a.goals)[0],   [allPlayers]);
   const topAssister = useMemo(() => [...allPlayers].sort((a, b) => b.assists - a.assists)[0], [allPlayers]);
-  const topCards    = useMemo(() => [...allPlayers].sort((a, b) =>
-    (b.yellowCards + b.redCards) - (a.yellowCards + a.redCards))[0], [allPlayers]);
+  const topRated     = useMemo(() => {
+    const eligible = allPlayers.filter(p => p.appearances >= 5);
+    const pool = eligible.length > 0 ? eligible : allPlayers;
+    return [...pool].sort((a, b) => computeRating(b) - computeRating(a))[0];
+  }, [allPlayers]);
+
+  const load = () => { refetchPlayers(); refetchClubs(); };
 
   const TABS: { id: MainTab; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'players', label: 'Joueurs',          icon: Users  },
@@ -155,26 +163,14 @@ export default function StatsPage() {
             SECTION 1 — STATISTIQUES GÉNÉRALES
         ══════════════════════════════════════════════════ */}
         <section aria-label="Statistiques générales">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-0.5">
-                Saison {seasonId.replace('season-', '')}
-              </p>
-              <h2 className="text-lg font-display font-bold text-foreground">
-                Statistiques générales
-              </h2>
-            </div>
-            <select
-              value={seasonId}
-              onChange={e => setSeasonId(e.target.value)}
-              className="bg-surface-elevated border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-accent/50 cursor-pointer transition-colors"
-            >
-              <option value="season-2025-26">2025 – 2026</option>
-              <option value="season-2024-25">2024 – 2025</option>
-            </select>
+          <div className="mb-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-0.5">
+              Vue d'ensemble
+            </p>
+            <h2 className="text-lg font-display font-bold text-foreground">La saison en chiffres</h2>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <StatCard icon={Target}       label="Buts marqués"      value={totalGoals}       color="text-accent" delay={0}    />
             <StatCard icon={Zap}          label="Passes décisives"  value={totalAssists}                            delay={0.04} />
             <StatCard icon={TrendingUp}   label="Moy. buts / match" value={avgGoals}                               delay={0.08} />
@@ -192,14 +188,59 @@ export default function StatsPage() {
             <StatCard icon={Zap} label="Top passeur"
               value={topAssister?.assists ?? 0} sub={topAssister?.playerName}
               color="text-win" delay={0.36} />
-            <StatCard icon={Square} label="Plus de cartons"
-              value={(topCards?.yellowCards ?? 0) + (topCards?.redCards ?? 0)}
-              sub={topCards?.playerName} color="text-accent" delay={0.40} />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.40, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-xl border border-border/50 bg-gradient-to-b from-white/[0.05] to-transparent p-4 flex items-center gap-3 hover:border-border/80 transition-colors"
+            >
+              <div className="h-9 w-9 rounded-xl bg-white/[0.05] border border-border/40 flex items-center justify-center shrink-0">
+                <Star className="h-4 w-4 text-muted-foreground/60" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  {topRated && <RatingBadge rating={computeRating(topRated)} size="sm" />}
+                  <p className="text-[11px] text-muted-foreground/50 truncate">Meilleure note</p>
+                </div>
+                <p className="text-[10px] text-muted-foreground/30 mt-1 truncate">{topRated?.playerName}</p>
+              </div>
+            </motion.div>
           </div>
         </section>
 
         {/* ══════════════════════════════════════════════════
-            SECTION 2 — CLASSEMENTS  (3 tabs)
+            SECTION 2 — MENEURS DE LIGUE (podium)
+        ══════════════════════════════════════════════════ */}
+        <section aria-label="Meneurs de ligue">
+          <div className="mb-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-0.5">
+              Podium
+            </p>
+            <h2 className="text-lg font-display font-bold text-foreground">Meneurs de la ligue</h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <LeagueLeadersPodium
+              title="Meilleurs buteurs"
+              icon={Target}
+              players={allPlayers}
+              valueKey="goals"
+              unit="buts"
+              chaseCount={3}
+            />
+            <LeagueLeadersPodium
+              title="Meilleurs passeurs"
+              icon={Zap}
+              players={allPlayers}
+              valueKey="assists"
+              unit="passes d."
+              chaseCount={3}
+            />
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════
+            SECTION 3 — CLASSEMENTS  (3 tabs)
         ══════════════════════════════════════════════════ */}
         <section aria-label="Classements">
           <div className="mb-5">
@@ -273,7 +314,8 @@ export default function StatsPage() {
             {/* ── Clubs ──────────────────────────────────────────────────── */}
             {tab === 'clubs' && (
               <motion.div key="clubs" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }} transition={{ duration: 0.28 }}>
+                exit={{ opacity: 0 }} transition={{ duration: 0.28 }} className="space-y-5">
+                <ClubAttackDefenseChart clubs={sortedClubs} />
                 <ClubStatsTable
                   clubs={sortedClubs}
                   loading={loading}

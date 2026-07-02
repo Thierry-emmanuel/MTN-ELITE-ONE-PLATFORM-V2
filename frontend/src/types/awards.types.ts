@@ -13,8 +13,23 @@ export type AwardCategory =
   | 'TEAM_OF_WEEK'
   | 'TEAM_OF_MONTH'
   | 'TEAM_OF_SEASON'
+  | 'GOAL_OF_WEEK'
+  | 'GOAL_OF_MONTH'
+  | 'GOAL_OF_SEASON'
   | 'COACH_OF_MONTH'
   | 'COACH_OF_SEASON';
+
+// ─── Category grouping (drives sidebar / section navigation) ──────────────────
+
+export type AwardGroup = 'BALLON_DOR' | 'PLAYER' | 'TEAM' | 'GOAL' | 'COACH';
+
+export const AWARD_GROUPS: { id: AwardGroup; label: string; categories: AwardCategory[] }[] = [
+  { id: 'BALLON_DOR', label: "Ballon d'Or",          categories: ['BALLON_DOR'] },
+  { id: 'PLAYER',      label: 'Distinctions Joueur',  categories: ['PLAYER_OF_MATCH', 'PLAYER_OF_WEEK', 'PLAYER_OF_MONTH', 'PLAYER_OF_SEASON', 'BEST_YOUNG_PLAYER', 'TOP_SCORER', 'TOP_ASSIST', 'BEST_GOALKEEPER'] },
+  { id: 'TEAM',        label: 'Équipe Type',          categories: ['TEAM_OF_WEEK', 'TEAM_OF_MONTH', 'TEAM_OF_SEASON'] },
+  { id: 'GOAL',        label: 'Plus Beau But',        categories: ['GOAL_OF_WEEK', 'GOAL_OF_MONTH', 'GOAL_OF_SEASON'] },
+  { id: 'COACH',       label: 'Distinctions Coach',   categories: ['COACH_OF_MONTH', 'COACH_OF_SEASON'] },
+];
 
 export type AwardType = 'PLAYER' | 'TEAM' | 'COACH';
 export type VotingStatus = 'OPEN' | 'CLOSED' | 'ANNOUNCED' | 'UPCOMING';
@@ -45,6 +60,14 @@ export interface PlayerNominee {
   };
   highlightStat: { label: string; value: number | string };
   form?: string[]; // ['W','W','D','W','L']
+  /** Present when this nominee appears in a "Goal of the Week/Month/Season" award */
+  goalContext?: {
+    opponent: string;
+    minute: number;
+    matchDate?: string;
+    description: string;
+    videoUrl?: string;
+  };
 }
 
 export interface TeamNominee {
@@ -232,6 +255,9 @@ export const AWARD_META: Record<AwardCategory, {
   TEAM_OF_WEEK:     { label: 'Équipe de la Semaine',  shortLabel: 'Éq. Sem.', icon: '🛡️', type: 'TEAM',   color: 'text-[#34D399]', bg: 'bg-[#34D399]/15 border-[#34D399]/30' },
   TEAM_OF_MONTH:    { label: 'Équipe du Mois',        shortLabel: 'Éq. Mois', icon: '🏟️', type: 'TEAM',   color: 'text-[#FCD116]', bg: 'bg-[#FCD116]/15 border-[#FCD116]/30' },
   TEAM_OF_SEASON:   { label: 'Équipe de la Saison',   shortLabel: 'Éq. Sais.',icon: '🥇', type: 'TEAM',   color: 'text-[#FCD116]', bg: 'bg-[#FCD116]/15 border-[#FCD116]/30' },
+  GOAL_OF_WEEK:     { label: 'But de la Semaine',     shortLabel: 'But Sem.', icon: '🚀', type: 'PLAYER', color: 'text-[#38BDF8]', bg: 'bg-[#38BDF8]/15 border-[#38BDF8]/30' },
+  GOAL_OF_MONTH:    { label: 'But du Mois',           shortLabel: 'But Mois', icon: '🔥', type: 'PLAYER', color: 'text-[#FB923C]', bg: 'bg-[#FB923C]/15 border-[#FB923C]/30' },
+  GOAL_OF_SEASON:   { label: 'But de la Saison',      shortLabel: 'But Sais.',icon: '💫', type: 'PLAYER', color: 'text-[#FCD116]', bg: 'bg-[#FCD116]/15 border-[#FCD116]/30' },
   COACH_OF_MONTH:   { label: 'Coach du Mois',         shortLabel: 'Coach',    icon: '📋', type: 'COACH',  color: 'text-[#A78BFA]', bg: 'bg-[#A78BFA]/15 border-[#A78BFA]/30' },
   COACH_OF_SEASON:  { label: 'Coach de la Saison',    shortLabel: 'Coach Sais.', icon: '🎖️', type: 'COACH', color: 'text-[#FCD116]', bg: 'bg-[#FCD116]/15 border-[#FCD116]/30' },
 };

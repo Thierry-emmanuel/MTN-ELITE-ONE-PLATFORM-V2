@@ -172,6 +172,60 @@ export const MOCK_AWARDS: Award[] = [
       { nomineeId: 'c2', votes: 2000, percentage: 37.0, trending: 'DOWN', rank: 2 },
     ], lastUpdated: new Date().toISOString() },
   },
+  {
+    id: 'aw-7', category: 'GOAL_OF_WEEK', type: 'PLAYER',
+    title: 'But de la Semaine', subtitle: 'Semaine du 21 Avril',
+    description: 'Le geste technique le plus spectaculaire de la 18e journée de MTN Elite One.',
+    period: 'J18 — 21 Avril', season: 'season-2025-26',
+    votingStatus: 'OPEN', votingDeadline: '2025-04-28T23:59:59Z',
+    nominees: [
+      { ...MAROU,    id: 'g1', highlightStat: { label: 'Minute', value: 87 }, goalContext: { opponent: 'Canon Yaoundé', minute: 87, description: 'Frappe enroulée du gauche à 25 mètres, en pleine lucarne.' } },
+      { ...BASSOGOG, id: 'g2', highlightStat: { label: 'Minute', value: 63 }, goalContext: { opponent: 'Union Douala',  minute: 63, description: 'Slalom sur 40 mètres et finition du droit dans la surface.' } },
+      { ...NGONDO,   id: 'g3', highlightStat: { label: 'Minute', value: 12 }, goalContext: { opponent: 'PWD Bamenda',   minute: 12, description: 'Retourné acrobatique sur corner, hors de portée du gardien.' } },
+    ],
+    fanVotingEnabled: true, fanVoteWeight: 100, juryVoteWeight: 0, trophyColor: 'SILVER',
+    voteResults: { awardId: 'aw-7', totalVotes: 6180, results: [
+      { nomineeId: 'g3', votes: 2980, percentage: 48.2, trending: 'UP',   rank: 1 },
+      { nomineeId: 'g1', votes: 1940, percentage: 31.4, trending: 'DOWN', rank: 2 },
+      { nomineeId: 'g2', votes: 1260, percentage: 20.4, trending: 'UP',   rank: 3 },
+    ], lastUpdated: new Date().toISOString() },
+  },
+  {
+    id: 'aw-8', category: 'GOAL_OF_MONTH', type: 'PLAYER',
+    title: 'But du Mois', subtitle: 'Avril 2025',
+    description: 'Le but le plus marquant du mois d\'avril, sélectionné parmi tous les buteurs de la Elite One.',
+    period: 'Avril 2025', season: 'season-2025-26',
+    votingStatus: 'OPEN', votingDeadline: '2025-05-01T23:59:59Z',
+    nominees: [
+      { ...ETAME,  id: 'g4', highlightStat: { label: 'Minute', value: 90 }, goalContext: { opponent: 'Coton Sport', minute: 90, description: 'Coup franc direct sous la barre à la dernière minute pour arracher le point du match nul.' } },
+      { ...DAURA,  id: 'g5', highlightStat: { label: 'Minute', value: 34 }, goalContext: { opponent: 'Victoria United', minute: 34, description: 'Une-deux rapide suivi d\'un piqué délicat au-dessus du gardien.' } },
+      { ...NGONDO, id: 'g6', highlightStat: { label: 'Minute', value: 12 }, goalContext: { opponent: 'PWD Bamenda', minute: 12, description: 'Retourné acrobatique sur corner, but du mois désigné par le jury FECAFOOT.' } },
+    ],
+    fanVotingEnabled: true, fanVoteWeight: 50, juryVoteWeight: 50, trophyColor: 'GOLD',
+    voteResults: { awardId: 'aw-8', totalVotes: 15420, results: [
+      { nomineeId: 'g6', votes: 7100, percentage: 46.0, trending: 'UP',   rank: 1 },
+      { nomineeId: 'g4', votes: 5220, percentage: 33.9, trending: 'UP',   rank: 2 },
+      { nomineeId: 'g5', votes: 3100, percentage: 20.1, trending: 'DOWN', rank: 3 },
+    ], lastUpdated: new Date().toISOString() },
+  },
+  {
+    id: 'aw-9', category: 'GOAL_OF_SEASON', type: 'PLAYER',
+    title: 'But de la Saison', subtitle: 'Saison 2025–26',
+    description: 'Le plus beau but inscrit en MTN Elite One cette saison, toutes journées confondues.',
+    period: 'Saison 2025–26', season: 'season-2025-26',
+    votingStatus: 'OPEN', votingDeadline: '2025-06-30T23:59:59Z',
+    nominees: [
+      { ...NGONDO,   id: 'g7', highlightStat: { label: 'Vues', value: '48K' }, goalContext: { opponent: 'PWD Bamenda',   minute: 12, description: 'Retourné acrobatique sur corner — candidat naturel au trophée annuel.' } },
+      { ...BASSOGOG, id: 'g8', highlightStat: { label: 'Vues', value: '31K' }, goalContext: { opponent: 'Union Douala',  minute: 63, description: 'Slalom sur 40 mètres, l\'un des buts les plus spectaculaires de la saison.' } },
+      { ...MAROU,    id: 'g9', highlightStat: { label: 'Vues', value: '22K' }, goalContext: { opponent: 'Canon Yaoundé', minute: 87, description: 'Frappe enroulée en pleine lucarne à 25 mètres.' } },
+    ],
+    fanVotingEnabled: true, fanVoteWeight: 60, juryVoteWeight: 40, trophyColor: 'GOLD',
+    voteResults: { awardId: 'aw-9', totalVotes: 22300, results: [
+      { nomineeId: 'g7', votes: 11400, percentage: 51.1, trending: 'UP',   rank: 1 },
+      { nomineeId: 'g8', votes: 6700,  percentage: 30.0, trending: 'STABLE', rank: 2 },
+      { nomineeId: 'g9', votes: 4200,  percentage: 18.9, trending: 'DOWN', rank: 3 },
+    ], lastUpdated: new Date().toISOString() },
+  },
 ];
 
 // ─── Ballon d'Or ──────────────────────────────────────────────────────────────

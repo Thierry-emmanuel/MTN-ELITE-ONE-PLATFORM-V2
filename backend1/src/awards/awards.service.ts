@@ -69,6 +69,44 @@ export class AwardsService {
     await this.awardRepo.remove(award);
   }
 
+  /** BF-10.4 — open a voting period. Fails loudly if it's already open so the
+   *  admin can't double-fire the action (mirrors SeasonsTab's activate()). */
+  async openAward(id: number): Promise<Award> {
+    const award = await this.findOne(id);
+    if (award.status === AwardStatus.OPEN) {
+      throw new BadRequestException('Ce vote est déjà ouvert');
+    }
+    award.status = AwardStatus.OPEN;
+    const saved = await this.awardRepo.save(award);
+    this.wsGateway.server.to(`award-${id}`).emit('award_status_changed', {
+      awardId: id, status: saved.status,
+    });
+    return saved;
+  }
+
+  /** BF-10.4 — close a voting period and compute the winner from the
+   *  current tally. Ties are broken by lowest nomination id (first nominated)
+   *  so the result is deterministic rather than "whichever query returns first". */
+  async closeAward(id: number): Promise<Award> {
+    const award = await this.findOne(id);
+    if (award.status !== AwardStatus.OPEN) {
+      throw new BadRequestException('Seul un vote ouvert peut être clôturé');
+    }
+
+    const winner = [...award.nominations].sort(
+      (a, b) => b.voteCount - a.voteCount || a.id - b.id,
+    )[0];
+
+    award.status = AwardStatus.ANNOUNCED;
+    award.winnerId = winner?.playerId ?? null;
+    const saved = await this.awardRepo.save(award);
+
+    this.wsGateway.server.to(`award-${id}`).emit('award_status_changed', {
+      awardId: id, status: saved.status, winnerId: saved.winnerId,
+    });
+    return saved;
+  }
+
   async addNomination(awardId: number, playerId: number): Promise<AwardNomination> {
     const award = await this.findOne(awardId);
     
@@ -128,8 +166,10 @@ export class AwardsService {
     // Fetch updated nomination for WS
     const updatedNomination = await this.nominationRepo.findOne({ where: { id: dto.nominationId } });
 
-    // Emit realtime update
-    this.wsGateway.server.emit('vote_updated', {
+    // Emit realtime update — scoped to this award's room only, so the admin
+    // nominations panel and public VotingPanel don't receive tallies for
+    // awards they haven't opened (BF-06.3).
+    this.wsGateway.server.to(`award-${awardId}`).emit('vote_updated', {
       awardId,
       nominationId: dto.nominationId,
       voteCount: updatedNomination?.voteCount,

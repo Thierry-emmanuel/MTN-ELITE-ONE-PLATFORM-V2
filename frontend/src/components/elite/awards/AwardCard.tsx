@@ -52,13 +52,16 @@ const NomineeRow = memo(({ nominee, result, rank, isVoted }: {
   nominee: Nominee; result?: VoteResult; rank: number; isVoted: boolean;
 }) => {
   const clubName = 'clubName' in nominee ? nominee.clubName : ('city' in nominee ? nominee.city : '');
+  const goalCtx  = (nominee as PlayerNominee).goalContext;
   return (
     <div className={`flex items-center gap-2.5 p-2 rounded-xl transition-colors ${isVoted ? 'bg-[#FCD116]/8' : 'hover:bg-white/[0.03]'}`}>
       <span className="text-sm shrink-0">{rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}</span>
       <Avatar nominee={nominee} size={32} />
       <div className="flex-1 min-w-0">
         <p className={`text-xs font-semibold truncate leading-tight ${isVoted ? 'text-[#FCD116]' : 'text-white/85'}`}>{nominee.name}</p>
-        <p className="text-[9px] text-white/35 truncate">{clubName}</p>
+        <p className="text-[9px] text-white/35 truncate">
+          {goalCtx ? `vs ${goalCtx.opponent} · ${goalCtx.minute}'` : clubName}
+        </p>
         {result && <VoteBar result={result} isVoted={isVoted} />}
       </div>
       <div className="shrink-0 text-right">
@@ -161,7 +164,9 @@ export const AwardCard = memo(({ award, votedNomineeId, index = 0, variant = 'de
                 <div className="min-w-0">
                   <p className="text-[10px] text-[#FCD116]/55 uppercase tracking-wider font-bold">Favori</p>
                   <p className="font-display text-lg font-black text-white truncate">{top.name}</p>
-                  <p className="text-xs text-white/40">{top.clubName}</p>
+                  <p className="text-xs text-white/40">
+                    {top.goalContext ? `vs ${top.goalContext.opponent} · ${top.goalContext.minute}'` : top.clubName}
+                  </p>
                 </div>
                 <div className="ml-auto shrink-0 text-right">
                   <p className="font-display text-2xl font-black text-[#FCD116] tabular-nums">{top.highlightStat.value}</p>

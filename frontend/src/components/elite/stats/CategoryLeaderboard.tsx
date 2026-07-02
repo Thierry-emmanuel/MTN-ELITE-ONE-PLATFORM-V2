@@ -5,6 +5,8 @@ import {
   Square, Clock, Trophy,
 } from 'lucide-react';
 import type { PlayerStat, StatCategory } from '@/types/football.types';
+import { computeRating } from '@/lib/statsRating';
+import { RatingBadge } from './RatingBadge';
 
 // ─── Category config — defines which columns appear per category ───────────────
 interface ColDef {
@@ -119,13 +121,14 @@ const Avatar = ({ photoUrl, name }: { photoUrl?: string; name: string }) => {
 
 // ─── Single leaderboard row ───────────────────────────────────────────────────
 const LeaderboardRow = memo(({
-  player, rank, cols, primaryKey, idx,
+  player, rank, cols, primaryKey, idx, maxPrimary,
 }: {
   player: PlayerStat;
   rank: number;
   cols: ColDef[];
   primaryKey: keyof PlayerStat;
   idx: number;
+  maxPrimary: number;
 }) => (
   <motion.tr
     initial={{ opacity: 0, x: -10 }}
@@ -161,17 +164,31 @@ const LeaderboardRow = memo(({
       <p className="text-sm text-muted-foreground/70 truncate max-w-[120px]">{player.clubName}</p>
     </td>
 
+    {/* Rating (visible on lg+) */}
+    <td className="px-3 py-3 hidden lg:table-cell text-center">
+      <RatingBadge rating={computeRating(player)} size="xs" />
+    </td>
+
     {/* Dynamic stat columns */}
     {cols.map(col => {
       const val = player[col.key] as number ?? 0;
       const isHighlight = col.key === primaryKey;
+      if (isHighlight) {
+        const ratio = maxPrimary > 0 ? Math.min(1, val / maxPrimary) : 0;
+        return (
+          <td key={String(col.key)} className="px-4 py-3">
+            <div className="flex items-center justify-end gap-2">
+              <span className="font-display text-xl tabular-nums text-foreground font-bold">{val}</span>
+              <div className="hidden sm:block w-12 h-1 rounded-full bg-white/[0.06] overflow-hidden shrink-0">
+                <div className="h-full rounded-full bg-accent/60" style={{ width: `${ratio * 100}%` }} />
+              </div>
+            </div>
+          </td>
+        );
+      }
       return (
         <td key={String(col.key)} className="px-4 py-3 text-center">
-          <span className={
-            isHighlight
-              ? 'font-display text-xl tabular-nums text-foreground font-bold'
-              : 'font-display text-base tabular-nums text-muted-foreground/70'
-          }>
+          <span className="font-display text-base tabular-nums text-muted-foreground/70">
             {val}
           </span>
         </td>
@@ -215,6 +232,8 @@ export const CategoryLeaderboard = memo(({
     })
     .slice(0, limit);
 
+  const maxPrimary = Math.max(...sorted.map(p => (p[primaryKey] as number) ?? 0), 1);
+
   return (
     <div className="rounded-xl border border-border overflow-hidden">
       {/* Table header */}
@@ -236,6 +255,9 @@ export const CategoryLeaderboard = memo(({
               <th className="px-3 py-2 text-left text-[10px] text-muted-foreground/50 uppercase tracking-wider font-medium hidden md:table-cell">
                 Club
               </th>
+              <th className="px-3 py-2 text-center text-[10px] text-muted-foreground/50 uppercase tracking-wider font-medium hidden lg:table-cell">
+                Note
+              </th>
               {config.cols.map(col => (
                 <th
                   key={String(col.key)}
@@ -255,7 +277,7 @@ export const CategoryLeaderboard = memo(({
             {loading
               ? Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/20">
-                    {Array.from({ length: config.cols.length + 3 }).map((_, j) => (
+                    {Array.from({ length: config.cols.length + 4 }).map((_, j) => (
                       <td key={j} className="px-3 py-3">
                         <div className="h-4 rounded bg-white/[0.05] animate-pulse"
                           style={{ width: j === 1 ? '70%' : '40%' }} />
@@ -266,7 +288,7 @@ export const CategoryLeaderboard = memo(({
               : sorted.length === 0
               ? (
                 <tr>
-                  <td colSpan={config.cols.length + 3}
+                  <td colSpan={config.cols.length + 4}
                     className="py-12 text-center text-sm text-muted-foreground/40">
                     Aucune donnée disponible.
                   </td>
@@ -280,6 +302,7 @@ export const CategoryLeaderboard = memo(({
                     cols={config.cols}
                     primaryKey={primaryKey}
                     idx={i}
+                    maxPrimary={maxPrimary}
                   />
                 ))
             }

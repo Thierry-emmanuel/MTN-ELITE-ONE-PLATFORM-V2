@@ -4,7 +4,7 @@ import {
   Users, Star, CalendarDays, BarChart2, Award, FileText, Plus, Edit3,
   Trash2, GripVertical, Save, TrendingUp, CheckCircle2, AlertCircle,
   Target, Flame, ShieldCheck, Medal, Clock, Flag, Trophy,
-  Download, Upload, RefreshCw, Eye, EyeOff,
+  Download, Upload, RefreshCw, Eye, EyeOff, Play, StopCircle,
 } from 'lucide-react';
 import AdminLayout from '@/layout/AdminLayout';
 import {
@@ -16,6 +16,16 @@ import {
 import { layoutApi, HomepageLayout, HeroBanner, Award as AwardType, Match, Article, HallOfFameLegend, TalentProfile } from '@/services/layoutApi';
 import { apiClient } from '@/services/api';
 import { SeasonsTab, ClubsTab, PlayersTab, CoachesTab, UsersTab } from './AdminEntityTabs';
+import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
+
+// BF-06.1 — the three MVP award categories. Kept as plain strings (matches
+// the existing `category: string` column, no migration needed) but
+// constrained to a select here instead of free text.
+const AWARD_CATEGORIES = [
+  { value: "Joueur de la Semaine", label: "Joueur de la Semaine" },
+  { value: "Joueur du Mois", label: "Joueur du Mois" },
+  { value: "Ballon d'Or", label: "Ballon d'Or" },
+];
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 type ToastState = { msg: string; type: 'success' | 'error' | 'info' };
@@ -305,6 +315,38 @@ export default function AdminPage() {
     setAwards(prev => prev.filter(a => a.id !== id));
     showToast('Award supprimé.');
   }); };
+
+  // BF-10.4 — one-click period lifecycle, mirrors SeasonsTab's activate()/close().
+  const openAwardVote = (id: string) => withLoading(async () => {
+    const r = await apiClient.post(`/awards/${id}/open`);
+    setAwards(prev => prev.map(a => a.id === id ? r.data : a));
+    if (selectedAward?.id === id) setSelectedAward(r.data);
+    showToast('Vote ouvert.');
+  });
+
+  const closeAwardVote = (id: string) => withLoading(async () => {
+    const r = await apiClient.post(`/awards/${id}/close`);
+    setAwards(prev => prev.map(a => a.id === id ? r.data : a));
+    if (selectedAward?.id === id) setSelectedAward(r.data);
+    const winnerName = players.find(p => p.id === r.data.winnerId)?.name;
+    showToast(winnerName ? `Vote clôturé — vainqueur : ${winnerName}` : 'Vote clôturé.');
+  });
+
+  // BF-06.3 — live tally while the nominations panel for an OPEN award is open.
+  useAwardLiveVotes(
+    selectedAward?.status === 'OPEN' ? Number(selectedAward.id) : null,
+    ({ nominationId, voteCount }) => {
+      setSelectedAward(prev => prev && ({
+        ...prev,
+        nominations: prev.nominations?.map((n: any) =>
+          n.id === nominationId ? { ...n, voteCount } : n),
+      }));
+    },
+    ({ status, winnerId }) => {
+      setSelectedAward(prev => prev && ({ ...prev, status, winnerId }));
+      setAwards(prev => prev.map(a => a.id === selectedAward?.id ? { ...a, status, winnerId } as AwardType : a));
+    },
+  );
 
   const addNomination = () => withLoading(async () => {
     if (!selectedAward || !nomineePlayerId) return;
@@ -751,7 +793,7 @@ export default function AdminPage() {
           {editingAward && (
             <AdminCard title={editingAward.id ? 'Modifier Award' : 'Créer un Award'} accent>
               <form onSubmit={saveAward} className="space-y-4">
-                <FormField label="Catégorie (ex: Ballon d'Or Elite One 2025)" value={editingAward.category || ''} onChange={v => setEditingAward(p => ({ ...p, category: v }))} required />
+                <FormField label="Catégorie" type="select" value={editingAward.category || ''} onChange={v => setEditingAward(p => ({ ...p, category: v }))} options={[{ value: '', label: 'Choisissez une catégorie...' }, ...AWARD_CATEGORIES]} required />
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label="Début des votes" type="datetime-local" value={(editingAward.periodStart || '').replace('Z','').slice(0,16)} onChange={v => setEditingAward(p => ({ ...p, periodStart: new Date(v).toISOString() }))} />
                   <FormField label="Fin des votes" type="datetime-local" value={(editingAward.periodEnd || '').replace('Z','').slice(0,16)} onChange={v => setEditingAward(p => ({ ...p, periodEnd: new Date(v).toISOString() }))} />
@@ -771,7 +813,20 @@ export default function AdminPage() {
 
           {/* Nominee management panel */}
           {selectedAward && (
-            <AdminCard title={`Nominations — ${selectedAward.category}`} subtitle={`${selectedAward.nominations?.length || 0} candidats • Statut: ${selectedAward.status}`} action={<AdminButton variant="secondary" size="sm" onClick={() => setSelectedAward(null)}>← Retour</AdminButton>} accent>
+            <AdminCard
+              title={`Nominations — ${selectedAward.category}`}
+              subtitle={`${selectedAward.nominations?.length || 0} candidats • Statut: ${selectedAward.status}`}
+              action={
+                <div className="flex items-center gap-3">
+                  {selectedAward.status === 'OPEN' && (
+                    <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
+                    </span>
+                  )}
+                  <AdminButton variant="secondary" size="sm" onClick={() => setSelectedAward(null)}>← Retour</AdminButton>
+                </div>
+              }
+              accent>
               <div className="space-y-4">
                 <div className="flex gap-2 items-end">
                   <div className="flex-1">
@@ -808,10 +863,21 @@ export default function AdminPage() {
                     <div>
                       <p className="text-xs font-bold text-white/85 leading-tight">{a.category}</p>
                       <p className="text-[10px] text-white/30 mt-1">{a.nominations?.length || 0} candidats</p>
+                      {a.status === 'ANNOUNCED' && a.winnerId && (
+                        <p className="text-[10px] text-accent font-semibold mt-1">
+                          🏆 {players.find(p => p.id === a.winnerId)?.name || '—'}
+                        </p>
+                      )}
                     </div>
                     <StatusBadge status={a.status} />
                   </div>
-                  <div className="flex gap-2 pt-2 border-t border-white/[0.05]">
+                  <div className="flex gap-2 pt-2 border-t border-white/[0.05] flex-wrap">
+                    {a.status === 'CLOSED' && (
+                      <AdminButton size="sm" variant="success" onClick={() => openAwardVote(a.id!)} loading={loading}><Play className="h-3 w-3" /> Ouvrir le vote</AdminButton>
+                    )}
+                    {a.status === 'OPEN' && (
+                      <AdminButton size="sm" variant="danger" onClick={() => closeAwardVote(a.id!)} loading={loading}><StopCircle className="h-3 w-3" /> Clôturer</AdminButton>
+                    )}
                     <AdminButton size="sm" variant="secondary" onClick={() => setSelectedAward(a)} className="flex-1">Nominations</AdminButton>
                     <AdminButton size="sm" variant="ghost" onClick={() => setEditingAward(a)}><Edit3 className="h-3 w-3" /></AdminButton>
                     <AdminButton size="sm" variant="danger" onClick={() => deleteAward(a.id!)}><Trash2 className="h-3 w-3" /></AdminButton>

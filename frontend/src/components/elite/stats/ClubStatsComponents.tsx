@@ -1,8 +1,10 @@
 import { useState, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Download } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Download, Swords } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
 import type { ClubStat, StatSortField } from '@/types/football.types';
-
 
 // ─── Mini horizontal bar ─────────────────────────────────────────────────────
 const MiniBar = memo(({ value, max, color = 'bg-accent/50' }: {
@@ -20,6 +22,63 @@ const MiniBar = memo(({ value, max, color = 'bg-accent/50' }: {
 ));
 MiniBar.displayName = 'MiniBar';
 
+// ─── Attack vs Defense comparison (Understat-style club comparison) ──────────
+const ChartTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-border bg-[hsl(168,45%,8%)] px-3 py-2 shadow-xl text-[11px]">
+      <p className="font-bold text-foreground mb-1">{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} style={{ color: p.fill }} className="tabular-nums">
+          {p.name}: <span className="font-bold">{p.value}</span>
+        </p>
+      ))}
+    </div>
+  );
+};
+
+export const ClubAttackDefenseChart = memo(({ clubs }: { clubs: ClubStat[] }) => {
+  const data = [...clubs]
+    .sort((a, b) => b.goalDifference - a.goalDifference)
+    .map(c => ({
+      name: c.clubShort ?? c.clubName,
+      'Buts pour': c.goalsFor,
+      'Buts contre': -c.goalsAgainst,
+    }));
+
+  return (
+    <div className="rounded-2xl border border-border/60 bg-white/[0.015] overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
+        <Swords className="h-3.5 w-3.5 text-accent/80 shrink-0" />
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">Attaque vs Défense</h3>
+      </div>
+      <div className="p-4" style={{ height: Math.max(280, data.length * 34) }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }} barGap={2}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(168 30% 25% / 0.4)" horizontal={false} />
+            <XAxis type="number" tick={{ fill: 'hsl(168 15% 55%)', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={54}
+              tick={{ fill: 'hsl(168 15% 70%)', fontSize: 11, fontWeight: 600 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'hsl(0 0% 100% / 0.03)' }} />
+            <Bar dataKey="Buts pour" fill="hsl(153 80% 40%)" radius={[0, 3, 3, 0]} barSize={10} />
+            <Bar dataKey="Buts contre" fill="hsl(354 70% 50%)" radius={[3, 0, 0, 3]} barSize={10} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="px-4 pb-3 text-[10px] text-muted-foreground/40">
+        Buts contre affichés en négatif pour comparer directement l'attaque et la défense de chaque club.
+      </p>
+    </div>
+  );
+});
+ClubAttackDefenseChart.displayName = 'ClubAttackDefenseChart';
+
 // ─── Sort icon ────────────────────────────────────────────────────────────────
 const SortIcon = ({ field, sortField, sortDir }: {
   field: string; sortField: string; sortDir: 'asc' | 'desc';
@@ -29,6 +88,14 @@ const SortIcon = ({ field, sortField, sortDir }: {
     ? <ChevronUp className="h-3 w-3 text-accent" />
     : <ChevronDown className="h-3 w-3 text-accent" />;
 };
+
+// ─── Heat cell background ─────────────────────────────────────────────────────
+function heatStyle(value: number, max: number, invert = false): React.CSSProperties {
+  if (!max || max <= 0 || value <= 0) return {};
+  const ratio = Math.min(1, value / max);
+  const hue = invert ? '354 70% 50%' : '49 97% 53%';
+  return { background: `linear-gradient(90deg, hsl(${hue} / ${(ratio * (invert ? 0.14 : 0.16)).toFixed(3)}) 0%, transparent 100%)` };
+}
 
 // ─── CSV export ───────────────────────────────────────────────────────────────
 function exportCsv(clubs: ClubStat[]) {
@@ -49,8 +116,8 @@ function exportCsv(clubs: ClubStat[]) {
 }
 
 // ─── Club row ─────────────────────────────────────────────────────────────────
-const ClubRow = memo(({ club, rank, idx, maxGoals, maxShots }: {
-  club: ClubStat; rank: number; idx: number; maxGoals: number; maxShots: number;
+const ClubRow = memo(({ club, rank, idx, maxGoals, maxShots, maxGoalsAgainst }: {
+  club: ClubStat; rank: number; idx: number; maxGoals: number; maxShots: number; maxGoalsAgainst: number;
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -59,9 +126,9 @@ const ClubRow = memo(({ club, rank, idx, maxGoals, maxShots }: {
       <motion.tr
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.22, delay: idx * 0.025, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.22, delay: Math.min(idx * 0.025, 0.3), ease: [0.22, 1, 0.36, 1] }}
         onClick={() => setExpanded(v => !v)}
-        className="group cursor-pointer border-b border-border/20 last:border-0 hover:bg-white/[0.025] transition-colors"
+        className="group cursor-pointer border-b border-border/20 last:border-0 hover:bg-white/[0.03] transition-colors"
       >
         {/* Rank */}
         <td className="pl-4 pr-2 py-3 text-center w-8">
@@ -71,7 +138,6 @@ const ClubRow = memo(({ club, rank, idx, maxGoals, maxShots }: {
         {/* Club name */}
         <td className="px-3 py-3 min-w-[140px]">
           <div className="flex items-center gap-2">
-            {/* Club color dot */}
             <div
               className="h-6 w-6 rounded-full border border-white/10 flex items-center justify-center shrink-0 text-[9px] font-black"
               style={{ background: `hsl(0, 0%, 18%)` }}
@@ -92,8 +158,13 @@ const ClubRow = memo(({ club, rank, idx, maxGoals, maxShots }: {
           const isYellow  = key === 'yellowCards';
           const isRed     = key === 'redCards';
           const isWin     = key === 'wins';
+          const heat =
+            key === 'goalsFor'     ? heatStyle(val, maxGoals) :
+            key === 'goalsAgainst' ? heatStyle(val, maxGoalsAgainst, true) :
+            key === 'shots'        ? heatStyle(val, maxShots) :
+            undefined;
           return (
-            <td key={key} className={`px-3 py-3 text-right text-sm tabular-nums ${
+            <td key={key} style={heat} className={`px-3 py-3 text-right text-sm tabular-nums ${
               isPoints ? 'font-display text-base font-bold text-foreground' :
               isYellow ? 'text-[#FCD116]/80' :
               isRed    ? 'text-[#CE1126]/80' :
@@ -185,6 +256,7 @@ export const ClubStatsTable = memo(({
   clubs, loading, sortField, sortDir, onSortChange,
 }: ClubStatsTableProps) => {
   const maxGoals = Math.max(...clubs.map(c => c.goalsFor), 1);
+  const maxGoalsAgainst = Math.max(...clubs.map(c => c.goalsAgainst), 1);
   const maxShots = Math.max(...clubs.map(c => c.shots), 1);
 
   const handleSort = useCallback((key: string) => {
@@ -261,6 +333,7 @@ export const ClubStatsTable = memo(({
                       idx={idx}
                       maxGoals={maxGoals}
                       maxShots={maxShots}
+                      maxGoalsAgainst={maxGoalsAgainst}
                     />
                   ))
                 )}

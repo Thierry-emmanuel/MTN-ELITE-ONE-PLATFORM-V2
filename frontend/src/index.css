@@ -3,6 +3,7 @@
 @theme {
   --font-sans:    "Inter",  ui-sans-serif, system-ui, sans-serif;
   --font-display: "Oswald", sans-serif;
+  --font-serif:   "Fraunces", Georgia, serif;
 
   /* ── Color tokens (mapped to CSS vars) ── */
   --color-background:          hsl(var(--background));

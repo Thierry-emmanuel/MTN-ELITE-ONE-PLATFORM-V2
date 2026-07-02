@@ -46,6 +46,18 @@ export class AwardsController {
     return this.awardsService.remove(id);
   }
 
+  @Post(':id/open')
+  @ApiOperation({ summary: 'Open the voting period for an award (BF-10.4)' })
+  open(@Param('id', ParseIntPipe) id: number) {
+    return this.awardsService.openAward(id);
+  }
+
+  @Post(':id/close')
+  @ApiOperation({ summary: 'Close voting and compute the winner (BF-10.4)' })
+  close(@Param('id', ParseIntPipe) id: number) {
+    return this.awardsService.closeAward(id);
+  }
+
   @Post(':id/nominations')
   @ApiOperation({ summary: 'Add a nomination to an award' })
   addNomination(@Param('id', ParseIntPipe) id: number, @Body() dto: CreateNominationDto) {
