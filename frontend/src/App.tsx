@@ -27,6 +27,9 @@ const PlayerDetailPage = lazy(() => import("./pages/PlayerDetailPage"));
 const HallOfFamePage  = lazy(() => import("./pages/HallOfFamePage"));
 const TransfersPage   = lazy(() => import("./pages/TransfersPage"));
 const InjuriesPage    = lazy(() => import("./pages/InjuriesPage"));
+const TalentsPage     = lazy(() => import("./pages/TalentsPage"));
+const LionsPage       = lazy(() => import("./pages/LionsPage"));
+const HistoryPage     = lazy(() => import("./pages/HistoryPage"));
 
 // ─── Route-level loading skeleton ─────────────────────────────────────────────
 const PageFallback = () => (
@@ -72,6 +75,9 @@ const App = () => (
         <Route path="/players/:id"         element={<PageLayout><PlayerDetailPage /></PageLayout>} />
         <Route path="/transfers"           element={<PageLayout><TransfersPage /></PageLayout>} />
         <Route path="/injuries"            element={<PageLayout><InjuriesPage /></PageLayout>} />
+        <Route path="/talents"             element={<PageLayout><TalentsPage /></PageLayout>} />
+        <Route path="/lions"               element={<PageLayout><LionsPage /></PageLayout>} />
+        <Route path="/history"             element={<PageLayout><HistoryPage /></PageLayout>} />
         <Route path="/halloffame"          element={<HallOfFamePage />} />
 
         <Route path="*" element={<NotFound />} />

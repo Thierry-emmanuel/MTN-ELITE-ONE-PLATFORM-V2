@@ -89,7 +89,7 @@ export const MOCK_STANDINGS: Standing[] = [
 
 // ─── Mock Player Stats ────────────────────────────────────────────────────────
 
-export const MOCK_PLAYER_STATS: PlayerStat[] = [
+const RAW_PLAYER_STATS: PlayerStat[] = [
   {
     playerId: 'p1', playerName: 'Christian Bassogog', position: 'FW',
     nationality: 'CMR', age: 29,
@@ -227,9 +227,23 @@ export const MOCK_PLAYER_STATS: PlayerStat[] = [
   },
 ];
 
+// ─── Placeholder media (used only when the API doesn't supply real URLs) ─────
+// Deterministic per-id so the same player/club always gets the same picture
+// across reloads — swap for real backend photoUrl / clubLogoUrl once available.
+const clubLogoUrl = (clubId: string) =>
+  `https://api.dicebear.com/7.x/shapes/svg?seed=${clubId}&backgroundType=gradientLinear`;
+const playerPhotoUrl = (playerId: string) =>
+  `https://i.pravatar.cc/128?u=${playerId}`;
+
+export const MOCK_PLAYER_STATS: PlayerStat[] = RAW_PLAYER_STATS.map(p => ({
+  ...p,
+  photoUrl: p.photoUrl ?? playerPhotoUrl(p.playerId),
+  clubLogoUrl: p.clubLogoUrl ?? clubLogoUrl(p.clubId),
+}));
+
 // ─── Mock Club Stats ──────────────────────────────────────────────────────────
 
-export const MOCK_CLUB_STATS: ClubStat[] = [
+const RAW_CLUB_STATS: ClubStat[] = [
   {
     clubId: 'cot', clubName: 'Coton Sport', clubShort: 'COT',
     matchesPlayed: 18, wins: 12, draws: 2, losses: 4,
@@ -311,3 +325,8 @@ export const MOCK_CLUB_STATS: ClubStat[] = [
     cleanSheets: 1, points: 14,
   },
 ];
+
+export const MOCK_CLUB_STATS: ClubStat[] = RAW_CLUB_STATS.map(c => ({
+  ...c,
+  clubLogoUrl: c.clubLogoUrl ?? clubLogoUrl(c.clubId),
+}));

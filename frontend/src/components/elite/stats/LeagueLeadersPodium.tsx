@@ -1,27 +1,15 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { PlayerStat } from '@/types/football.types';
 import { computeRating } from '@/lib/statsRating';
 import { RatingBadge } from './RatingBadge';
+import { PlayerAvatar, ClubBadge } from './MediaAvatar';
+import { ChevronDown } from 'lucide-react';
 
 const MEDAL: Record<number, { bar: string; ring: string; glow: string; badge: string; height: string }> = {
   1: { bar: 'bg-[#FCD116]', ring: 'ring-[#FCD116]/45', glow: 'shadow-[0_0_30px_rgba(252,209,22,0.22)]', badge: 'bg-[#FCD116] text-black', height: 'lg:pb-8' },
   2: { bar: 'bg-[#C7C7C7]', ring: 'ring-[#C7C7C7]/35', glow: 'shadow-[0_0_18px_rgba(199,199,199,0.14)]', badge: 'bg-[#C7C7C7] text-black', height: 'lg:pb-0 lg:mt-6' },
   3: { bar: 'bg-[#CD7F32]', ring: 'ring-[#CD7F32]/35', glow: 'shadow-[0_0_18px_rgba(205,127,50,0.14)]', badge: 'bg-[#CD7F32] text-white', height: 'lg:pb-0 lg:mt-9' },
-};
-
-const Avatar = ({ photoUrl, name, size }: { photoUrl?: string; name: string; size: number }) => {
-  const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  return photoUrl
-    ? <img src={photoUrl} alt={name} width={size} height={size} className="rounded-full object-cover shrink-0" loading="lazy" />
-    : (
-      <div
-        className="rounded-full bg-white/10 border border-white/10 flex items-center justify-center shrink-0 font-bold text-foreground/70"
-        style={{ width: size, height: size, fontSize: size * 0.32 }}
-      >
-        {initials}
-      </div>
-    );
 };
 
 const PodiumCard = memo(({
@@ -41,7 +29,7 @@ const PodiumCard = memo(({
         <div className={`h-[3px] ${medal.bar}`} />
         <div className="p-4 flex flex-col items-center text-center">
           <div className="relative mb-2.5">
-            <Avatar photoUrl={player.photoUrl} name={player.playerName} size={rank === 1 ? 64 : 52} />
+            <PlayerAvatar photoUrl={player.photoUrl} name={player.playerName} size={rank === 1 ? 64 : 52} />
             <span className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-[hsl(168,45%,11%)] ${medal.badge}`}>
               {rank}
             </span>
@@ -49,9 +37,12 @@ const PodiumCard = memo(({
           <p className="font-display text-sm font-bold text-foreground leading-tight truncate max-w-full">
             {player.playerName}
           </p>
-          <p className="text-[10px] text-muted-foreground/60 truncate max-w-full mt-0.5">
-            {player.clubShort ?? player.clubName}
-          </p>
+          <div className="flex items-center justify-center gap-1 mt-0.5 max-w-full">
+            <ClubBadge logoUrl={player.clubLogoUrl} name={player.clubName} size={12} />
+            <p className="text-[10px] text-muted-foreground/60 truncate">
+              {player.clubShort ?? player.clubName}
+            </p>
+          </div>
 
           <div className="mt-3 flex items-baseline gap-1.5">
             <span className={`font-display tabular-nums leading-none text-foreground ${rank === 1 ? 'text-4xl' : 'text-3xl'}`}>
@@ -80,7 +71,7 @@ const ChaseRow = memo(({
     className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03] transition-colors"
   >
     <span className="w-5 text-[11px] text-muted-foreground/50 tabular-nums text-center shrink-0">{rank}</span>
-    <Avatar photoUrl={player.photoUrl} name={player.playerName} size={26} />
+    <PlayerAvatar photoUrl={player.photoUrl} name={player.playerName} size={26} />
     <div className="min-w-0 flex-1">
       <p className="text-[12px] font-semibold text-foreground truncate leading-tight">{player.playerName}</p>
       <p className="text-[9px] text-muted-foreground/50 truncate">{player.clubShort ?? player.clubName}</p>
@@ -108,18 +99,23 @@ interface LeagueLeadersPodiumProps {
 export const LeagueLeadersPodium = memo(({
   title, icon: Icon, players, valueKey, unit, chaseCount = 5,
 }: LeagueLeadersPodiumProps) => {
+  const [expanded, setExpanded] = useState(false);
   const sorted = [...players].sort((a, b) => ((b[valueKey] as number) ?? 0) - ((a[valueKey] as number) ?? 0));
   const top3 = sorted.slice(0, 3);
-  const chase = sorted.slice(3, 3 + chaseCount);
+  const rest = sorted.slice(3);
+  const chase = expanded ? rest : rest.slice(0, chaseCount);
   const max = (top3[0]?.[valueKey] as number) ?? 1;
 
   if (top3.length === 0) return null;
 
   return (
     <div className="rounded-2xl border border-border/60 bg-white/[0.015] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-        <Icon className="h-3.5 w-3.5 text-accent/80 shrink-0" />
-        <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{title}</h3>
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border/50">
+        <div className="flex items-center gap-2">
+          <Icon className="h-3.5 w-3.5 text-accent/80 shrink-0" />
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">{title}</h3>
+        </div>
+        <span className="text-[10px] text-muted-foreground/40">{sorted.length} joueurs</span>
       </div>
 
       <div className="p-4 lg:p-5">
@@ -137,7 +133,7 @@ export const LeagueLeadersPodium = memo(({
         </div>
 
         {chase.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-border/30 space-y-0.5">
+          <div className="mt-4 pt-3 border-t border-border/30 space-y-0.5 max-h-[420px] overflow-y-auto">
             {chase.map((p, i) => (
               <ChaseRow
                 key={p.playerId}
@@ -149,6 +145,16 @@ export const LeagueLeadersPodium = memo(({
               />
             ))}
           </div>
+        )}
+
+        {rest.length > chaseCount && (
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="w-full mt-2 pt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-muted-foreground/60 hover:text-accent transition-colors"
+          >
+            {expanded ? 'Réduire' : `Voir les ${rest.length} suivants`}
+            <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </button>
         )}
       </div>
     </div>

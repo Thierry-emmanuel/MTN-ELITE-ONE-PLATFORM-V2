@@ -69,8 +69,9 @@ const NAV_LINKS = [
     label: "Communauté",
     icon: <Users className="h-3.5 w-3.5" />,
     children: [
-      { label: "Young Talent Watch", href: "/players",    icon: <Star          className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Hall of Fame",       href: "/halloffame", icon: <Trophy        className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Young Talent Watch", href: "/talents",    icon: <Star          className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Musée & Archives",   href: "/history",    icon: <Trophy        className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Hall of Fame",       href: "/halloffame", icon: <Award         className="h-3.5 w-3.5 text-[#FCD116]" /> },
       { label: "Transferts",         href: "/transfers",  icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
       { label: "Blessures",          href: "/injuries",   icon: <Activity      className="h-3.5 w-3.5 text-[#FCD116]" /> },
     ],
@@ -171,7 +172,7 @@ const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-full left-0 mt-2 min-w-[200px] bg-[hsl(168,50%,7%)] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+            className="absolute top-full left-0 mt-2 min-w-[200px] bg-[#07190e]/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
           >
             {isAccent && (
               <div className="h-[2px] bg-gradient-to-r from-accent via-accent/60 to-transparent" />
@@ -287,10 +288,10 @@ const MobileMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) =
         <motion.div
           initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 320 }}
-          className="fixed top-0 right-0 bottom-0 w-[300px] bg-[hsl(168,50%,6%)] border-l border-white/8 z-50 lg:hidden flex flex-col"
+          className="fixed top-0 right-0 bottom-0 w-[300px] bg-[#05140B]/98 backdrop-blur-md border-l border-white/10 z-50 lg:hidden flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <div className="flex items-center gap-3">
               <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" />
               <div>
@@ -373,11 +374,11 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
       <header
         className={`fixed top-[2px] left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-[hsl(168,50%,7%)/90] backdrop-blur-xl border-b border-white/8 shadow-[0_4px_40px_rgba(0,0,0,0.45)]"
+            ? "bg-[#05140B]/90 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_40px_rgba(0,0,0,0.45)]"
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="container flex items-center gap-3 h-[60px]">
+        <div className="container px-4 mx-auto flex items-center justify-between gap-3 h-[60px]">
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 shrink-0 group mr-2">

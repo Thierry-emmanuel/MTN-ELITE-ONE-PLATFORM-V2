@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, ArrowRight, ChevronDown } from 'lucide-react';
+import { Search, User, ArrowRight, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePlayers, useClubs } from '@/hooks/useFootball';
 import { PageHero } from '@/components/elite/FootballPrimitives';
 import PageLayout from '@/layout/PageLayout';
@@ -27,8 +27,11 @@ export default function PlayersPage() {
   const [positionFilter, setPositionFilter] = useState<'ALL'|'GK'|'DF'|'MF'|'FW'>('ALL');
   const [clubFilter,     setClubFilter]     = useState<string>('ALL');
 
-  const { data: clubs }                        = useClubs();
-  const { data: players, isLoading }           = usePlayers({
+  // Top scorers carousel ref — declared at component level (valid hook usage)
+  const topScorersTrackRef = useRef<HTMLDivElement>(null);
+
+  const { data: clubs }            = useClubs();
+  const { data: players, isLoading } = usePlayers({
     position: positionFilter !== 'ALL' ? positionFilter : undefined,
     clubId:   clubFilter     !== 'ALL' ? clubFilter     : undefined,
   });
@@ -39,6 +42,14 @@ export default function PlayersPage() {
       p.playerName.toLowerCase().includes(search.toLowerCase())
     );
   }, [players, search]);
+
+  const topScorers = useMemo(() =>
+    [...filteredPlayers].sort((a: PlayerStat, b: PlayerStat) => b.goals - a.goals).slice(0, 10),
+    [filteredPlayers]
+  );
+
+  const scrollTopScorers = (dir: 'left' | 'right') =>
+    topScorersTrackRef.current?.scrollBy({ left: dir === 'right' ? 220 : -220, behavior: 'smooth' });
 
   return (
     <PageLayout>
@@ -96,6 +107,67 @@ export default function PlayersPage() {
             ))}
           </div>
         </div>
+
+        {/* ── Top Scorers Carousel ── */}
+        {!isLoading && topScorers.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-widest font-semibold">
+                ⚡ Meilleurs buteurs
+              </span>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => scrollTopScorers('left')}
+                  className="h-7 w-7 rounded-full bg-white/5 border border-border/40 grid place-items-center hover:bg-white/10 text-muted-foreground hover:text-accent transition-all cursor-pointer"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => scrollTopScorers('right')}
+                  className="h-7 w-7 rounded-full bg-white/5 border border-border/40 grid place-items-center hover:bg-white/10 text-muted-foreground hover:text-accent transition-all cursor-pointer"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div
+              ref={topScorersTrackRef}
+              className="flex gap-3 overflow-x-auto scrollbar-hide pb-1"
+              style={{ scrollSnapType: 'x mandatory' }}
+            >
+              {topScorers.map((p: PlayerStat, i: number) => (
+                <Link
+                  key={p.playerId}
+                  to={`/players/${p.playerId}`}
+                  style={{ scrollSnapAlign: 'start' }}
+                  className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-surface-elevated border border-border/50 rounded-xl hover:border-accent/40 hover:bg-white/[0.04] transition-all group"
+                >
+                  <div className="relative shrink-0">
+                    <div className="h-9 w-9 rounded-full bg-white/5 border border-border/40 grid place-items-center font-display text-xs font-bold text-accent">
+                      {(p.nationality || 'CMR').slice(0, 2)}
+                    </div>
+                    {i < 3 && (
+                      <span className="absolute -top-1 -right-1 text-[8px] leading-none">
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-foreground group-hover:text-accent transition-colors truncate max-w-[110px]">
+                      {p.playerName}
+                    </div>
+                    <div className="text-[9px] text-muted-foreground truncate">{p.clubName}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-display font-bold text-accent">{p.goals}</div>
+                    <div className="text-[8px] text-muted-foreground uppercase">buts</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Result count */}
         {!isLoading && (

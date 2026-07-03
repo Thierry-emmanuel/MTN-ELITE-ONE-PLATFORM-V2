@@ -2,12 +2,13 @@ import { useState, useMemo, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronUp, ChevronDown, ChevronsUpDown,
-  Download, X, Info, User,
+  Download, X, Info,
 } from 'lucide-react';
 import type { PlayerStat, StatSortField } from '@/types/football.types';
 import { computeRating, percentileOf } from '@/lib/statsRating';
 import { RatingBadge } from './RatingBadge';
 import { PercentileRadar } from './PercentileRadar';
+import { PlayerAvatar, ClubBadge } from './MediaAvatar';
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 interface ColDef {
@@ -121,15 +122,13 @@ const PlayerDetailSlideOver = memo(({
       {/* Player info */}
       <div className="p-4 border-b border-border/40">
         <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
-            {player.photoUrl
-              ? <img src={player.photoUrl} alt={player.playerName} className="h-14 w-14 rounded-full object-cover" loading="lazy" />
-              : <User className="h-6 w-6 text-muted-foreground/40" />
-            }
-          </div>
+          <PlayerAvatar photoUrl={player.photoUrl} name={player.playerName} size={56} />
           <div className="min-w-0 flex-1">
             <p className="font-display text-base font-bold text-foreground truncate">{player.playerName}</p>
-            <p className="text-[11px] text-muted-foreground/60 truncate">{player.clubName}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <ClubBadge logoUrl={player.clubLogoUrl} name={player.clubName} size={14} />
+              <p className="text-[11px] text-muted-foreground/60 truncate">{player.clubName}</p>
+            </div>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wide ${POSITION_BADGE[player.position] ?? 'bg-white/10 text-muted-foreground border-border'}`}>
                 {player.position}
@@ -255,17 +254,13 @@ const TableRow = memo(({
           return (
             <td key={key} className="px-3 py-3 sticky left-8 bg-[hsl(168,45%,11%)] group-hover:bg-[hsl(168,40%,13%)] transition-colors z-[1]">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
-                  {player.photoUrl
-                    ? <img src={player.photoUrl} alt={player.playerName} className="h-8 w-8 rounded-full object-cover" loading="lazy" />
-                    : <span className="text-[10px] font-bold text-muted-foreground/60">
-                        {player.playerName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </span>
-                  }
-                </div>
+                <PlayerAvatar photoUrl={player.photoUrl} name={player.playerName} size={32} />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate group-hover:text-accent transition-colors">{player.playerName}</p>
-                  <p className="text-[10px] text-muted-foreground/50 truncate">{player.clubShort ?? player.clubName}</p>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <ClubBadge logoUrl={player.clubLogoUrl} name={player.clubName} size={12} />
+                    <p className="text-[10px] text-muted-foreground/50 truncate">{player.clubShort ?? player.clubName}</p>
+                  </div>
                 </div>
                 <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase hidden sm:inline ${POSITION_BADGE[player.position] ?? 'bg-white/10 text-muted-foreground border-border'}`}>
                   {player.position}
@@ -300,7 +295,9 @@ interface PlayerStatsTableProps {
   page: number;
   totalPages: number;
   totalCount: number;
+  pageSize: number;
   onPageChange: (p: number) => void;
+  onPageSizeChange: (n: number) => void;
   onSortChange: (field: StatSortField, dir: 'asc' | 'desc') => void;
   sortField: StatSortField;
   sortDir: 'asc' | 'desc';
@@ -308,8 +305,8 @@ interface PlayerStatsTableProps {
 
 export const PlayerStatsTable = memo(({
   players, loading, per90,
-  page, totalPages, totalCount,
-  onPageChange, onSortChange,
+  page, totalPages, totalCount, pageSize,
+  onPageChange, onPageSizeChange, onSortChange,
   sortField, sortDir,
 }: PlayerStatsTableProps) => {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStat | null>(null);
@@ -347,8 +344,8 @@ export const PlayerStatsTable = memo(({
     onSortChange(field, newDir);
   }, [sortField, sortDir, onSortChange]);
 
-  const startRow = (page - 1) * 25 + 1;
-  const endRow   = Math.min(page * 25, totalCount);
+  const startRow = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endRow   = Math.min(page * pageSize, totalCount);
 
   return (
     <>
@@ -359,6 +356,34 @@ export const PlayerStatsTable = memo(({
           {per90 && <span className="ml-1.5 text-accent/60 font-medium">(par 90')</span>}
         </p>
         <div className="flex items-center gap-2">
+          {/* Page size / "show all" */}
+          <div className="flex items-center gap-1 rounded-lg bg-white/[0.04] border border-border/40 p-0.5">
+            {[25, 50, 100].map(n => (
+              <button
+                key={n}
+                onClick={() => onPageSizeChange(n)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tabular-nums transition-all ${
+                  pageSize === n
+                    ? 'bg-accent text-black'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => onPageSizeChange(totalCount)}
+              title="Afficher tous les joueurs sur une seule page"
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                pageSize >= totalCount && totalCount > 0
+                  ? 'bg-accent text-black'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Tout
+            </button>
+          </div>
+
           {/* Column picker */}
           <div className="relative">
             <button
@@ -469,7 +494,7 @@ export const PlayerStatsTable = memo(({
                       key={p.playerId}
                       player={p}
                       idx={i}
-                      rank={(page - 1) * 25 + i + 1}
+                      rank={(page - 1) * pageSize + i + 1}
                       per90={per90}
                       visibleKeys={visibleKeys}
                       colMaxes={colMaxes}

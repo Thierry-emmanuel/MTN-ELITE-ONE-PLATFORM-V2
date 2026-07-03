@@ -1396,6 +1396,428 @@ export default function AdminPage() {
       {activeTab === 'actions' && (
         <EntityCrudEngine config={ENTITY_REGISTRY.actions} showToast={showToast} lookupOptions={{ clubs, players }} />
       )}
+
+      {/* ── SCOUTING (Young Talent Watch) ───────────────────────────────────── */}
+      {activeTab === 'scouting' && (
+        <div className="space-y-8">
+          <SectionHeader
+            title="Young Talent Watch — Scouting Centre"
+            subtitle="Gérez les profils de talents émergents, leur progression et leur chemin vers l'Élite"
+            icon={TrendingUp_}
+            actions={
+              <AdminButton onClick={() => setEditingTalent({ playerId: '', highlightVideoUrl: '', status: 'WATCHLIST', scoutingNotes: '', rating: 5 })}>
+                <Plus className="h-3.5 w-3.5" /> Suivre un Talent
+              </AdminButton>
+            }
+          />
+
+          {/* Stats rapides */}
+          <div className="grid grid-cols-4 gap-4">
+            <DashboardStatCard label="Watchlist" value={talents.filter(t => t.status === 'WATCHLIST').length} icon={Eye} color="text-blue-400" index={0} />
+            <DashboardStatCard label="Promus Élite" value={talents.filter(t => t.status === 'PROMOTED').length} icon={TrendingUp} color="text-emerald-400" index={1} />
+            <DashboardStatCard label="Convoqués Lions" value={talents.filter(t => t.status === 'NATIONAL_TEAM').length} icon={Flag} color="text-amber-400" index={2} />
+            <DashboardStatCard label="Total Suivis" value={talents.length} icon={Users} color="text-purple-400" index={3} />
+          </div>
+
+          {/* Formulaire d'édition */}
+          {editingTalent && (
+            <AdminCard title={editingTalent._id ? 'Modifier Profil Talent' : 'Suivre un Nouveau Talent'} accent>
+              <form onSubmit={saveTalent} className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    label="Joueur"
+                    type="select"
+                    value={editingTalent.playerId || ''}
+                    onChange={v => setEditingTalent(p => ({ ...p, playerId: v }))}
+                    options={[{ value: '', label: 'Sélectionner un joueur' }, ...players.map(p => ({ value: p.id, label: `${p.name} • ${p.club?.name || ''}` }))]}
+                    required
+                  />
+                  <FormField
+                    label="Statut du talent"
+                    type="select"
+                    value={editingTalent.status || 'WATCHLIST'}
+                    onChange={v => setEditingTalent(p => ({ ...p, status: v as any }))}
+                    options={[
+                      { value: 'WATCHLIST', label: '👁️ Watchlist Espoirs' },
+                      { value: 'PROMOTED', label: '🚀 Promu d\'Élite' },
+                      { value: 'NATIONAL_TEAM', label: '🇨🇲 Convoqué Indomptables' },
+                    ]}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <FormField
+                    label="Note globale (1–10)"
+                    type="number"
+                    value={editingTalent.rating || 5}
+                    onChange={v => setEditingTalent(p => ({ ...p, rating: Number(v) }))}
+                    hint="Évaluation du potentiel"
+                  />
+                  <FormField
+                    label="Position sur le terrain"
+                    type="select"
+                    value={(editingTalent as any).position || ''}
+                    onChange={v => setEditingTalent(p => ({ ...p, position: v } as any))}
+                    options={[
+                      { value: '', label: 'Poste' },
+                      { value: 'GK', label: 'Gardien (GK)' },
+                      { value: 'CB', label: 'Défenseur central (CB)' },
+                      { value: 'LB', label: 'Arrière gauche (LB)' },
+                      { value: 'RB', label: 'Arrière droit (RB)' },
+                      { value: 'CDM', label: 'Milieu défensif (CDM)' },
+                      { value: 'CM', label: 'Milieu central (CM)' },
+                      { value: 'CAM', label: 'Milieu offensif (CAM)' },
+                      { value: 'LW', label: 'Ailier gauche (LW)' },
+                      { value: 'RW', label: 'Ailier droit (RW)' },
+                      { value: 'ST', label: 'Attaquant (ST)' },
+                    ]}
+                  />
+                  <FormField
+                    label="Âge du joueur"
+                    type="number"
+                    value={(editingTalent as any).age || ''}
+                    onChange={v => setEditingTalent(p => ({ ...p, age: Number(v) } as any))}
+                    hint="Âge actuel"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4 items-end">
+                  <MediaUploader
+                    label="Vidéo de highlights"
+                    value={editingTalent.highlightVideoUrl || ''}
+                    onChange={v => setEditingTalent(p => ({ ...p, highlightVideoUrl: v }))}
+                    acceptType="video"
+                    hint="Vidéo (MP4, MOV)"
+                  />
+                  <FormField
+                    label="Potentiel (ex: 85, 90…)"
+                    type="number"
+                    value={(editingTalent as any).potential || ''}
+                    onChange={v => setEditingTalent(p => ({ ...p, potential: Number(v) } as any))}
+                    hint="Note de potentiel FIFA-like"
+                  />
+                </div>
+                <FormField
+                  label="Notes du scout (observations détaillées)"
+                  type="textarea"
+                  value={editingTalent.scoutingNotes || ''}
+                  onChange={v => setEditingTalent(p => ({ ...p, scoutingNotes: v }))}
+                  hint="Observations tactiques, physiques, techniques du joueur"
+                />
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                  <AdminButton variant="secondary" onClick={() => setEditingTalent(null)}>Annuler</AdminButton>
+                  <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+                </div>
+              </form>
+            </AdminCard>
+          )}
+
+          {/* Table des talents */}
+          <AdminCard noPadding>
+            <DataTable
+              columns={[
+                {
+                  key: 'player', label: 'Joueur', render: r => (
+                    <div className="flex items-center gap-3">
+                      {r.player?.profileImageUrl && <img src={r.player.profileImageUrl} className="h-8 w-8 rounded-full object-cover bg-white/5" alt={r.player?.name} />}
+                      <div>
+                        <p className="font-semibold text-white/85 text-[11px]">{r.player?.name || '—'}</p>
+                        <p className="text-white/35 text-[10px]">{r.player?.club?.name || ''}</p>
+                      </div>
+                    </div>
+                  )
+                },
+                { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
+                { key: 'rating', label: 'Note', align: 'center', render: r => <span className="font-display font-bold text-accent tabular-nums">{r.rating}/10</span> },
+                { key: 'potential', label: 'Potentiel', align: 'center', render: r => <span className="text-emerald-400 font-bold text-[11px]">{(r as any).potential || '—'}</span> },
+                { key: 'scoutingNotes', label: 'Observations', render: r => <span className="text-white/35 text-[10px] line-clamp-1">{r.scoutingNotes || '—'}</span> },
+              ]}
+              data={talents}
+              keyField="_id"
+              onEdit={r => setEditingTalent(r)}
+              onDelete={r => deleteTalent(r._id!)}
+            />
+          </AdminCard>
+        </div>
+      )}
+
+      {/* ── LIONS CENTRE (National Team) ────────────────────────────────────── */}
+      {activeTab === 'lions' && (
+        <div className="space-y-8">
+          <SectionHeader
+            title="Centre des Lions — Indomptables"
+            subtitle="Gérez les profils des joueurs du championnat convoqués en équipe nationale"
+            icon={Trophy_}
+          />
+
+          {/* Carte d'info */}
+          <div className="grid grid-cols-3 gap-4">
+            <AdminCard>
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-green-500/10 border border-green-500/20 grid place-items-center shrink-0">
+                  <Flag className="h-5 w-5 text-green-400" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold">Joueurs convoqués</p>
+                  <p className="text-2xl font-display font-bold text-white">{talents.filter(t => t.status === 'NATIONAL_TEAM').length}</p>
+                </div>
+              </div>
+            </AdminCard>
+            <AdminCard>
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 grid place-items-center shrink-0">
+                  <Star className="h-5 w-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold">Talents surveillés</p>
+                  <p className="text-2xl font-display font-bold text-white">{talents.filter(t => t.status === 'WATCHLIST').length}</p>
+                </div>
+              </div>
+            </AdminCard>
+            <AdminCard>
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 grid place-items-center shrink-0">
+                  <TrendingUp className="h-5 w-5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-white/40 uppercase tracking-wider font-semibold">Promus cette saison</p>
+                  <p className="text-2xl font-display font-bold text-white">{talents.filter(t => t.status === 'PROMOTED').length}</p>
+                </div>
+              </div>
+            </AdminCard>
+          </div>
+
+          {/* Sélection nationale actuelle */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white/80 uppercase tracking-widest">Sélection Nationale Actuelle</h3>
+              <AdminButton onClick={() => setEditingTalent({ playerId: '', highlightVideoUrl: '', status: 'NATIONAL_TEAM', scoutingNotes: '', rating: 8 })}>
+                <Plus className="h-3.5 w-3.5" /> Ajouter un Lion
+              </AdminButton>
+            </div>
+
+            {editingTalent && (
+              <AdminCard title="Profil Lion — Indomptable" accent>
+                <form onSubmit={saveTalent} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      label="Joueur du championnat"
+                      type="select"
+                      value={editingTalent.playerId || ''}
+                      onChange={v => setEditingTalent(p => ({ ...p, playerId: v }))}
+                      options={[{ value: '', label: 'Sélectionner un joueur' }, ...players.map(p => ({ value: p.id, label: `${p.name} • ${p.club?.name || ''}` }))]}
+                      required
+                    />
+                    <FormField
+                      label="Statut Lions"
+                      type="select"
+                      value={editingTalent.status || 'NATIONAL_TEAM'}
+                      onChange={v => setEditingTalent(p => ({ ...p, status: v as any }))}
+                      options={[
+                        { value: 'NATIONAL_TEAM', label: '🇨🇲 Titulaire Indomptables' },
+                        { value: 'PROMOTED', label: '🟡 Prétendant à la sélection' },
+                        { value: 'WATCHLIST', label: '👁️ Sous surveillance des Lions' },
+                      ]}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Caps nationaux" type="number" value={(editingTalent as any).caps || ''} onChange={v => setEditingTalent(p => ({ ...p, caps: Number(v) } as any))} hint="Nombre de sélections" />
+                    <FormField label="Buts en sélection" type="number" value={(editingTalent as any).nationalGoals || ''} onChange={v => setEditingTalent(p => ({ ...p, nationalGoals: Number(v) } as any))} />
+                    <FormField label="Note Lions (1–10)" type="number" value={editingTalent.rating || 8} onChange={v => setEditingTalent(p => ({ ...p, rating: Number(v) }))} />
+                  </div>
+                  <FormField
+                    label="Parcours & Histoire (chemin vers les Lions)"
+                    type="textarea"
+                    value={editingTalent.scoutingNotes || ''}
+                    onChange={v => setEditingTalent(p => ({ ...p, scoutingNotes: v }))}
+                    hint="Description du parcours du joueur depuis l'académie jusqu'aux Lions"
+                  />
+                  <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                    <AdminButton variant="secondary" onClick={() => setEditingTalent(null)}>Annuler</AdminButton>
+                    <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+                  </div>
+                </form>
+              </AdminCard>
+            )}
+
+            <AdminCard noPadding>
+              <DataTable
+                columns={[
+                  {
+                    key: 'player', label: 'Lion', render: r => (
+                      <div className="flex items-center gap-3">
+                        {r.player?.profileImageUrl && <img src={r.player.profileImageUrl} className="h-9 w-9 rounded-full object-cover border border-green-500/30" alt={r.player?.name} />}
+                        <div>
+                          <p className="font-bold text-white/90 text-[11px]">{r.player?.name || '—'}</p>
+                          <p className="text-white/35 text-[10px]">{r.player?.club?.name || ''}</p>
+                        </div>
+                      </div>
+                    )
+                  },
+                  { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
+                  { key: 'caps', label: 'Caps', align: 'center', render: r => <span className="font-bold text-accent text-[11px]">{(r as any).caps ?? '—'}</span> },
+                  { key: 'nationalGoals', label: 'Buts', align: 'center', render: r => <span className="font-bold text-emerald-400 text-[11px]">{(r as any).nationalGoals ?? '—'}</span> },
+                  { key: 'rating', label: 'Note', align: 'center', render: r => <span className="font-display font-bold text-amber-400 tabular-nums text-[11px]">{r.rating}/10</span> },
+                ]}
+                data={talents}
+                keyField="_id"
+                onEdit={r => setEditingTalent(r)}
+                onDelete={r => deleteTalent(r._id!)}
+              />
+            </AdminCard>
+          </div>
+
+          {/* Configuration de la page Lions */}
+          <AdminCard title="Configuration de la page Lions" accent>
+            <div className="space-y-4">
+              <p className="text-[11px] text-white/40">Paramètres d'affichage et de contenu de la section Road to Lions</p>
+              <div className="grid grid-cols-2 gap-4">
+                <SwitchToggle label="Afficher le compte à rebours tournoi" checked={false} onChange={() => {}} />
+                <SwitchToggle label="Activer le vote meilleur Lion du mois" checked={false} onChange={() => {}} />
+                <SwitchToggle label="Afficher la timeline historique" checked={true} onChange={() => {}} />
+                <SwitchToggle label="Afficher les stats internationales" checked={true} onChange={() => {}} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Prochain tournoi / compétition" value="" onChange={() => {}} hint="Ex: CHAN 2025, CAN 2026" />
+                <FormField label="Date du prochain match Lions" type="date" value="" onChange={() => {}} />
+              </div>
+              <div className="flex justify-end pt-2 border-t border-white/[0.05]">
+                <AdminButton onClick={() => showToast('Configuration Lions sauvegardée !')}>
+                  <Save className="h-3.5 w-3.5" /> Sauvegarder
+                </AdminButton>
+              </div>
+            </div>
+          </AdminCard>
+        </div>
+      )}
+
+      {/* ── MUSEUM & ARCHIVES ────────────────────────────────────────────────── */}
+      {activeTab === 'museum' && (
+        <div className="space-y-8">
+          <SectionHeader
+            title="Musée & Archives — Heritage Centre"
+            subtitle="Administrez le musée digital officiel du football camerounais"
+            icon={Trophy_}
+          />
+
+          {/* Vue d'ensemble */}
+          <div className="grid grid-cols-4 gap-4">
+            <DashboardStatCard label="Saisons archivées" value={seasons.length} icon={CalendarDays} color="text-blue-400" index={0} />
+            <DashboardStatCard label="Légendes Hall of Fame" value={legends.length} icon={Star} color="text-amber-400" index={1} />
+            <DashboardStatCard label="Records enregistrés" value={12} icon={Trophy} color="text-emerald-400" index={2} />
+            <DashboardStatCard label="Moments historiques" value={8} icon={Flag} color="text-purple-400" index={3} />
+          </div>
+
+          {/* Hall of Fame — gestion des légendes */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white/80 uppercase tracking-widest">Hall of Fame — Légendes</h3>
+                <p className="text-[11px] text-white/35 mt-1">Intronisez et gérez les figures légendaires du football camerounais</p>
+              </div>
+              <AdminButton onClick={() => setEditingLegend({ name: '', bio: { fr: '', en: '' }, era: '90', achievements: [], image_url: '', club_ids: [] })}>
+                <Plus className="h-3.5 w-3.5" /> Introniser une Légende
+              </AdminButton>
+            </div>
+
+            {editingLegend && (
+              <AdminCard title={editingLegend._id ? 'Modifier Légende' : 'Introniser une Légende'} accent>
+                <form onSubmit={saveLegend} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Nom de la légende" value={editingLegend.name || ''} onChange={v => setEditingLegend(p => ({ ...p, name: v }))} required />
+                    <FormField label="Époque (ex: 80, 90, 2000)" value={editingLegend.era || ''} onChange={v => setEditingLegend(p => ({ ...p, era: v }))} hint="Décennie de gloire" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Biographie (Français)" type="textarea" value={editingLegend.bio?.fr || ''} onChange={v => setEditingLegend(p => ({ ...p, bio: { ...(p?.bio as any), fr: v } }))} required />
+                    <FormField label="Biographie (Anglais)" type="textarea" value={editingLegend.bio?.en || ''} onChange={v => setEditingLegend(p => ({ ...p, bio: { ...(p?.bio as any), en: v } }))} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Poste occupé" value={(editingLegend as any).position || ''} onChange={v => setEditingLegend(p => ({ ...p, position: v } as any))} hint="Ex: Attaquant, Milieu" />
+                    <FormField label="Nationalité" value={(editingLegend as any).nationality || 'Cameroun'} onChange={v => setEditingLegend(p => ({ ...p, nationality: v } as any))} />
+                    <FormField label="Club emblématique" value={(editingLegend as any).iconicClub || ''} onChange={v => setEditingLegend(p => ({ ...p, iconicClub: v } as any))} hint="Club de cœur" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 items-end">
+                    <FormField label="Palmarès (séparés par virgule)" value={editingLegend.achievements?.join(', ') || ''} onChange={v => setEditingLegend(p => ({ ...p, achievements: v.split(',').map((s: string) => s.trim()).filter(Boolean) }))} hint="Ex: CAN 2000, Coupe du Cameroun x3" />
+                    <MediaUploader label="Photo de la légende" value={editingLegend.image_url || ''} onChange={v => setEditingLegend(p => ({ ...p, image_url: v }))} acceptType="image" hint="Portrait (PNG, JPEG, WEBP)" />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
+                    <AdminButton variant="secondary" onClick={() => setEditingLegend(null)}>Annuler</AdminButton>
+                    <AdminButton type="submit" loading={loading}>Introniser</AdminButton>
+                  </div>
+                </form>
+              </AdminCard>
+            )}
+
+            <AdminCard noPadding>
+              <DataTable
+                columns={[
+                  {
+                    key: 'name', label: 'Légende', render: r => (
+                      <div className="flex items-center gap-3">
+                        {r.image_url && <img src={r.image_url} className="h-9 w-9 rounded-full object-cover bg-white/5 border border-amber-500/20" alt={r.name} />}
+                        <div>
+                          <p className="font-bold text-white/90 text-[11px]">{r.name}</p>
+                          <p className="text-white/35 text-[10px]">{(r as any).iconicClub || ''}</p>
+                        </div>
+                      </div>
+                    )
+                  },
+                  { key: 'era', label: 'Époque', render: r => <span className="text-accent font-bold text-[10px]">{r.era}s</span> },
+                  { key: 'position', label: 'Poste', render: r => <span className="text-white/40 text-[10px]">{(r as any).position || '—'}</span> },
+                  { key: 'achievements', label: 'Palmarès', render: r => <span className="text-white/40 text-[10px]">{r.achievements?.slice(0, 2).join(' · ')}</span> },
+                ]}
+                data={legends}
+                keyField="_id"
+                onEdit={r => setEditingLegend(r)}
+                onDelete={r => deleteLegend(r._id!)}
+              />
+            </AdminCard>
+          </div>
+
+          {/* Archives de saisons */}
+          <div className="space-y-4 pt-6 border-t border-white/[0.05]">
+            <div>
+              <h3 className="text-sm font-bold text-white/80 uppercase tracking-widest">Archives des Saisons</h3>
+              <p className="text-[11px] text-white/35 mt-1">Chaque saison disponible dans les archives du musée</p>
+            </div>
+            <AdminCard noPadding>
+              <DataTable
+                columns={[
+                  { key: 'name', label: 'Saison', render: r => <span className="font-bold text-white/85 text-[11px]">{r.name || r.year || '—'}</span> },
+                  { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
+                  { key: 'champion', label: 'Champion', render: r => <span className="text-accent font-semibold text-[10px]">{r.champion || '—'}</span> },
+                  { key: 'archived', label: 'Archivée', align: 'center', render: r => <span className={`text-[10px] font-bold ${r.status === 'COMPLETED' ? 'text-emerald-400' : 'text-white/25'}`}>{r.status === 'COMPLETED' ? '✓' : '—'}</span> },
+                ]}
+                data={seasons}
+                keyField="id"
+                onEdit={() => {}}
+              />
+            </AdminCard>
+          </div>
+
+          {/* Configuration du musée */}
+          <AdminCard title="Configuration du Musée Digital" accent>
+            <div className="space-y-4">
+              <p className="text-[11px] text-white/40">Paramètres d'affichage de la section Heritage & Archives</p>
+              <div className="grid grid-cols-2 gap-4">
+                <SwitchToggle label="Afficher le Hall of Champions" checked={true} onChange={() => {}} />
+                <SwitchToggle label="Activer les Archives de Saisons" checked={true} onChange={() => {}} />
+                <SwitchToggle label="Afficher les Records Centre" checked={true} onChange={() => {}} />
+                <SwitchToggle label="Afficher l'Évolution de la Ligue" checked={true} onChange={() => {}} />
+                <SwitchToggle label="Afficher l'histoire des Derbies" checked={true} onChange={() => {}} />
+                <SwitchToggle label="Afficher les Finales Historiques" checked={false} onChange={() => {}} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Titre de la section musée" value="Musée & Archives" onChange={() => {}} hint="Affiché dans la navigation" />
+                <FormField label="Sous-titre éditorial" value="Le patrimoine du football camerounais" onChange={() => {}} />
+              </div>
+              <div className="flex justify-end pt-2 border-t border-white/[0.05]">
+                <AdminButton onClick={() => showToast('Configuration musée sauvegardée !')}>
+                  <Save className="h-3.5 w-3.5" /> Sauvegarder
+                </AdminButton>
+              </div>
+            </div>
+          </AdminCard>
+        </div>
+      )}
     </AdminLayout>
   );
 }

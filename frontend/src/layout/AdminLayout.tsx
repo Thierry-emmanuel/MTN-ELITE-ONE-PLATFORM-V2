@@ -4,6 +4,7 @@ import {
   Shield, LayoutDashboard, Layers, Image, Calendar,
   Trophy, FileText, Star, BarChart2, ExternalLink,
   ChevronRight, MapPin, Shirt, Handshake, Zap,
+  Eye, Flag, Archive, Users,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -34,7 +35,10 @@ const NAV_GROUPS = [
     items: [
       { id: 'awards',     label: "Awards & Ballon d'Or",   icon: Trophy },
       { id: 'stats',      label: 'Statistiques',           icon: BarChart2 },
-      { id: 'halloffame', label: 'Légendes & Talents',     icon: Star },
+      { id: 'halloffame', label: 'Hall of Fame (Légendes)', icon: Users },
+      { id: 'scouting',   label: 'Young Talent Watch',     icon: Eye },
+      { id: 'lions',      label: 'Centre des Lions',       icon: Flag },
+      { id: 'museum',     label: 'Musée & Archives',       icon: Archive },
     ],
   },
   {

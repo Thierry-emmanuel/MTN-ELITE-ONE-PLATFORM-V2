@@ -1,283 +1,267 @@
-import { useState, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useState, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Quote, ChevronRight, Award, Trophy, Star,
-  Shield, Medal, Monitor, Zap, Globe2,
+  Trophy, Award, Users, Star, Calendar, Bookmark, BarChart3,
+  ChevronRight, Compass, Shield, Zap, Search, Activity, Quote,
+  ChevronDown, ChevronLeft, ChevronRight as ChevronRightIcon,
+  BookOpen, Sparkles, HelpCircle, History
 } from 'lucide-react';
-import { PageHero } from '@/components/elite/FootballPrimitives';
 import PageLayout from '@/layout/PageLayout';
+import { PageHero } from '@/components/elite/FootballPrimitives';
+import { ClubBadge } from '@/components/elite/ClubBadge';
+import { clubs, Club } from '@/components/elite/data';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface TimelineEvent {
-  year: string;
-  title: string;
-  era: 'foundations' | 'golden' | 'generation' | 'modern';
-  description: string;
-  details: string[];
-  icon: React.ComponentType<{ className?: string }>;
-  accentColor: string;
-  statLabel?: string;
-  statValue?: string;
+import yt1 from "@/assets/images/youngtalents/NathanDouala.png";
+import yt2 from "@/assets/images/youngtalents/SergeDaura.png";
+import p3 from "@/assets/images/players/EdouardSombang.png";
+import p1 from "@/assets/images/youngtalents/SergeDaura.png";
+import p2 from "@/assets/images/players/RichardNjoh.png";
+
+const imgMap: Record<string, string> = { yt1, yt2, p3, p1, p2 };
+
+// Helper to resolve club names to Club objects
+function getClubByName(name: string): Club {
+  const normalized = name.toLowerCase();
+  if (normalized.includes('victoria')) return clubs.vict;
+  if (normalized.includes('coton')) return clubs.cot;
+  if (normalized.includes('canon')) return clubs.cnk;
+  if (normalized.includes('union')) return clubs.uds;
+  if (normalized.includes('fovu')) return clubs.fov;
+  if (normalized.includes('bamboutos')) return clubs.bam;
+  if (normalized.includes('colombe')) return clubs.cof;
+  if (normalized.includes('apejes')) return clubs.apb;
+  if (normalized.includes('young')) return clubs.ymb;
+  if (normalized.includes('pwd')) return clubs.pwd;
+  
+  // Return a generic fallback club
+  return { id: 'generic', name, short: name.slice(0, 3).toUpperCase(), color: '#1F8A4C', city: 'Cameroun' };
 }
 
-// ─── Era config ───────────────────────────────────────────────────────────────
-const ERAS = [
-  { id: 'all',         label: 'Toutes les Époques', color: 'text-white' },
-  { id: 'foundations', label: '1950–1970',           color: 'text-[#008751]' },
-  { id: 'golden',      label: '1970–1990',           color: 'text-[#FCD116]' },
-  { id: 'generation',  label: '1990–2010',           color: 'text-[#60A5FA]' },
-  { id: 'modern',      label: '2010–Présent',        color: 'text-[#CE1126]' },
-] as const;
-
-type EraId = typeof ERAS[number]['id'];
-
-const ERA_ACCENT: Record<string, string> = {
-  foundations: '#008751',
-  golden:      '#FCD116',
-  generation:  '#60A5FA',
-  modern:      '#CE1126',
+// Player image helper mapping
+const PLAYER_IMAGES: Record<string, string> = {
+  "Nathan Douala": "yt1",
+  "Salomon Mbarga": "p3",
+  "Serge Daura": "yt2",
+  "Roger Milla": "p1",
+  "Alain Nsangou": "p2"
 };
 
-// ─── Timeline data ─────────────────────────────────────────────────────────────
-const TIMELINE_DATA: TimelineEvent[] = [
+// ─── Data Definitions ────────────────────────────────────────────────────────
+
+interface SeasonArchive {
+  year: string;
+  champion: string;
+  runnerUp: string;
+  topScorer: string;
+  goals: number;
+  bestAttack: string;
+  bestDefense: string;
+  story: string;
+  awards: { title: string; winner: string; club: string }[];
+  standings: { rank: number; club: string; played: number; points: number; gd: number }[];
+  fixtures: { home: string; away: string; score: string; date: string }[];
+}
+
+const HISTORIC_SEASONS: SeasonArchive[] = [
   {
-    year: '1950', era: 'foundations', icon: Award,
-    accentColor: '#008751',
-    title: 'Naissance du Championnat National',
-    description: "Les premières rencontres officielles s'organisent au Cameroun, jetant les bases d'une passion nationale qui va s'embraser sur toute la décennie.",
-    details: ['Création des premiers clubs historiques', 'Développement des terrains municipaux', 'Structuration de la Fédération Camerounaise de Football'],
-    statLabel: 'Clubs fondateurs', statValue: '8',
+    year: "2024/2025",
+    champion: "Victoria United",
+    runnerUp: "Coton Sport",
+    topScorer: "Salomon Mbarga",
+    goals: 14,
+    bestAttack: "Victoria United (42 buts)",
+    bestDefense: "Union Douala (16 buts)",
+    story: "Une saison légendaire marquée par le sacre historique de Victoria United. Emmenés par le jeune prodige Nathan Douala, ils ont conquis le titre lors des play-offs d'Elite One dans une ambiance extraordinaire.",
+    awards: [
+      { title: "Meilleur Joueur (Ballon d'Or)", winner: "Nathan Douala", club: "Victoria United" },
+      { title: "Meilleur Gardien", winner: "Alain Nsangou", club: "Canon Yaoundé" },
+      { title: "Meilleur Entraîneur", winner: "Dimitar Pantev", club: "Victoria United" }
+    ],
+    standings: [
+      { rank: 1, club: "Victoria United", played: 26, points: 54, gd: 20 },
+      { rank: 2, club: "Coton Sport", played: 26, points: 51, gd: 18 },
+      { rank: 3, club: "Canon Yaoundé", played: 26, points: 48, gd: 12 },
+      { rank: 4, club: "Union Douala", played: 26, points: 45, gd: 10 },
+      { rank: 5, club: "Dynamo Douala", played: 26, points: 41, gd: 4 }
+    ],
+    fixtures: [
+      { home: "Victoria United", away: "Coton Sport", score: "3 - 2", date: "Play-offs 2025" },
+      { home: "Canon Yaoundé", away: "Union Douala", score: "1 - 1", date: "Mars 2025" },
+      { home: "Dynamo Douala", away: "Victoria United", score: "0 - 2", date: "Février 2025" }
+    ]
   },
   {
-    year: '1972', era: 'golden', icon: Globe2,
-    accentColor: '#FCD116',
-    title: "La CAN à domicile",
-    description: "Le Cameroun accueille sa première Coupe d'Afrique des Nations. Bien que la victoire finale échappe aux Lions, la ferveur est gravée dans le marbre de l'histoire.",
-    details: ['Inauguration des stades de Yaoundé et Douala', 'Éclosion de la première génération de stars locales', "Cameroun 3e de la compétition"],
-    statLabel: 'Stades inaugurés', statValue: '2',
+    year: "2023/2024",
+    champion: "Coton Sport",
+    runnerUp: "Stade Renard",
+    topScorer: "Emmanuel Mahop",
+    goals: 13,
+    bestAttack: "Coton Sport (39 buts)",
+    bestDefense: "Stade Renard (15 buts)",
+    story: "Coton Sport a conservé sa suprématie nationale en survolant la phase finale. La rigueur tactique et la profondeur de banc de Garoua ont fait la différence face à un Stade Renard très surprenant.",
+    awards: [
+      { title: "Meilleur Joueur", winner: "Emmanuel Mahop", club: "Coton Sport" },
+      { title: "Révélation de l'année", winner: "Nathan Douala", club: "Victoria United" },
+      { title: "Meilleur Entraîneur", winner: "Jean-Baptiste Bisseck", club: "Coton Sport" }
+    ],
+    standings: [
+      { rank: 1, club: "Coton Sport", played: 24, points: 50, gd: 19 },
+      { rank: 2, club: "Stade Renard", played: 24, points: 46, gd: 12 },
+      { rank: 3, club: "Bamboutos", played: 24, points: 42, gd: 8 },
+      { rank: 4, club: "Canon Yaoundé", played: 24, points: 39, gd: 3 }
+    ],
+    fixtures: [
+      { home: "Coton Sport", away: "Stade Renard", score: "2 - 0", date: "Play-offs 2024" },
+      { home: "Bamboutos", away: "Canon Yaoundé", score: "3 - 1", date: "Avril 2024" }
+    ]
   },
   {
-    year: '1982', era: 'golden', icon: Star,
-    accentColor: '#FCD116',
-    title: "Le Premier Mondial Historique",
-    description: "Menés par des joueurs légendaires issus du championnat national, les Lions Indomptables surprennent le monde entier en Espagne. Une révélation.",
-    details: ["Match nul historique contre l'Italie, future championne du monde", "Révélation de Thomas N'Kono au monde entier", '6 points en phase de groupes sans défaite'],
-    statLabel: 'Matchs sans défaite', statValue: '3',
+    year: "1999/2000",
+    champion: "Fovu Baham",
+    runnerUp: "Coton Sport",
+    topScorer: "Pius N'Diefi",
+    goals: 16,
+    bestAttack: "Fovu Baham (38 buts)",
+    bestDefense: "Coton Sport (14 buts)",
+    story: "Une saison mythique marquée par le premier sacre national de Fovu de Baham. Cette année-là a coïncidé avec la mèche olympique des Lions de Sydney, créant une vague de ferveur footballistique sans précédent au pays.",
+    awards: [
+      { title: "Meilleur Buteur", winner: "Pius N'Diefi", club: "Fovu Baham" },
+      { title: "Meilleur Gardien", winner: "Idris Carlos Kameni", club: "Kadji Sports Academy" }
+    ],
+    standings: [
+      { rank: 1, club: "Fovu Baham", played: 30, points: 62, gd: 18 },
+      { rank: 2, club: "Coton Sport", played: 30, points: 59, gd: 16 },
+      { rank: 3, club: "Union Douala", played: 30, points: 55, gd: 11 },
+      { rank: 4, club: "Canon Yaoundé", played: 30, points: 52, gd: 9 }
+    ],
+    fixtures: [
+      { home: "Fovu Baham", away: "Coton Sport", score: "1 - 0", date: "Septembre 2000" },
+      { home: "Union Douala", away: "Canon Yaoundé", score: "2 - 2", date: "Mai 2000" }
+    ]
   },
   {
-    year: '1990', era: 'golden', icon: Trophy,
-    accentColor: '#FCD116',
-    title: "L'Épopée d'Italie & La Danse de Roger Milla",
-    description: "Le Cameroun devient la première nation africaine à atteindre les quarts de finale de la Coupe du Monde. Un exploit mythique qui change à jamais le football mondial.",
-    details: ["Victoire choc contre l'Argentine de Maradona en ouverture (1-0)", '4 buts légendaires de Roger Milla à 38 ans', 'Communion historique de tout un peuple uni derrière ses Lions'],
-    statLabel: 'Buts de Milla', statValue: '4',
-  },
-  {
-    year: '2000', era: 'generation', icon: Medal,
-    accentColor: '#60A5FA',
-    title: "Le Sacre Olympique de Sydney",
-    description: "La génération dorée de Samuel Eto'o et Patrick Mboma décroche la médaille d'or olympique en Australie, affirmant la domination absolue du football camerounais en Afrique.",
-    details: ["Victoire mémorable contre l'Espagne en finale aux tirs au but", "Double champion d'Afrique en titre (2000 & 2002)", "Naissance de la légende Samuel Eto'o sur la scène mondiale"],
-    statLabel: 'Titre olympique', statValue: '🥇',
-  },
-  {
-    year: '2017', era: 'generation', icon: Shield,
-    accentColor: '#60A5FA',
-    title: "5e Sacre Africain — CAN 2017",
-    description: "Hugo Broos mène les Lions à leur cinquième titre continental au Gabon. Un triomphe collectif incroyable qui repousse toutes les attentes après une qualification difficile.",
-    details: ['Victoire 2-1 contre l\'Égypte en finale', '5e titre de champion d\'Afrique pour le Cameroun', 'Vincent Aboubakar, héros de la finale'],
-    statLabel: 'Titres africains', statValue: '5',
-  },
-  {
-    year: '2021', era: 'modern', icon: Zap,
-    accentColor: '#CE1126',
-    title: "La CAN à Domicile — Un Pays en Fête",
-    description: "Hôte de la 33e édition de la Coupe d'Afrique des Nations, le Cameroun investit massivement dans ses infrastructures et présente une compétition de prestige mondial.",
-    details: ['Nouveaux stades ultra-modernes à Yaoundé, Douala, Garoua', '24 nations participantes, meilleure édition de l\'histoire', 'Record d\'affluence pour plusieurs rencontres'],
-    statLabel: 'Nouveaux stades', statValue: '5',
-  },
-  {
-    year: '2025', era: 'modern', icon: Monitor,
-    accentColor: '#CE1126',
-    title: "La Révolution Numérique de la MTN Elite One",
-    description: "Modernisation complète de la ligue : professionnalisme intégral, données en temps réel, couverture internationale. La Elite One entre dans l'ère digitale.",
-    details: ['Digitalisation complète avec la plateforme MTN Elite One', 'Statistiques en temps réel et suivi GPS des joueurs', 'Diffusion en streaming international des matchs'],
-    statLabel: 'Clubs professionnels', statValue: '16',
-  },
+    year: "1989/1990",
+    champion: "Canon Yaoundé",
+    runnerUp: "Tonnerre Yaoundé",
+    topScorer: "Roger Milla",
+    goals: 15,
+    bestAttack: "Canon Yaoundé (45 buts)",
+    bestDefense: "Tonnerre Yaoundé (18 buts)",
+    story: "L'âge d'or du football camerounais. Le 'Classico' de Yaoundé entre le Canon et le Tonnerre a atteint son paroxysme. Quelques mois plus tard, la quasi-totalité de l'effectif s'envolait pour l'Italie pour écrire la page la plus célèbre de la Coupe du Monde.",
+    awards: [
+      { title: "Meilleur Joueur", winner: "Roger Milla", club: "Tonnerre Yaoundé" },
+      { title: "Meilleur Gardien", winner: "Thomas N'Kono", club: "Canon Yaoundé" }
+    ],
+    standings: [
+      { rank: 1, club: "Canon Yaoundé", played: 28, points: 58, gd: 22 },
+      { rank: 2, club: "Tonnerre Yaoundé", played: 28, points: 56, gd: 20 },
+      { rank: 3, club: "Union Douala", played: 28, points: 49, gd: 11 },
+      { rank: 4, club: "Prévoyance Yaoundé", played: 28, points: 44, gd: 5 }
+    ],
+    fixtures: [
+      { home: "Canon Yaoundé", away: "Tonnerre Yaoundé", score: "2 - 1", date: "Avril 1990" },
+      { home: "Tonnerre Yaoundé", away: "Union Douala", score: "3 - 0", date: "Février 1990" }
+    ]
+  }
 ];
 
-// ─── Timeline event card ───────────────────────────────────────────────────────
-function TimelineCard({ event, index }: { event: TimelineEvent; index: number }) {
-  const Icon = event.icon;
-  const isEven = index % 2 === 0;
-  const accent = event.accentColor;
+const CLUB_HONOURS = [
+  { club: "Coton Sport de Garoua", gold: 18, silver: 7, lastTitle: "2024", color: "#10B981" },
+  { club: "Canon Yaoundé", gold: 10, silver: 6, lastTitle: "2002", color: "#CE1126" },
+  { club: "Tonnerre Yaoundé", gold: 5, silver: 4, lastTitle: "1988", color: "#FCD116" },
+  { club: "Union Douala", gold: 5, silver: 3, lastTitle: "2012", color: "#3B82F6" },
+  { club: "Oryx Douala", gold: 5, silver: 1, lastTitle: "1967", color: "#EC4899" },
+  { club: "Fovu Baham", gold: 1, silver: 2, lastTitle: "2000", color: "#8B5CF6" },
+  { club: "Victoria United", gold: 1, silver: 0, lastTitle: "2025", color: "#F59E0B" }
+];
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-      className={`relative flex flex-col md:flex-row items-center gap-6 md:gap-0 ${isEven ? 'md:flex-row-reverse' : ''}`}
-    >
-      {/* ── Year node (desktop) ───────────────────────────────────── */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 z-10 hidden md:flex h-14 w-14 rounded-full border-2 items-center justify-center shrink-0 shadow-2xl"
-        style={{
-          background: `radial-gradient(circle, ${accent}22, #0a0a0a)`,
-          borderColor: `${accent}60`,
-          boxShadow: `0 0 24px ${accent}40`,
-        }}
-      >
-        <span
-          className="font-display font-black text-sm tabular-nums"
-          style={{ color: accent }}
-        >
-          {event.year.slice(-2)}
-        </span>
-      </div>
+const TIMELINE_EVENTS = [
+  { year: "1950", title: "Fondation", desc: "Organisation des premières ligues régionales structurées sous l'égide de la fédération pionnière." },
+  { year: "1960", title: "Indépendance & Premier Titre", desc: "Premier championnat unifié national célébré après l'indépendance." },
+  { year: "1965", title: "Sacre de l'Oryx Douala", desc: "L'Oryx Douala remporte la toute première Coupe des clubs champions africains." },
+  { year: "1972", title: "La CAN de Yaoundé", desc: "Inauguration des stades Omnisports et ferveur continentale à domicile." },
+  { year: "1982", title: "L'Épopée Espagnole", desc: "Les Lions brillent sans perdre un match lors de la Coupe du Monde 1982." },
+  { year: "1990", title: "Quart de finale en Italie", desc: "La génération de Roger Milla stupéfie la planète et atteint les quarts de finale mondiaux." },
+  { year: "2000", title: "Or Olympique de Sydney", desc: "Le Cameroun de Samuel Eto'o bat l'Espagne pour le graal olympique." },
+  { year: "2025", title: "Ère Professionnelle Digitale", desc: "Entrée en vigueur de la couverture digitale complète et data des clubs." }
+];
 
-      {/* ── Content card ──────────────────────────────────────────── */}
-      <div className="w-full md:w-[44%] group">
-        {/* Mobile year */}
-        <div
-          className="md:hidden inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest font-mono border"
-          style={{ color: accent, borderColor: `${accent}40`, background: `${accent}12` }}
-        >
-          <Icon className="h-3 w-3" /> {event.year}
-        </div>
+const RECORD_ITEMS = [
+  { title: "Plus grand nombre de titres de Champion", value: "18", holder: "Coton Sport de Garoua", detail: "Dominant le football camerounais depuis les années 1990." },
+  { title: "Buts marqués en une seule saison", value: "22", holder: "Albert Meyong Ze", detail: "Établi avec le Canon Yaoundé en 1998/1999." },
+  { title: "Plus grand nombre de sélections nationales", value: "137", holder: "Rigobert Song", detail: "Légendaire capitaine ayant débuté au Tonnerre Yaoundé." },
+  { title: "Plus large victoire en finale de Coupe", value: "5 - 0", holder: "Union Douala vs Lion Blessé", detail: "Finale de la Coupe du Cameroun 1961." },
+  { title: "Série d'invincibilité en championnat", value: "32 matchs", holder: "Coton Sport de Garoua", detail: "Série étalée sur les saisons 2007 et 2008." }
+];
 
-        <div
-          className="rounded-2xl border bg-gradient-to-b from-white/[0.05] to-transparent p-6 sm:p-7 space-y-4 transition-all duration-400 hover:shadow-2xl"
-          style={{ borderColor: `${accent}30` }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLDivElement).style.borderColor = `${accent}70`;
-            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 20px 60px ${accent}18`;
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLDivElement).style.borderColor = `${accent}30`;
-            (e.currentTarget as HTMLDivElement).style.boxShadow = '';
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-start gap-3">
-            <div
-              className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-              style={{ background: `${accent}18`, border: `1px solid ${accent}35` }}
-            >
-              <Icon className="h-5 w-5" style={{ color: accent }} />
-            </div>
-            <div>
-              <h3 className="font-display text-lg font-bold text-white leading-snug">
-                {event.title}
-              </h3>
-              {event.statLabel && event.statValue && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: accent }}>
-                    {event.statLabel} :
-                  </span>
-                  <span className="font-display text-base font-black" style={{ color: accent }}>
-                    {event.statValue}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+const DERBIES = [
+  {
+    name: "Le Classico Classique de Yaoundé",
+    clubs: "Canon vs Tonnerre",
+    story: "La rivalité historique de la capitale politique. Une confrontation qui divisait autrefois chaque quartier de Yaoundé entre les 'Mekok Megonda' du Canon et les supporters du Tonnerre Kalara Club.",
+    status: "Historique / Rivalité majeure"
+  },
+  {
+    name: "Le Derby de Douala",
+    clubs: "Union Douala vs Dynamo Douala",
+    story: "Une bataille intense pour la suprématie de la capitale économique. Ce derby mobilise les passions populaires le long du littoral et représente un choc d'identités culturelles fortes.",
+    status: "Rivalité active"
+  }
+];
 
-          {/* Description */}
-          <p className="text-sm text-white/60 leading-relaxed">{event.description}</p>
+const LEGENDARY_COACHES = [
+  { name: "Hugo Broos", achievements: "Vainqueur de la CAN 2017 avec une sélection locale solide." },
+  { name: "Jean-Paul Akono", achievements: "Architecte de la médaille d'or olympique en 2000." },
+  { name: "Peter Schnittger", achievements: "Pionnier de la structuration moderne de la sélection dans les années 70." }
+];
 
-          {/* Details */}
-          <ul className="space-y-1.5 pt-3 border-t" style={{ borderColor: `${accent}20` }}>
-            {event.details.map((d, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground/70">
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: accent }} />
-                {d}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+type TabId = 'champions' | 'archives' | 'records' | 'evolution';
 
-      {/* Spacer */}
-      <div className="hidden md:block w-[44%]" />
-    </motion.div>
-  );
-}
-
-// ─── Pulsing era label ─────────────────────────────────────────────────────────
-function EraLabel({ text, color }: { text: string; color: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
-      className="flex items-center gap-3 py-4 md:justify-center"
-    >
-      <div className="flex-1 md:flex-none md:w-40 h-px" style={{ background: `${color}40` }} />
-      <span
-        className="text-[10px] font-black uppercase tracking-[0.22em] shrink-0"
-        style={{ color }}
-      >
-        {text}
-      </span>
-      <div className="flex-1 md:flex-none md:w-40 h-px" style={{ background: `${color}40` }} />
-    </motion.div>
-  );
-}
-
-// ─── HistoryPage ───────────────────────────────────────────────────────────────
 export default function HistoryPage() {
-  const [selectedEra, setSelectedEra] = useState<EraId>('all');
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<TabId>('champions');
+  const [selectedSeasonYear, setSelectedSeasonYear] = useState<string>("2024/2025");
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start end', 'end start'],
-  });
-  const lineScaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const activeSeason = useMemo(() => {
+    return HISTORIC_SEASONS.find(s => s.year === selectedSeasonYear) || HISTORIC_SEASONS[0];
+  }, [selectedSeasonYear]);
 
-  // Group events by era for labelled sections
-  const filteredEvents = selectedEra === 'all'
-    ? TIMELINE_DATA
-    : TIMELINE_DATA.filter(e => e.era === selectedEra);
-
-  // Determine which era labels to show
-  const showEraLabels = selectedEra === 'all';
-  let lastEra = '';
+  const TABS = [
+    { id: 'champions', label: 'Palmarès & Clubs', icon: Trophy },
+    { id: 'archives',  label: 'Archives de Saison', icon: Calendar },
+    { id: 'records',   label: 'Records & Derbies', icon: Bookmark },
+    { id: 'evolution', label: 'Évolution Historique', icon: History }
+  ];
 
   return (
     <PageLayout>
       <PageHero
-        eyebrow="MTN Elite One · Histoire"
+        eyebrow="MTN Elite One · Musée &amp; Archives"
         title="Musée du Football"
-        subtitle="Un voyage immersif à travers la légende et l'histoire des Lions Indomptables"
-        accentColor="red"
+        subtitle="Explorez l'histoire glorieuse, les archives mythiques et le patrimoine unique du football camerounais."
+        accentColor="gold"
       />
 
-      {/* ── Cameroun flag accent bar ─────────────────────────────────────── */}
-      <div className="h-[3px] bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]" />
+      {/* Flag Gradient Border */}
+      <div className="h-[4px] bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]" />
 
-      {/* ── Era Navigation ───────────────────────────────────────────────── */}
-      <div className="border-b border-border/40 sticky top-[62px] bg-background/95 backdrop-blur-xl z-20">
+      {/* Tabs navigation */}
+      <div className="sticky top-[62px] z-30 bg-[#0A1A12]/95 backdrop-blur-md border-b border-white/10">
         <div className="container py-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {ERAS.map(era => {
-              const active = selectedEra === era.id;
-              const accent = era.id === 'all' ? '#ffffff' : ERA_ACCENT[era.id] ?? '#ffffff';
+            {TABS.map(({ id, label, icon: Icon }) => {
+              const active = activeTab === id;
               return (
                 <button
-                  key={era.id}
-                  id={`era-${era.id}`}
-                  onClick={() => setSelectedEra(era.id as EraId)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0 border ${
-                    active ? 'text-black' : 'bg-white/[0.02] border-border/40 hover:bg-white/[0.05]'
+                  key={id}
+                  onClick={() => setActiveTab(id as TabId)}
+                  className={`px-4.5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border shrink-0 cursor-pointer ${
+                    active
+                      ? 'bg-[#1F8A4C] text-white border-[#1F8A4C] shadow-[0_0_15px_rgba(31,138,76,0.35)]'
+                      : 'bg-white/[0.02] text-gray-400 border-white/5 hover:bg-white/5 hover:text-white'
                   }`}
-                  style={active
-                    ? { background: accent, borderColor: accent, boxShadow: `0 0 16px ${accent}50` }
-                    : { color: accent }}
                 >
-                  {era.label}
+                  <Icon className="h-4 w-4" />
+                  {label}
                 </button>
               );
             })}
@@ -285,63 +269,430 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* ── Timeline ─────────────────────────────────────────────────────── */}
-      <div className="container py-14 relative" ref={containerRef}>
+      <div className="container py-12">
+        <AnimatePresence mode="wait">
 
-        {/* Animated centre line */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 hidden md:block w-px overflow-hidden">
-          <motion.div
-            className="w-full h-full origin-top"
-            style={{
-              scaleY: lineScaleY,
-              background: 'linear-gradient(to bottom, #008751, #FCD116, #CE1126)',
-              opacity: 0.25,
-            }}
-          />
-        </div>
+          {/* ────── Tab 1: PALMARÈS & CLUBS ────── */}
+          {activeTab === 'champions' && (
+            <motion.div
+              key="champions"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-12"
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="lg:col-span-6 space-y-6">
+                  <div className="inline-flex items-center gap-2 text-[#FCD116]">
+                    <Trophy className="h-4 w-4 animate-bounce" />
+                    <span className="text-[11px] uppercase font-black tracking-widest">Le Panthéon des Clubs</span>
+                  </div>
+                  <h2 className="font-display text-3xl sm:text-4xl font-extrabold uppercase text-white tracking-tight leading-none">
+                    Palmarès de la MTN Elite One
+                  </h2>
+                  <p className="text-gray-300 text-sm leading-relaxed font-light">
+                    Depuis sa création, la ligue d'élite camerounaise a vu s'affronter les plus grands clubs d'Afrique. De la dynastie historique de Coton Sport de Garoua aux pionniers de l'Oryx Douala, découvrez le classement historique des champions.
+                  </p>
+                  <blockquote className="border-l-2 border-[#FCD116] pl-4 italic text-xs text-gray-400">
+                    &ldquo;Devenir champion du Cameroun, c'est graver son nom au coeur d'une ferveur de 30 millions de sélectionneurs.&rdquo;
+                  </blockquote>
+                </div>
 
-        <div className="space-y-14">
-          {filteredEvents.map((event, idx) => {
-            const showLabel = showEraLabels && event.era !== lastEra;
-            if (showLabel) lastEra = event.era;
-            const eraConf = ERAS.find(e => e.id === event.era);
-            const accentCol = ERA_ACCENT[event.era] ?? '#FCD116';
-
-            return (
-              <div key={`${event.year}-${event.title}`}>
-                {showLabel && eraConf && (
-                  <EraLabel text={eraConf.label} color={accentCol} />
-                )}
-                <TimelineCard event={event} index={idx} />
+                {/* Stat quick summary card */}
+                <div className="lg:col-span-6 bg-gradient-to-br from-[#0c2215] to-[#041009] p-6 rounded-3xl border border-white/10 grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Titres Record</div>
+                    <div className="text-2xl font-display font-black text-[#FCD116] mt-1">18</div>
+                    <div className="text-[9px] text-gray-400 truncate">Coton Sport</div>
+                  </div>
+                  <div className="border-x border-white/5">
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">1er Champion</div>
+                    <div className="text-2xl font-display font-black text-white mt-1">1961</div>
+                    <div className="text-[9px] text-gray-400 truncate">Oryx Douala</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Total Champions</div>
+                    <div className="text-2xl font-display font-black text-[#10B981] mt-1">15</div>
+                    <div className="text-[9px] text-gray-400 truncate">différents clubs</div>
+                  </div>
+                </div>
               </div>
-            );
-          })}
-        </div>
 
-        {/* ── Closing quote ──────────────────────────────────────────────── */}
+              {/* Clubs Honours Grid */}
+              <div className="space-y-4">
+                <h3 className="font-display text-xl font-bold uppercase text-white tracking-wide border-b border-white/5 pb-2">
+                  Tableau d'Honneur des Clubs
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {CLUB_HONOURS.map((c, i) => (
+                    <motion.div
+                      key={c.club}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-black/20 p-5 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-[#1F8A4C]/30 hover:bg-black/40 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <ClubBadge club={getClubByName(c.club)} size={36} />
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-bold text-white group-hover:text-[#FCD116] transition-colors">{c.club}</h4>
+                          <div className="text-[10px] text-gray-400 font-light">
+                            Dernier sacre : <span className="font-bold text-gray-300">{c.lastTitle}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 justify-end">
+                          <Trophy className="h-3.5 w-3.5 text-[#FCD116]" />
+                          <span className="text-base font-display font-black text-white">{c.gold}</span>
+                        </div>
+                        <div className="text-[8px] text-gray-500 uppercase font-bold">Titres</div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ────── Tab 2: SEASON ARCHIVES ────── */}
+          {activeTab === 'archives' && (
+            <motion.div
+              key="archives"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-8"
+            >
+              {/* Season Selector Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0d2218] p-4.5 rounded-2xl border border-white/10">
+                <div className="space-y-1">
+                  <div className="text-xs uppercase font-extrabold text-gray-400 tracking-wider">Sélectionner une Saison Historique</div>
+                  <p className="text-[11px] text-gray-500">Explorez les classements, résultats et statistiques de l'époque.</p>
+                </div>
+                <div className="relative shrink-0">
+                  <select
+                    value={selectedSeasonYear}
+                    onChange={(e) => setSelectedSeasonYear(e.target.value)}
+                    className="w-full sm:w-48 pl-4 pr-8 py-2 bg-[#07140e] border border-white/10 rounded-xl text-sm focus:outline-none focus:border-[#FCD116]/60 text-white transition-colors appearance-none cursor-pointer"
+                  >
+                    {HISTORIC_SEASONS.map(s => (
+                      <option key={s.year} value={s.year}>{s.year}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Season Editorial Showcase */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left block: Story and quick stats */}
+                <div className="lg:col-span-7 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 rounded bg-[#FCD116]/10 border border-[#FCD116]/20 text-[10px] font-bold text-[#FCD116] uppercase tracking-wider">
+                      Saison {activeSeason.year}
+                    </span>
+                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                      Champion : 
+                      <ClubBadge club={getClubByName(activeSeason.champion)} size={16} />
+                      <span className="font-bold text-white">{activeSeason.champion}</span>
+                    </span>
+                  </div>
+
+                  <h3 className="font-display text-3xl font-bold uppercase text-white tracking-tight leading-tight">
+                    Récit de la Saison
+                  </h3>
+
+                  <p className="text-gray-300 text-sm leading-relaxed font-light">
+                    {activeSeason.story}
+                  </p>
+
+                  {/* Season achievements / awards */}
+                  <div className="space-y-3 pt-4 border-t border-white/5">
+                    <h4 className="text-xs uppercase font-extrabold text-gray-400 tracking-wider">Distinctions Individuelles</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {activeSeason.awards.map((a, idx) => {
+                        const imgKey = PLAYER_IMAGES[a.winner];
+                        const playerImg = imgKey ? imgMap[imgKey] : null;
+                        return (
+                          <div key={idx} className="bg-black/30 p-3.5 rounded-xl border border-white/5 flex gap-3 items-center">
+                            {playerImg ? (
+                              <img src={playerImg} alt={a.winner} className="w-10 h-10 rounded-full object-cover object-top shrink-0 border border-white/10" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 text-gray-500 font-bold text-xs">{(a.winner[0] || 'P')}</div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="text-[9px] text-gray-500 uppercase">{a.title}</div>
+                              <div className="text-sm font-bold text-white truncate">{a.winner}</div>
+                              <div className="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5">
+                                <ClubBadge club={getClubByName(a.club)} size={12} />
+                                <span className="truncate">{a.club}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right block: Stats cards */}
+                <div className="lg:col-span-5 bg-black/25 border border-white/5 p-6 rounded-2xl space-y-4">
+                  <h4 className="text-xs uppercase font-black tracking-widest text-[#FCD116]">Chiffres Clés</h4>
+                  <div className="space-y-3.5">
+                    <div className="flex justify-between border-b border-white/5 pb-2 items-center">
+                      <span className="text-xs text-gray-400">Meilleur Buteur</span>
+                      <div className="flex items-center gap-2">
+                        {PLAYER_IMAGES[activeSeason.topScorer] && (
+                          <img src={imgMap[PLAYER_IMAGES[activeSeason.topScorer]]} alt="" className="w-6 h-6 rounded-full object-cover object-top" />
+                        )}
+                        <span className="text-xs font-bold text-white">{activeSeason.topScorer} ({activeSeason.goals} buts)</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between border-b border-white/5 pb-2 items-center">
+                      <span className="text-xs text-gray-400">Meilleure Attaque</span>
+                      <div className="flex items-center gap-1.5">
+                        <ClubBadge club={getClubByName(activeSeason.bestAttack.split(' (')[0])} size={14} />
+                        <span className="text-xs font-bold text-white">{activeSeason.bestAttack}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between pb-2 items-center">
+                      <span className="text-xs text-gray-400">Meilleure Défense</span>
+                      <div className="flex items-center gap-1.5">
+                        <ClubBadge club={getClubByName(activeSeason.bestDefense.split(' (')[0])} size={14} />
+                        <span className="text-xs font-bold text-white">{activeSeason.bestDefense}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Standings and Fixtures Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6">
+                {/* Standings */}
+                <div className="lg:col-span-7 bg-black/20 border border-white/5 rounded-2xl overflow-hidden">
+                  <div className="p-4 border-b border-white/5">
+                    <h4 className="text-xs uppercase font-black text-white tracking-widest">Classement Final</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/5 bg-white/[0.02] text-[9px] uppercase text-gray-400 font-bold">
+                          <th className="p-3 text-center">Pos</th>
+                          <th className="p-3">Club</th>
+                          <th className="p-3 text-center">MJ</th>
+                          <th className="p-3 text-center">Pts</th>
+                          <th className="p-3 text-center">Diff</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {activeSeason.standings.map(s => (
+                          <tr key={s.club} className="hover:bg-white/[0.01]">
+                            <td className="p-3 text-center font-bold text-gray-300">{s.rank}</td>
+                            <td className="p-3 font-bold text-white">
+                              <div className="flex items-center gap-2">
+                                <ClubBadge club={getClubByName(s.club)} size={16} />
+                                <span>{s.club}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-center text-gray-400">{s.played}</td>
+                            <td className="p-3 text-center font-bold text-[#FCD116]">{s.points}</td>
+                            <td className="p-3 text-center text-gray-400">{s.gd > 0 ? `+${s.gd}` : s.gd}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Fixtures */}
+                <div className="lg:col-span-5 bg-black/20 border border-white/5 rounded-2xl p-5 space-y-4">
+                  <h4 className="text-xs uppercase font-black text-white tracking-widest border-b border-white/5 pb-2">Affiches Marquantes</h4>
+                  <div className="space-y-3">
+                    {activeSeason.fixtures.map((f, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-black/30 p-3 rounded-xl border border-white/5">
+                        <div className="min-w-0 flex-1 flex items-center gap-2">
+                          <ClubBadge club={getClubByName(f.home)} size={16} />
+                          <div className="text-xs font-bold text-white truncate">{f.home}</div>
+                        </div>
+                        <div className="px-3 shrink-0 text-center font-display font-black text-[#FCD116] text-xs">
+                          {f.score}
+                        </div>
+                        <div className="min-w-0 flex-1 flex items-center justify-end gap-2">
+                          <div className="text-xs font-bold text-white truncate text-right">{f.away}</div>
+                          <ClubBadge club={getClubByName(f.away)} size={16} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ────── Tab 3: RECORDS & DERBIES ────── */}
+          {activeTab === 'records' && (
+            <motion.div
+              key="records"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-12"
+            >
+              {/* Records Grid */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-display text-2xl font-bold uppercase text-white tracking-tight">Le Centre des Records</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Les plus grands records et chiffres de l'histoire du football camerounais.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {RECORD_ITEMS.map((rec, i) => (
+                    <motion.div
+                      key={rec.title}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="bg-black/25 border border-white/5 p-5 rounded-2xl space-y-3"
+                    >
+                      <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{rec.title}</div>
+                      <div className="text-2xl font-display font-black text-[#FCD116]">{rec.value}</div>
+                      <div className="flex items-center gap-2">
+                        {PLAYER_IMAGES[rec.holder] ? (
+                          <img src={imgMap[PLAYER_IMAGES[rec.holder]]} alt="" className="w-8 h-8 rounded-full object-cover object-top border border-white/10" />
+                        ) : (
+                          <ClubBadge club={getClubByName(rec.holder)} size={20} />
+                        )}
+                        <div>
+                          <div className="text-xs font-bold text-white">{rec.holder}</div>
+                          <p className="text-[10px] text-gray-400 font-light leading-relaxed mt-0.5">{rec.detail}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Derby Rivalry History */}
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div>
+                  <h3 className="font-display text-2xl font-bold uppercase text-white tracking-tight">Histoires de Derbys</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Ces matchs fratricides qui font vibrer le pays tout entier.</p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {DERBIES.map((d, i) => (
+                    <div key={i} className="bg-gradient-to-br from-[#0c2215] to-[#041009] p-6 rounded-3xl border border-white/5 space-y-3 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-[#FCD116]/5 rounded-full blur-2xl" />
+                      <div className="flex justify-between items-start">
+                        <span className="px-2.5 py-0.5 rounded bg-[#FCD116]/10 border border-[#FCD116]/20 text-[9px] font-bold text-[#FCD116] uppercase tracking-wider">
+                          {d.status}
+                        </span>
+                      </div>
+                      <h4 className="font-display text-lg font-bold text-white">{d.name}</h4>
+                      <p className="text-xs text-gray-300 leading-relaxed font-light">{d.story}</p>
+                      <div className="text-[10px] font-bold text-accent uppercase tracking-wider pt-2 border-t border-white/5 flex justify-between items-center">
+                        <span>Affiche historique</span>
+                        <div className="flex items-center gap-1.5">
+                          <ClubBadge club={getClubByName(d.clubs.split(' vs ')[0])} size={16} />
+                          <span className="text-white">{d.clubs}</span>
+                          <ClubBadge club={getClubByName(d.clubs.split(' vs ')[1])} size={16} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Legendary Coaches */}
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div>
+                  <h3 className="font-display text-2xl font-bold uppercase text-white tracking-tight">Grands Tacticiens</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Les entraîneurs emblématiques qui ont écrit les plus belles pages de l'histoire.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {LEGENDARY_COACHES.map((coach, i) => (
+                    <div key={i} className="bg-black/30 p-5 rounded-2xl border border-white/5 space-y-2">
+                      <h4 className="text-sm font-bold text-white">{coach.name}</h4>
+                      <p className="text-xs text-gray-400 font-light leading-relaxed">{coach.achievements}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ────── Tab 4: LEAGUE EVOLUTION ────── */}
+          {activeTab === 'evolution' && (
+            <motion.div
+              key="evolution"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-8"
+            >
+              <div>
+                <h3 className="font-display text-2xl font-bold uppercase text-white tracking-tight">Évolution du Championnat</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Parcourez le fil rouge de l'histoire et découvrez comment la ligue s'est modernisée depuis 1950.</p>
+              </div>
+
+              <div className="relative border-l-2 border-white/10 pl-6 ml-3 space-y-8 py-2">
+                {TIMELINE_EVENTS.map((event, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.08 }}
+                    className="relative"
+                  >
+                    {/* Circle dot node */}
+                    <span className="absolute -left-[35px] top-1.5 h-4 w-4 rounded-full border-2 border-[#1F8A4C] bg-[#0A1A12] flex items-center justify-center">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#FCD116]" />
+                    </span>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-[#FCD116] bg-[#FCD116]/10 px-2 py-0.5 rounded border border-[#FCD116]/20 font-mono">
+                          {event.year}
+                        </span>
+                        <h4 className="text-sm font-bold text-white">{event.title}</h4>
+                      </div>
+                      <p className="text-xs text-gray-400 leading-relaxed font-light">
+                        {event.desc}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </div>
+
+      {/* Museum Closing Plaque */}
+      <section className="container pb-20 pt-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-24 max-w-2xl mx-auto rounded-3xl border border-[#FCD116]/20 bg-black/70 p-10 text-center space-y-5 relative overflow-hidden"
+          className="max-w-2xl mx-auto border border-[#FCD116]/20 p-10 text-center space-y-4 relative"
+          style={{ background: 'rgba(255,255,255,0.02)' }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(252,209,22,0.06),transparent_65%)] pointer-events-none" />
-          {/* Cameroun tricolour */}
-          <div className="flex justify-center gap-2 mb-2">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(252,209,22,0.05),transparent_70%)] pointer-events-none" />
+          <Quote className="h-8 w-8 text-[#FCD116] mx-auto opacity-50" />
+          <p className="font-display text-lg italic text-white/90 leading-relaxed">
+            &ldquo;Le football est notre patrimoine commun, un ciment social indissoluble qui lie le passé, le présent et le futur du Cameroun.&rdquo;
+          </p>
+          <div className="flex justify-center gap-1">
             {['#008751', '#FCD116', '#CE1126'].map(c => (
-              <div key={c} className="h-1 w-8 rounded-full" style={{ background: c }} />
+              <div key={c} className="h-1 w-6 rounded-full" style={{ background: c }} />
             ))}
           </div>
-          <Quote className="h-8 w-8 text-[#FCD116] mx-auto opacity-50" />
-          <p className="font-display text-xl italic text-white/90 leading-relaxed">
-            &ldquo;Le football au Cameroun n&apos;est pas seulement un sport, c&apos;est une religion,
-            un ciment social qui unit le pays tout entier sous le même drapeau tricolore.&rdquo;
-          </p>
-          <div className="text-xs text-muted-foreground/50 uppercase tracking-widest font-bold font-mono">
-            — Légende du Football Camerounais
+          <div className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+            Conservateur Général du Musée
           </div>
         </motion.div>
-      </div>
+      </section>
     </PageLayout>
   );
 }

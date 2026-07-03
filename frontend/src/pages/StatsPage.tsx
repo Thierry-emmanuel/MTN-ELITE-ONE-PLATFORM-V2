@@ -23,7 +23,10 @@ import type {
 } from '@/types/football.types';
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
-const PAGE_SIZE = 25;
+const DEFAULT_PAGE_SIZE = 25;
+// High ceiling so a full season's roster/clubs is never silently truncated client-side.
+const FULL_PLAYER_FETCH_LIMIT = 1000;
+const FULL_CLUB_FETCH_LIMIT   = 200;
 
 type MainTab = 'players' | 'clubs' | 'tableau';
 
@@ -88,14 +91,15 @@ export default function StatsPage() {
   const [tab,            setTab]            = useState<MainTab>((searchParams.get('tab') as MainTab) ?? 'players');
   const [seasonId]       = useState(searchParams.get('season') ?? SEASON_ID);
   const [activeCategory, setActiveCategory] = useState<StatCategory>((searchParams.get('cat') as StatCategory) ?? 'goals');
-  const { data: allPlayersData, isLoading: playersLoading, refetch: refetchPlayers } = usePlayerStats(seasonId, { limit: 200 });
-  const { data: allClubsData, isLoading: clubsLoading, refetch: refetchClubs } = useClubStats(seasonId, { limit: 50 });
+  const { data: allPlayersData, isLoading: playersLoading, refetch: refetchPlayers } = usePlayerStats(seasonId, { limit: FULL_PLAYER_FETCH_LIMIT });
+  const { data: allClubsData, isLoading: clubsLoading, refetch: refetchClubs } = useClubStats(seasonId, { limit: FULL_CLUB_FETCH_LIMIT });
   const allPlayers = allPlayersData ?? MOCK_PLAYER_STATS;
   const allClubs = allClubsData ?? MOCK_CLUB_STATS;
   const loading = playersLoading || clubsLoading;
 
   const [per90,          setPer90]          = useState(false);
   const [playerPage,     setPlayerPage]     = useState(1);
+  const [playerPageSize, setPlayerPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [playerSort,     setPlayerSort]     = useState<StatSortField>('goals');
   const [playerDir,      setPlayerDir]      = useState<'asc' | 'desc'>('desc');
   const [clubSort,       setClubSort]       = useState<StatSortField>('goalsFor');
@@ -113,8 +117,8 @@ export default function StatsPage() {
 
   const filteredPlayers  = useMemo(() => applyFilters(allPlayers, filters), [allPlayers, filters]);
   const sortedPlayers    = useMemo(() => sortPlayers(filteredPlayers, playerSort, playerDir), [filteredPlayers, playerSort, playerDir]);
-  const pagePlayers      = useMemo(() => sortedPlayers.slice((playerPage - 1) * PAGE_SIZE, playerPage * PAGE_SIZE), [sortedPlayers, playerPage]);
-  const totalPlayerPages = Math.ceil(filteredPlayers.length / PAGE_SIZE);
+  const pagePlayers      = useMemo(() => sortedPlayers.slice((playerPage - 1) * playerPageSize, playerPage * playerPageSize), [sortedPlayers, playerPage, playerPageSize]);
+  const totalPlayerPages = Math.max(1, Math.ceil(filteredPlayers.length / playerPageSize));
   const sortedClubs      = useMemo(() => sortClubs(allClubs, clubSort, clubDir), [allClubs, clubSort, clubDir]);
   const clubOptions      = useMemo(() =>
     [...new Map(allPlayers.map(p => [p.clubId, { id: p.clubId, name: p.clubName, short: p.clubShort }])).values()],
@@ -348,7 +352,9 @@ export default function StatsPage() {
                   page={playerPage}
                   totalPages={totalPlayerPages}
                   totalCount={filteredPlayers.length}
+                  pageSize={playerPageSize}
                   onPageChange={setPlayerPage}
+                  onPageSizeChange={n => { setPlayerPageSize(n); setPlayerPage(1); }}
                   onSortChange={(f, d) => { setPlayerSort(f); setPlayerDir(d); setPlayerPage(1); }}
                   sortField={playerSort}
                   sortDir={playerDir}

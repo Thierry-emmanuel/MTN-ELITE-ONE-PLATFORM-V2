@@ -14,6 +14,7 @@ import {
 import { VotingPanel } from '@/components/elite/awards/VotingPanel';
 import { MOCK_AWARDS, MOCK_HISTORICAL } from '@/services/mockAwards';
 import type { HistoricalWinner } from '@/types/awards.types';
+import trophyImageSrc from '@/assets/images/trophies/ballon-dor-cameroun.png';
 
 type Tab = 'ranking' | 'vote' | 'history' | 'halloffame';
 
@@ -90,7 +91,6 @@ const HofCard = memo(({ winner, rank }: { winner: HistoricalWinner; rank: number
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute bottom-3 right-3 text-2xl"
         >
-          🏆
         </motion.div>
       </div>
 
@@ -279,6 +279,7 @@ export default function BallonDorPage() {
 
       {/* Hero */}
       <div className="container pb-8">
+        {/* Once you've uncommented the import above, change this to: trophyImageSrc={trophyImageSrc} */}
         <BallonDorHero edition={edition} />
       </div>
 

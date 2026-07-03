@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import type { ClubStat, StatSortField } from '@/types/football.types';
+import { ClubBadge } from './MediaAvatar';
 
 // ─── Mini horizontal bar ─────────────────────────────────────────────────────
 const MiniBar = memo(({ value, max, color = 'bg-accent/50' }: {
@@ -138,12 +139,7 @@ const ClubRow = memo(({ club, rank, idx, maxGoals, maxShots, maxGoalsAgainst }: 
         {/* Club name */}
         <td className="px-3 py-3 min-w-[140px]">
           <div className="flex items-center gap-2">
-            <div
-              className="h-6 w-6 rounded-full border border-white/10 flex items-center justify-center shrink-0 text-[9px] font-black"
-              style={{ background: `hsl(0, 0%, 18%)` }}
-            >
-              {club.clubShort?.[0] ?? club.clubName[0]}
-            </div>
+            <ClubBadge logoUrl={club.clubLogoUrl} name={club.clubName} size={24} />
             <div>
               <p className="text-sm font-semibold group-hover:text-accent transition-colors">{club.clubName}</p>
               <p className="text-[10px] text-muted-foreground/50">{club.clubShort}</p>

@@ -5,7 +5,7 @@ import {
 } from 'framer-motion';
 import {
   Trophy, Star, ChevronUp, ChevronDown, ChevronLeft, ChevronRight,
-  Minus, Crown, Users, Calendar, Sparkles, Play, Pause,
+  Minus, Crown, Users, Calendar, Sparkles, Play, Pause, ImagePlus,
 } from 'lucide-react';
 import { useAwardCountdown } from '@/hooks/useAwards';
 import { MOCK_HISTORICAL } from '@/services/mockAwards';
@@ -38,6 +38,78 @@ const Spotlight = () => (
     />
   </div>
 );
+
+// ─── TrophyShowcase — an original laurel-arch frame with a real image slot.
+//     Pass `src` for your own trophy photo/render; otherwise shows a tasteful
+//     placeholder so the layout & lighting stay correct until an asset lands ──
+interface TrophyShowcaseProps { src?: string; alt?: string; width?: number; height?: number; }
+
+const TrophyShowcase = ({ src, alt = "Trophée Ballon d'Or Cameroun", width = 240, height = 300 }: TrophyShowcaseProps) => {
+  const leafAngles = [98, 118, 138, 158, 82, 62, 42, 22];
+  return (
+    <div className="relative flex flex-col items-center" style={{ width }}>
+      {/* ambient stage glow behind the piece */}
+      <div
+        className="absolute -z-10 rounded-full blur-3xl"
+        style={{
+          width: width * 1.5, height: width * 1.5, top: -width * 0.2,
+          background: 'radial-gradient(ellipse 60% 60% at 50% 45%, rgba(252,209,22,0.30), transparent 70%)',
+        }}
+      />
+
+      {/* laurel + star crest, framing the top of the showcase */}
+      <svg width={width} height={70} viewBox="0 0 220 70" className="mb-[-14px] relative z-10">
+        <defs>
+          <linearGradient id="crestGold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFF3C4" />
+            <stop offset="45%" stopColor="#FCD116" />
+            <stop offset="100%" stopColor="#A9760F" />
+          </linearGradient>
+        </defs>
+        <path d="M15,55 A80,80 0 0,1 90,10" fill="none" stroke="#FCD116" strokeOpacity="0.4" strokeWidth="1.2" />
+        <path d="M205,55 A80,80 0 0,0 130,10" fill="none" stroke="#FCD116" strokeOpacity="0.4" strokeWidth="1.2" />
+        {leafAngles.map((deg, i) => {
+          const r = 80, cx = 110 + r * Math.cos((deg * Math.PI) / 180), cy = 60 + r * Math.sin((deg * Math.PI) / 180);
+          return <ellipse key={i} cx={cx} cy={cy} rx="10" ry="4.5" fill="#FCD116" fillOpacity="0.55" transform={`rotate(${deg}, ${cx}, ${cy})`} />;
+        })}
+        <path
+          d="M110,8 L113,16.2 L121.6,16.7 L114.9,22 L117,30.3 L110,25.6 L103,30.3 L105.1,22 L98.4,16.7 L107,16.2 Z"
+          fill="url(#crestGold)"
+        />
+      </svg>
+
+      {/* image showcase — arch niche, like a museum display */}
+      <div
+        className="relative w-full rounded-t-[9999px] rounded-b-2xl border-2 border-[#FCD116]/35 bg-gradient-to-b from-[#171104] via-[#0a0803] to-[#050505] overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.6)]"
+        style={{ height }}
+      >
+        <div className="absolute inset-[3px] rounded-t-[9999px] rounded-b-xl border border-[#FCD116]/15 pointer-events-none" />
+
+        {src ? (
+          <img
+            src={src}
+            alt={alt}
+            className="absolute inset-0 h-full w-full object-contain p-7"
+            style={{ filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.55))' }}
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-3 rounded-t-[9999px] rounded-b-xl border-2 border-dashed border-[#FCD116]/25 flex flex-col items-center justify-center gap-2.5 px-6 text-center">
+            <ImagePlus className="h-7 w-7 text-[#FCD116]/40" />
+            <p className="text-[10px] font-black uppercase tracking-[.14em] text-[#FCD116]/45">Emplacement du trophée</p>
+            <p className="text-[9.5px] leading-relaxed text-white/25">
+              Ajoutez ici la photo ou le rendu du trophée<br />(PNG transparent conseillé, min. 800×1000px)
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* grounding shadow */}
+      <div className="w-3/4 h-3.5 rounded-full blur-md bg-black/70 -mt-1.5" />
+    </div>
+  );
+};
+
 
 // ─── Countdown ────────────────────────────────────────────────────────────────
 const CountdownBox = ({ value, label, urgent }: { value: number; label: string; urgent: boolean }) => (
@@ -77,7 +149,7 @@ const VoteCountdown = memo(({ deadline }: { deadline: string }) => {
 VoteCountdown.displayName = 'VoteCountdown';
 
 // ─── BallonDorHero ────────────────────────────────────────────────────────────
-export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) => {
+export const BallonDorHero = memo(({ edition, trophyImageSrc }: { edition: BallonDorEdition; trophyImageSrc?: string }) => {
   const top = edition.ranking[0];
   return (
     <section className="relative min-h-[72vh] flex flex-col items-center justify-center overflow-hidden rounded-3xl bg-[#050505]">
@@ -99,8 +171,8 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
 
         <div className="space-y-3">
           <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 70, damping: 12, delay: 0.2 }} className="flex justify-center">
-            <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }} className="text-7xl sm:text-9xl" style={{ filter: 'drop-shadow(0 0 50px rgba(252,209,22,0.55))' }}>
-              🏆
+            <motion.div animate={{ y: [0, -14, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }} style={{ filter: 'drop-shadow(0 0 50px rgba(252,209,22,0.35))' }}>
+              <TrophyShowcase src={trophyImageSrc} />
             </motion.div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.4 }}>
@@ -129,7 +201,11 @@ export const BallonDorHero = memo(({ edition }: { edition: BallonDorEdition }) =
                   <Crown className="absolute -top-2 -right-1 h-5 w-5 text-[#FCD116]" fill="currentColor" />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <p className="text-[10px] text-[#FCD116]/60 uppercase tracking-widest font-bold">{edition.votingOpen ? '🔴 En tête' : '🏆 Vainqueur'}</p>
+                  <p className="flex items-center gap-1.5 text-[10px] text-[#FCD116]/60 uppercase tracking-widest font-bold">
+                    {edition.votingOpen
+                      ? <><span className="h-1.5 w-1.5 rounded-full bg-[#EF4444] animate-pulse" />En tête</>
+                      : <><Trophy className="h-3 w-3" />Vainqueur</>}
+                  </p>
                   <p className="font-display text-lg font-black text-white leading-tight">{top.nominee.name}</p>
                   <p className="text-xs text-white/40">{top.nominee.clubName}</p>
                 </div>

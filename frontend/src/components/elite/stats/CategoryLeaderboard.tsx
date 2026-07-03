@@ -1,12 +1,13 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Target, Zap, BookOpen, ArrowUpRight,
-  Square, Clock, Trophy,
+  Square, Clock, Trophy, ChevronDown,
 } from 'lucide-react';
 import type { PlayerStat, StatCategory } from '@/types/football.types';
 import { computeRating } from '@/lib/statsRating';
 import { RatingBadge } from './RatingBadge';
+import { PlayerAvatar, ClubBadge } from './MediaAvatar';
 
 // ─── Category config — defines which columns appear per category ───────────────
 interface ColDef {
@@ -107,18 +108,6 @@ const RankBadge = ({ rank }: { rank: number }) => {
   );
 };
 
-// ─── Player avatar (initials fallback) ────────────────────────────────────────
-const Avatar = ({ photoUrl, name }: { photoUrl?: string; name: string }) => {
-  const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  return photoUrl
-    ? <img src={photoUrl} alt={name} className="h-9 w-9 rounded-full object-cover shrink-0" loading="lazy" />
-    : (
-      <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-[11px] font-bold text-muted-foreground/60">
-        {initials}
-      </div>
-    );
-};
-
 // ─── Single leaderboard row ───────────────────────────────────────────────────
 const LeaderboardRow = memo(({
   player, rank, cols, primaryKey, idx, maxPrimary,
@@ -144,7 +133,7 @@ const LeaderboardRow = memo(({
     {/* Player */}
     <td className="px-3 py-3">
       <div className="flex items-center gap-2.5 min-w-0">
-        <Avatar photoUrl={player.photoUrl} name={player.playerName} />
+        <PlayerAvatar photoUrl={player.photoUrl} name={player.playerName} size={36} />
         <div className="min-w-0">
           <p className="text-sm font-semibold truncate text-foreground group-hover:text-accent transition-colors leading-tight">
             {player.playerName}
@@ -161,7 +150,10 @@ const LeaderboardRow = memo(({
 
     {/* Club (visible on md+) */}
     <td className="px-3 py-3 hidden md:table-cell">
-      <p className="text-sm text-muted-foreground/70 truncate max-w-[120px]">{player.clubName}</p>
+      <div className="flex items-center gap-1.5">
+        <ClubBadge logoUrl={player.clubLogoUrl} name={player.clubName} size={16} />
+        <p className="text-sm text-muted-foreground/70 truncate max-w-[100px]">{player.clubName}</p>
+      </div>
     </td>
 
     {/* Rating (visible on lg+) */}
@@ -219,29 +211,33 @@ const PRIMARY_KEY: Record<StatCategory, keyof PlayerStat> = {
 export const CategoryLeaderboard = memo(({
   category, players, loading = false, limit = 15,
 }: CategoryLeaderboardProps) => {
+  const [expanded, setExpanded] = useState(false);
   const config     = CATEGORY_CONFIG[category];
   const primaryKey = PRIMARY_KEY[category];
   const Icon       = config.icon;
 
   // Sort by primary key descending
-  const sorted = [...players]
+  const fullSorted = [...players]
     .sort((a, b) => {
       const va = a[primaryKey] as number ?? 0;
       const vb = b[primaryKey] as number ?? 0;
       return vb - va;
-    })
-    .slice(0, limit);
+    });
+  const sorted = expanded ? fullSorted : fullSorted.slice(0, limit);
 
   const maxPrimary = Math.max(...sorted.map(p => (p[primaryKey] as number) ?? 0), 1);
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
       {/* Table header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/60 bg-white/[0.03]">
-        <Icon className="h-3.5 w-3.5 text-accent/70 shrink-0" />
-        <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">
-          {config.label}
-        </h3>
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border/60 bg-white/[0.03]">
+        <div className="flex items-center gap-2">
+          <Icon className="h-3.5 w-3.5 text-accent/70 shrink-0" />
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/80">
+            {config.label}
+          </h3>
+        </div>
+        <span className="text-[10px] text-muted-foreground/40">{fullSorted.length} joueurs</span>
       </div>
 
       <div className="overflow-x-auto">
@@ -309,6 +305,16 @@ export const CategoryLeaderboard = memo(({
           </tbody>
         </table>
       </div>
+
+      {fullSorted.length > limit && (
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold text-muted-foreground/60 hover:text-accent hover:bg-white/[0.02] transition-colors border-t border-border/30"
+        >
+          {expanded ? 'Réduire' : `Voir les ${fullSorted.length} joueurs`}
+          <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </button>
+      )}
     </div>
   );
 });
