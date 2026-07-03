@@ -23,9 +23,13 @@ function EntityCrudEngineInner<T extends { id?: string; _id?: string }>({
   const { create, update, remove, isSaving } = useMutations();
 
   const [editing, setEditing] = useState<Partial<T> | null>(null);
-  const isNew = editing && !editing.id && !editing._id;
+  // Use explicit null/undefined check so integer id=0 doesn't falsely mark as new.
+  const isNew = editing !== null && (
+    (editing as any).id == null && (editing as any)._id == null
+  );
 
-  const idOf = (row: T) => (config.idField === '_id' ? row._id! : row.id!);
+  const idOf = (row: T): string =>
+    String(config.idField === '_id' ? row._id! : row.id!);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +132,78 @@ function EntityCrudEngineInner<T extends { id?: string; _id?: string }>({
                 );
               }
 
+              if (field.type === 'switch') {
+                return (
+                  <div key={String(field.key)} className={wrapClass || ''}>
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+                        {field.label}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={!!value}
+                        onClick={() => onChange(!value)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                          value ? 'bg-emerald-500' : 'bg-stone-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                            value ? 'translate-x-4' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </label>
+                  </div>
+                );
+              }
+
+              if (field.type === 'tags') {
+                const tags: string[] = Array.isArray(value) ? (value as string[]) : [];
+                const addTag = (input: string) => {
+                  const trimmed = input.trim();
+                  if (trimmed && !tags.includes(trimmed)) onChange([...tags, trimmed]);
+                };
+                return (
+                  <div key={String(field.key)} className={wrapClass || 'col-span-2'}>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1">
+                      {field.label}
+                    </label>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-200 text-stone-700 text-xs"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => onChange(tags.filter((t) => t !== tag))}
+                            className="ml-1 text-stone-400 hover:text-red-500 leading-none"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder={field.hint ?? 'Appuyez sur Entrée pour ajouter'}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addTag((e.target as HTMLInputElement).value);
+                          (e.target as HTMLInputElement).value = '';
+                        }
+                      }}
+                      onBlur={(e) => { addTag(e.target.value); e.target.value = ''; }}
+                      className="w-full text-xs rounded border border-stone-300 px-2 py-1.5 focus:outline-none focus:border-stone-400"
+                    />
+                  </div>
+                );
+              }
+
               if (field.type === 'color') {
                 return (
                   <div key={String(field.key)} className={wrapClass}>
@@ -167,6 +243,7 @@ function EntityCrudEngineInner<T extends { id?: string; _id?: string }>({
                   />
                 </div>
               );
+
             })}
             <div className="col-span-2 flex justify-end gap-2 pt-2 border-t border-stone-200">
               <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>

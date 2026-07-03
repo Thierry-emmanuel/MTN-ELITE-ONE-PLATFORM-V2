@@ -201,6 +201,24 @@ export function useLegends() {
   });
 }
 
+// ─── useInjuries ──────────────────────────────────────────────────────────────
+export function useInjuries(filters?: { status?: string; clubId?: string }) {
+  return useQuery({
+    queryKey: QK.injuries(filters ?? {}),
+    queryFn: () => footballApi.getInjuries(filters),
+    staleTime: 120_000,
+  });
+}
+
+// ─── useTransfers ─────────────────────────────────────────────────────────────
+export function useTransfers(filters?: { windowLabel?: string; clubId?: string }) {
+  return useQuery({
+    queryKey: QK.transfers(filters ?? {}),
+    queryFn: () => footballApi.getTransfers(filters),
+    staleTime: 60_000,
+  });
+}
+
 // ─── usePlayerStats ───────────────────────────────────────────────────────────
 export function usePlayerStats(seasonId: string, filters?: Omit<PlayerStatsFilter, 'seasonId'>) {
   return useQuery({

@@ -1,6 +1,6 @@
 import {
   IsString, IsEnum, IsDateString, IsOptional,
-  IsUUID, MaxLength, IsArray, IsObject,
+  IsInt, MaxLength, IsArray, IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CoachStatus } from '../coach.entity';
@@ -93,9 +93,9 @@ export class CreateCoachDto {
   socialMedia?: SocialMediaDto;
 
   // ── Club / Status ─────────────────────────────────────────────
-  @ApiPropertyOptional()
-  @IsOptional() @IsUUID()
-  clubId?: string;
+  @ApiPropertyOptional({ description: 'ID of the club' })
+  @IsOptional() @IsInt()
+  clubId?: number;
 
   @ApiPropertyOptional({ enum: CoachStatus, default: CoachStatus.ACTIVE })
   @IsOptional() @IsEnum(CoachStatus)

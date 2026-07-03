@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Shield, LayoutDashboard, Layers, Image, Calendar,
   Trophy, FileText, Star, BarChart2, ExternalLink,
-  ChevronRight,
+  ChevronRight, MapPin, Shirt, Handshake, Zap,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -26,6 +26,7 @@ const NAV_GROUPS = [
       { id: 'hero',       label: 'Bannières Hero',         icon: Image },
       { id: 'matches',    label: 'Matchs & Résultats',     icon: Calendar },
       { id: 'news',       label: 'Actualités & Presse',    icon: FileText },
+      { id: 'actions',    label: 'Actions marquantes',     icon: Zap },
     ],
   },
   {
@@ -43,6 +44,9 @@ const NAV_GROUPS = [
       { id: 'clubs',      label: 'Clubs',                  icon: Shield },
       { id: 'players',    label: 'Joueurs',                icon: Star },
       { id: 'coaches',    label: 'Entraîneurs',            icon: Star },
+      { id: 'stadiums',   label: 'Stades',                 icon: MapPin },
+      { id: 'equipments', label: 'Équipements',            icon: Shirt },
+      { id: 'sponsors',   label: 'Sponsors',               icon: Handshake },
       { id: 'users',      label: 'Utilisateurs',           icon: Star },
     ],
   },

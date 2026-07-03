@@ -39,6 +39,7 @@ const NAV_LINKS = [
       { label: "Tous les clubs", href: "/clubs",     icon: <Users className="h-3.5 w-3.5 text-primary-glow" /> },
       { label: "Joueurs",        href: "/players",   icon: <Star className="h-3.5 w-3.5 text-primary-glow" /> },
       { label: "Transferts",     href: "/transfers", icon: <ArrowLeftRight className="h-3.5 w-3.5 text-primary-glow" /> },
+      { label: "Blessures",      href: "/injuries",  icon: <Activity className="h-3.5 w-3.5 text-primary-glow" /> },
       { label: "Road to Lions",  href: "/lions",     icon: <Award className="h-3.5 w-3.5 text-primary-glow" /> },
     ],
   },
@@ -70,8 +71,8 @@ const NAV_LINKS = [
     children: [
       { label: "Young Talent Watch", href: "/players",    icon: <Star          className="h-3.5 w-3.5 text-[#FCD116]" /> },
       { label: "Hall of Fame",       href: "/halloffame", icon: <Trophy        className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Transferts",         href: "/results",    icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Blessures",          href: "/stats",      icon: <Activity      className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Transferts",         href: "/transfers",  icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Blessures",          href: "/injuries",   icon: <Activity      className="h-3.5 w-3.5 text-[#FCD116]" /> },
     ],
   },
 ] as const;

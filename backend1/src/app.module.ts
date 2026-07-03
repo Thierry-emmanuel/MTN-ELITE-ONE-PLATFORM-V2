@@ -57,7 +57,7 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
         autoLoadEntities: true,
         synchronize: cfg.get<string>('DB_SYNCHRONIZE') === 'true',
         logging:     cfg.get<string>('NODE_ENV') === 'development',
-        extra: { max: 20, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 2_000 },
+        extra: { max: 20, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000 },
       }),
     }),
 

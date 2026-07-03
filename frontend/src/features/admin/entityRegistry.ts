@@ -4,6 +4,9 @@ import { selectionsConfig } from './configs/selections.config';
 import { bigMomentsConfig } from './configs/bigMoments.config';
 import { clubsConfig } from './configs/clubs.config';
 import { playersConfig } from './configs/players.config';
+import { stadiumsConfig } from './configs/stadiums.config';
+import { equipmentsConfig } from './configs/equipments.config';
+import { sponsorsConfig } from './configs/sponsors.config';
 import type { EntityConfig } from './engine/entityConfig.types';
 
 /**
@@ -22,8 +25,12 @@ export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   injuries: injuriesConfig,
   selections: selectionsConfig,
   'big-moments': bigMomentsConfig,
+  actions: { ...bigMomentsConfig, name: 'actions', labelSingular: 'Action', labelPlural: 'Actions' },
   clubs: clubsConfig,
   players: playersConfig,
+  stadiums: stadiumsConfig,
+  equipments: equipmentsConfig,
+  sponsors: sponsorsConfig,
 };
 
 export type EntityRegistryKey = keyof typeof ENTITY_REGISTRY;

@@ -136,6 +136,10 @@ export const AwardCard = memo(({ award, votedNomineeId, index = 0, variant = 'de
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(252,209,22,0.10)_0%,transparent_70%)] pointer-events-none" />
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#FCD116]/50 to-transparent" />
 
+          {/* Corner ornaments — plaque framing */}
+          <div className="absolute top-3 left-3 h-4 w-4 border-t border-l border-[#FCD116]/40 pointer-events-none" />
+          <div className="absolute bottom-3 right-3 h-4 w-4 border-b border-r border-[#FCD116]/40 pointer-events-none" />
+
           {/* Live badge */}
           {isOpen && (
             <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#10B981]/15 border border-[#10B981]/30 text-[#10B981] text-[10px] font-black uppercase tracking-wider">
@@ -150,7 +154,7 @@ export const AwardCard = memo(({ award, votedNomineeId, index = 0, variant = 'de
               <span className="text-2xl">{meta.icon}</span>
               <div>
                 <p className={`text-[10px] font-black uppercase tracking-[.18em] ${meta.color}`}>{meta.shortLabel}</p>
-                <h3 className="font-display text-xl font-black text-white">{award.title}</h3>
+                <h3 className="font-serif italic text-xl font-medium text-white">{award.title}</h3>
               </div>
             </div>
 
@@ -163,7 +167,7 @@ export const AwardCard = memo(({ award, votedNomineeId, index = 0, variant = 'de
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] text-[#FCD116]/55 uppercase tracking-wider font-bold">Favori</p>
-                  <p className="font-display text-lg font-black text-white truncate">{top.name}</p>
+                  <p className="font-serif italic text-lg font-semibold text-white truncate">{top.name}</p>
                   <p className="text-xs text-white/40">
                     {top.goalContext ? `vs ${top.goalContext.opponent} · ${top.goalContext.minute}'` : top.clubName}
                   </p>
@@ -218,20 +222,26 @@ export const AwardCard = memo(({ award, votedNomineeId, index = 0, variant = 'de
         {/* Accent bar */}
         <div className={`h-px bg-gradient-to-r from-transparent ${award.trophyColor === 'GOLD' ? 'via-[#FCD116]/50' : 'via-white/15'} to-transparent`} />
 
-        <div className="p-4">
+        <div className="relative p-4">
+          {award.trophyColor === 'GOLD' && (
+            <>
+              <div className="absolute top-2.5 left-2.5 h-3 w-3 border-t border-l border-[#FCD116]/35 pointer-events-none" />
+              <div className="absolute top-2.5 right-2.5 h-3 w-3 border-t border-r border-[#FCD116]/35 pointer-events-none" />
+            </>
+          )}
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-2.5">
               <div className={`h-9 w-9 rounded-xl border flex items-center justify-center text-lg ${meta.bg}`}>{meta.icon}</div>
               <div>
                 <p className={`text-[9px] font-black uppercase tracking-[.16em] ${meta.color}`}>{award.period}</p>
-                <h3 className="text-sm font-bold text-white/90">{award.title}</h3>
+                <h3 className="font-serif italic text-sm font-semibold text-white/90">{award.title}</h3>
               </div>
             </div>
             {isOpen
               ? <span className="flex items-center gap-1 text-[9px] text-[#10B981] font-black shrink-0"><span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />LIVE</span>
               : award.votingStatus === 'ANNOUNCED'
-              ? <span className="flex items-center gap-1 text-[9px] text-[#FCD116] font-bold shrink-0">
+              ? <span className="flex items-center gap-1 text-[9px] text-[#FCD116] font-bold shrink-0 border border-[#FCD116]/25 rounded-full px-1.5 py-0.5 bg-[#FCD116]/[0.06]">
                   <Trophy className="h-2.5 w-2.5" /> ANNONCÉ
                 </span>
               : null}

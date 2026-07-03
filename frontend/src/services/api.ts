@@ -6,6 +6,8 @@ import type {
 } from '../types/football.types';
 import { clubs as MOCK_CLUBS, legends as MOCK_LEGENDS } from '../components/elite/data';
 import { MOCK_PLAYER_STATS, MOCK_FIXTURES } from './mockData';
+import { MOCK_INJURIES, MOCK_TRANSFERS } from './transfersInjuriesMockData';
+import type { InjuryRecord, TransferRecord } from '../types/transfersInjuries.types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -241,6 +243,32 @@ export const footballApi = {
       return MOCK_LEGENDS;
     }
   },
+
+  // ── Injuries ───────────────────────────────────────────────────────────────
+  getInjuries: async (params?: { status?: string; clubId?: string }) => {
+    try {
+      const res = await get<any>('/injuries', { params });
+      const list: InjuryRecord[] = Array.isArray(res) ? res : res.data;
+      if (!list || list.length === 0) return MOCK_INJURIES;
+      return list;
+    } catch (e) {
+      console.warn('Failed to fetch injuries from backend, using mock medical data.', e);
+      return MOCK_INJURIES;
+    }
+  },
+
+  // ── Transfers ──────────────────────────────────────────────────────────────
+  getTransfers: async (params?: { windowLabel?: string; clubId?: string }) => {
+    try {
+      const res = await get<any>('/transfers', { params });
+      const list: TransferRecord[] = Array.isArray(res) ? res : res.data;
+      if (!list || list.length === 0) return MOCK_TRANSFERS;
+      return list;
+    } catch (e) {
+      console.warn('Failed to fetch transfers from backend, using mock mercato data.', e);
+      return MOCK_TRANSFERS;
+    }
+  },
 };
 
 // ─── Query key factory ────────────────────────────────────────────────────────
@@ -261,4 +289,6 @@ export const QK = {
   players:        (filters?: object)                   => ['players', filters]             as const,
   player:         (id: string)                         => ['player', id]                   as const,
   legends:        ()                                   => ['legends']                      as const,
+  injuries:       (filters?: object)                   => ['injuries', filters]            as const,
+  transfers:      (filters?: object)                   => ['transfers', filters]           as const,
 } as const;

@@ -38,16 +38,291 @@ import { layoutApi } from '@/services/layoutApi';
 
 type ToastFn = (msg: string, type?: 'success' | 'error' | 'info') => void;
 
-/* ─── Shared multi-tab form helper ───────────────────────────────────────── */
-function FormTabs({ tabs, active, onChange }: { tabs: string[]; active: string; onChange: (t: string) => void }) {
+/* ─── Social icon SVGs ──────────────────────────────────────────────────────── */
+const IgIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+  </svg>
+);
+const FbIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+const WaIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
+const TwIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/>
+  </svg>
+);
+const TkIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.02-.07z"/>
+  </svg>
+);
+
+/* ─── Social action button ──────────────────────────────────────────────────── */
+const SocialBtn = ({ href, icon, label, color }: { href?: string; icon: React.ReactNode; label: string; color: string }) => (
+  href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all hover:scale-105 active:scale-95 ${color}`}>
+      {icon}{label}
+    </a>
+  ) : (
+    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-bold opacity-30 ${color}`}>{icon}{label}</div>
+  )
+);
+
+/* ─── Real-time Live Preview Components (Meta/Instagram-style) ─────────────── */
+const ClubCardPreview = ({ club }: { club: any }) => (
+  <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/[0.07] bg-[#0e1520] sticky top-24">
+    {/* Cover banner */}
+    <div className="relative h-24 w-full overflow-hidden">
+      {club.bannerUrl
+        ? <img src={club.bannerUrl} alt="Cover" className="w-full h-full object-cover" />
+        : <div className="w-full h-full" style={{ background: `linear-gradient(135deg, ${club.primaryColor || '#fcd116'} 0%, ${club.secondaryColor || '#007a5e'} 100%)` }} />
+      }
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0e1520]/70 to-transparent" />
+    </div>
+    {/* Avatar */}
+    <div className="flex flex-col items-center -mt-9 px-4 pb-4">
+      <div className="h-[72px] w-[72px] rounded-full border-4 border-[#0e1520] bg-[#1a2535] overflow-hidden shadow-xl">
+        {club.logoUrl
+          ? <img src={club.logoUrl} alt="Logo" className="w-full h-full object-contain p-1.5" />
+          : <div className="w-full h-full flex items-center justify-center text-white/30 text-xs font-bold">Logo</div>
+        }
+      </div>
+      <h4 className="font-display font-bold text-white text-sm mt-2 leading-tight text-center">{club.name || 'Nom du Club'}</h4>
+      {club.nickname && <p className="text-[10px] text-accent font-semibold mt-0.5">"{club.nickname}"</p>}
+      <p className="text-[9px] text-white/40 mt-1 text-center">{club.city || 'Ville'}{club.foundedYear ? ` · Est. ${club.foundedYear}` : ''}</p>
+      {club.description && <p className="text-[9px] text-white/50 text-center leading-relaxed mt-1.5 line-clamp-2">{club.description}</p>}
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-2 w-full mt-3 pt-3 border-t border-white/[0.06]">
+        {[
+          { label: 'Matchs', val: club.achievements?.league ?? '—' },
+          { label: 'Titres', val: (Number(club.achievements?.league || 0) + Number(club.achievements?.cup || 0)) || '—' },
+          { label: 'Budget', val: club.budget ? `${(Number(club.budget)/1e6).toFixed(0)}M` : '—' },
+        ].map(s => (
+          <div key={s.label} className="text-center">
+            <p className="font-display font-bold text-white text-sm">{s.val}</p>
+            <p className="text-[8px] text-white/30 uppercase tracking-wider mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      {/* Social links */}
+      <div className="flex flex-wrap gap-1.5 justify-center mt-3">
+        <SocialBtn href={club.socialMedia?.instagram} icon={<IgIcon />} label="Instagram" color="bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-pink-400 border border-pink-500/20" />
+        <SocialBtn href={club.socialMedia?.facebook} icon={<FbIcon />} label="Facebook" color="bg-blue-600/15 text-blue-400 border border-blue-500/20" />
+        <SocialBtn href={club.socialMedia?.whatsapp} icon={<WaIcon />} label="WhatsApp" color="bg-green-600/15 text-green-400 border border-green-500/20" />
+        <SocialBtn href={club.socialMedia?.twitter} icon={<TwIcon />} label="X" color="bg-white/5 text-white/60 border border-white/10" />
+      </div>
+      {/* Stade */}
+      {club.stadium && (
+        <div className="w-full mt-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] text-left">
+          <p className="text-[8px] uppercase tracking-wider text-white/25 font-bold">Stade Domicile</p>
+          <p className="text-xs text-white/75 font-semibold mt-0.5 truncate">{club.stadium}</p>
+          {club.stadiumCapacity && <p className="text-[8px] text-white/35 mt-0.5">{Number(club.stadiumCapacity).toLocaleString()} places</p>}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const PlayerCardPreview = ({ player, clubs }: { player: any; clubs: any[] }) => {
+  const club = clubs.find(c => String(c.id) === String(player.clubId));
   return (
-    <div className="flex gap-1 border-b border-white/[0.06] mb-4 -mx-1 px-1">
-      {tabs.map(t => (
-        <button key={t} onClick={() => onChange(t)}
-          className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-t-lg ${active === t ? 'text-accent border-b-2 border-accent bg-accent/5' : 'text-white/30 hover:text-white/60'}`}>
-          {t}
+    <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/[0.07] bg-[#0e1520] sticky top-24">
+      {/* Cover */}
+      <div className="relative h-24 w-full overflow-hidden">
+        {player.secondaryPhotoUrl
+          ? <img src={player.secondaryPhotoUrl} alt="Cover" className="w-full h-full object-cover object-top" />
+          : <div className="w-full h-full bg-gradient-to-br from-accent/30 via-[#1a2535] to-[#0e1520]" />
+        }
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0e1520]/80 to-transparent" />
+        {/* Jersey number watermark */}
+        {player.jerseyNumber && (
+          <span className="absolute bottom-1 right-2 font-display font-black text-4xl text-white/10 leading-none select-none">#{player.jerseyNumber}</span>
+        )}
+        {/* Club logo */}
+        {club?.logoUrl && (
+          <img src={club.logoUrl} alt="Club" className="absolute top-2 right-2 h-7 w-7 object-contain bg-black/30 backdrop-blur-sm p-0.5 rounded-lg" />
+        )}
+      </div>
+      {/* Avatar */}
+      <div className="flex flex-col items-center -mt-9 px-4 pb-4">
+        <div className="h-[72px] w-[72px] rounded-full border-4 border-[#0e1520] bg-[#1a2535] overflow-hidden shadow-xl">
+          {player.photoUrl
+            ? <img src={player.photoUrl} alt="Photo" className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center text-white/30 text-[10px] font-bold">Photo</div>
+          }
+        </div>
+        {/* Position badge */}
+        <span className="mt-2 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30">
+          {player.position || 'FWD'}
+        </span>
+        <h4 className="font-display font-bold text-white text-sm mt-1.5 leading-tight text-center">
+          {player.firstName || ''} {player.lastName || 'Nom du Joueur'}
+        </h4>
+        {player.nickname && <p className="text-[9px] text-accent/80 font-semibold mt-0.5">"{player.nickname}"</p>}
+        <p className="text-[9px] text-white/40 mt-0.5">{player.nationality || 'Nationalité'}{club ? ` · ${club.name}` : ''}</p>
+        {player.biography && <p className="text-[9px] text-white/45 text-center leading-relaxed mt-1.5 line-clamp-2">{player.biography}</p>}
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2 w-full mt-3 pt-3 border-t border-white/[0.06]">
+          {[
+            { label: 'Matchs', val: player.appearances || 0 },
+            { label: 'Buts', val: player.goals || 0 },
+            { label: 'Passes', val: player.assists || 0 },
+          ].map(s => (
+            <div key={s.label} className="text-center">
+              <p className="font-display font-bold text-white text-sm">{s.val}</p>
+              <p className="text-[8px] text-white/30 uppercase tracking-wider mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+        {/* Social links */}
+        <div className="flex flex-wrap gap-1.5 justify-center mt-3">
+          <SocialBtn href={player.socialMedia?.instagram} icon={<IgIcon />} label="Instagram" color="bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-pink-400 border border-pink-500/20" />
+          <SocialBtn href={player.socialMedia?.twitter} icon={<TwIcon />} label="X" color="bg-white/5 text-white/60 border border-white/10" />
+          <SocialBtn href={player.socialMedia?.tiktok} icon={<TkIcon />} label="TikTok" color="bg-white/5 text-white/60 border border-white/10" />
+        </div>
+        {/* Physical */}
+        {(player.height || player.weight || player.preferredFoot) && (
+          <div className="flex gap-3 mt-3 w-full justify-center text-[8px] text-white/30 uppercase tracking-wider">
+            {player.height && <span>{player.height} cm</span>}
+            {player.weight && <span>{player.weight} kg</span>}
+            {player.preferredFoot && <span>Pied {player.preferredFoot === 'RIGHT' ? 'droit' : player.preferredFoot === 'LEFT' ? 'gauche' : 'ambidextre'}</span>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CoachCardPreview = ({ coach, clubs }: { coach: any; clubs: any[] }) => {
+  const club = clubs.find(c => String(c.id) === String(coach.clubId));
+  return (
+    <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/[0.07] bg-[#0e1520] sticky top-24">
+      {/* Cover */}
+      <div className="relative h-24 w-full overflow-hidden">
+        {coach.bannerUrl
+          ? <img src={coach.bannerUrl} alt="Cover" className="w-full h-full object-cover" />
+          : <div className="w-full h-full bg-gradient-to-br from-purple-700/30 via-[#1a2535] to-[#0e1520]" />
+        }
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0e1520]/80 to-transparent" />
+        {club?.logoUrl && (
+          <img src={club.logoUrl} alt="Club" className="absolute top-2 right-2 h-7 w-7 object-contain bg-black/30 backdrop-blur-sm p-0.5 rounded-lg" />
+        )}
+      </div>
+      {/* Avatar */}
+      <div className="flex flex-col items-center -mt-9 px-4 pb-4">
+        <div className="h-[72px] w-[72px] rounded-full border-4 border-[#0e1520] bg-[#1a2535] overflow-hidden shadow-xl">
+          {coach.photoUrl
+            ? <img src={coach.photoUrl} alt="Photo" className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center text-white/30 text-[10px] font-bold">Photo</div>
+          }
+        </div>
+        {coach.qualification && (
+          <span className="mt-2 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/25">
+            {coach.qualification}
+          </span>
+        )}
+        <h4 className="font-display font-bold text-white text-sm mt-1.5 leading-tight text-center">
+          {coach.firstName || ''} {coach.lastName || "Nom de l'Entraîneur"}
+        </h4>
+        <p className="text-[9px] text-white/40 mt-0.5">{coach.nationality || 'Nationalité'}{coach.specialization ? ` · ${coach.specialization}` : ''}</p>
+        <p className="text-[9px] text-white/50 mt-0.5">{club ? club.name : 'Libre de tout contrat'}</p>
+        {coach.biography && <p className="text-[9px] text-white/45 text-center leading-relaxed mt-1.5 line-clamp-2">{coach.biography}</p>}
+        {/* Trophies count */}
+        <div className="grid grid-cols-2 gap-3 w-full mt-3 pt-3 border-t border-white/[0.06]">
+          {[
+            { label: 'Trophées', val: coach.trophies?.length || '—' },
+            { label: 'Clubs dirigés', val: coach.formerClubs?.length || '—' },
+          ].map(s => (
+            <div key={s.label} className="text-center">
+              <p className="font-display font-bold text-white text-sm">{s.val}</p>
+              <p className="text-[8px] text-white/30 uppercase tracking-wider mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+        {/* Social links */}
+        <div className="flex flex-wrap gap-1.5 justify-center mt-3">
+          <SocialBtn href={coach.socialMedia?.instagram} icon={<IgIcon />} label="Instagram" color="bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-pink-400 border border-pink-500/20" />
+          <SocialBtn href={coach.socialMedia?.twitter} icon={<TwIcon />} label="X" color="bg-white/5 text-white/60 border border-white/10" />
+          <SocialBtn href={coach.socialMedia?.linkedin} icon={<FbIcon />} label="LinkedIn" color="bg-blue-600/15 text-blue-400 border border-blue-500/20" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Shared multi-tab form helper ───────────────────────────────────────── */
+// NOTE: every button MUST be type="button" — inside a <form> a plain <button> defaults
+// to type="submit" which was causing the tab-click to save & exit immediately.
+function FormTabs({ tabs, active, onChange, isNew }: { tabs: string[]; active: string; onChange: (t: string) => void; isNew?: boolean }) {
+  return (
+    <div className="flex gap-1 border-b border-white/[0.06] mb-4 -mx-1 px-1 flex-wrap">
+      {tabs.map((t, i) => (
+        <button
+          key={t}
+          type="button"
+          disabled={isNew && i > tabs.indexOf(active)}
+          onClick={() => onChange(t)}
+          className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-t-lg
+            ${active === t ? 'text-accent border-b-2 border-accent bg-accent/5' : 'text-white/30 hover:text-white/60'}
+            ${isNew && i > tabs.indexOf(active) ? 'opacity-30 cursor-not-allowed' : ''}`}>
+          {isNew && <span className="mr-1 opacity-40">{i + 1}.</span>}{t}
         </button>
       ))}
+    </div>
+  );
+}
+
+/* ─── Wizard navigation (Next / Prev for create mode) ────────────────────── */
+function WizardNav({ tabs, active, onChange, onCancel, loading, isNew }: {
+  tabs: string[]; active: string; onChange: (t: string) => void;
+  onCancel: () => void; loading?: boolean; isNew: boolean;
+}) {
+  const idx = tabs.indexOf(active);
+  const isLast = idx === tabs.length - 1;
+  return (
+    <div className="flex justify-between items-center pt-4 border-t border-white/[0.05]">
+      <div className="flex gap-2">
+        <button type="button" onClick={onCancel}
+          className="px-3 py-1.5 rounded-xl text-[11px] font-bold text-white/40 hover:text-white/70 transition-colors border border-white/[0.07] hover:border-white/20">
+          Annuler
+        </button>
+        {idx > 0 && (
+          <button type="button" onClick={() => onChange(tabs[idx - 1])}
+            className="px-3 py-1.5 rounded-xl text-[11px] font-bold text-white/50 hover:text-white/80 transition-colors border border-white/[0.07] hover:border-white/20 flex items-center gap-1">
+            ← Précédent
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        {/* step dots */}
+        <div className="flex gap-1">
+          {tabs.map((_, i) => (
+            <span key={i} className={`block h-1.5 rounded-full transition-all ${
+              i < idx ? 'w-3 bg-accent/60' : i === idx ? 'w-4 bg-accent' : 'w-1.5 bg-white/15'
+            }`} />
+          ))}
+        </div>
+        {isLast || !isNew ? (
+          <button type="submit" disabled={loading}
+            className="px-4 py-1.5 rounded-xl text-[11px] font-bold bg-accent text-black hover:bg-accent/90 transition-all disabled:opacity-50 flex items-center gap-1.5">
+            {loading ? '…' : '✓ Sauvegarder'}
+          </button>
+        ) : (
+          <button type="button" onClick={() => onChange(tabs[idx + 1])}
+            className="px-4 py-1.5 rounded-xl text-[11px] font-bold bg-accent/15 text-accent hover:bg-accent/25 transition-all border border-accent/30 flex items-center gap-1.5">
+            Suivant →
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -100,7 +375,10 @@ export function SeasonsTab({ showToast }: { showToast: ToastFn }) {
   const run = async (fn: () => Promise<void>) => {
     setLoading(true);
     try { await fn(); }
-    catch (e: any) { showToast(e?.response?.data?.message || e.message, 'error'); }
+    catch (e: any) {
+      const msg = e?.response?.data?.message;
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || e.message), 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -191,7 +469,10 @@ export function ClubsTab({ showToast }: { showToast: ToastFn }) {
   const run = async (fn: () => Promise<void>) => {
     setLoading(true);
     try { await fn(); }
-    catch (e: any) { showToast(e?.response?.data?.message || e.message, 'error'); }
+    catch (e: any) {
+      const msg = e?.response?.data?.message;
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || e.message), 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -208,8 +489,13 @@ export function ClubsTab({ showToast }: { showToast: ToastFn }) {
   });
 
   const save = (e: React.FormEvent) => { e.preventDefault(); run(async () => {
+    // Strip server-computed fields — NestJS forbidNonWhitelisted will 400 if they are present.
+    const {
+      id: _id, createdAt: _ca, updatedAt: _ua, players: _pl, standings: _st,
+      ...fields
+    } = editing as any;
     const dto = {
-      ...editing,
+      ...fields,
       foundedYear: Number(editing.foundedYear),
       stadiumCapacity: editing.stadiumCapacity ? Number(editing.stadiumCapacity) : undefined,
       budget: editing.budget ? Number(editing.budget) : undefined,
@@ -254,113 +540,146 @@ export function ClubsTab({ showToast }: { showToast: ToastFn }) {
 
       {editing && (
         <AdminCard title={editing.id ? `Modifier — ${editing.name}` : 'Créer un Nouveau Club'} accent>
-          <form onSubmit={save} className="space-y-4">
-            <FormTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <form onSubmit={save} className="space-y-4 lg:col-span-2">
+              <FormTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-            {/* ── Identité ── */}
-            {activeTab === 'Identité' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Nom officiel du club *" value={editing.name || ''} onChange={v => setEditing((p: any) => ({ ...p, name: v }))} required />
-                  <FormField label="Surnom / Alias" value={editing.nickname || ''} onChange={v => setEditing((p: any) => ({ ...p, nickname: v }))} hint="Ex: Les Diables Noirs" />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Ville" value={editing.city || ''} onChange={v => setEditing((p: any) => ({ ...p, city: v }))} required />
-                  <FormField label="Région" value={editing.region || ''} onChange={v => setEditing((p: any) => ({ ...p, region: v }))} hint="Ex: Centre, Littoral, Ouest" />
-                  <FormField label="Année de fondation" type="number" value={editing.foundedYear || ''} onChange={v => setEditing((p: any) => ({ ...p, foundedYear: v }))} required />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Site officiel" value={editing.websiteUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, websiteUrl: v }))} hint="https://…" />
-                  <FormField label="Statut" type="select" value={editing.status || 'ACTIVE'} onChange={v => setEditing((p: any) => ({ ...p, status: v }))} options={[{ value: 'ACTIVE', label: 'Actif' }, { value: 'INACTIVE', label: 'Inactif' }]} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Couleur principale</label>
-                    <div className="flex items-center gap-2">
-                      <input type="color" value={editing.primaryColor || '#fcd116'} onChange={e => setEditing((p: any) => ({ ...p, primaryColor: e.target.value }))} className="h-10 w-14 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
-                      <span className="text-xs text-white/40 font-mono">{editing.primaryColor || '#fcd116'}</span>
+              {/* ── Identité ── */}
+              {activeTab === 'Identité' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Nom officiel du club *" value={editing.name || ''} onChange={v => setEditing((p: any) => ({ ...p, name: v }))} required />
+                    <FormField label="Surnom / Alias" value={editing.nickname || ''} onChange={v => setEditing((p: any) => ({ ...p, nickname: v }))} hint="Ex: Les Diables Noirs" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Ville" value={editing.city || ''} onChange={v => setEditing((p: any) => ({ ...p, city: v }))} required />
+                    <FormField label="Région" value={editing.region || ''} onChange={v => setEditing((p: any) => ({ ...p, region: v }))} hint="Ex: Centre, Littoral, Ouest" />
+                    <FormField label="Année de fondation" type="number" value={editing.foundedYear || ''} onChange={v => setEditing((p: any) => ({ ...p, foundedYear: v }))} required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Site officiel" value={editing.websiteUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, websiteUrl: v }))} hint="https://…" />
+                    <FormField label="Statut" type="select" value={editing.status || 'ACTIVE'} onChange={v => setEditing((p: any) => ({ ...p, status: v }))} options={[{ value: 'ACTIVE', label: 'Actif' }, { value: 'INACTIVE', label: 'Inactif' }]} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Couleur principale</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={editing.primaryColor || '#fcd116'} onChange={e => setEditing((p: any) => ({ ...p, primaryColor: e.target.value }))} className="h-10 w-14 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+                        <span className="text-xs text-white/40 font-mono">{editing.primaryColor || '#fcd116'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Couleur secondaire</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={editing.secondaryColor || '#007a5e'} onChange={e => setEditing((p: any) => ({ ...p, secondaryColor: e.target.value }))} className="h-10 w-14 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
+                        <span className="text-xs text-white/40 font-mono">{editing.secondaryColor || '#007a5e'}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Couleur secondaire</label>
-                    <div className="flex items-center gap-2">
-                      <input type="color" value={editing.secondaryColor || '#007a5e'} onChange={e => setEditing((p: any) => ({ ...p, secondaryColor: e.target.value }))} className="h-10 w-14 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
-                      <span className="text-xs text-white/40 font-mono">{editing.secondaryColor || '#007a5e'}</span>
-                    </div>
+                  <FormField label="Description courte" type="textarea" value={editing.description || ''} onChange={v => setEditing((p: any) => ({ ...p, description: v }))} hint="Résumé affiché sur les cartes club" />
+                  <FormField label="Histoire complète du club" type="textarea" value={editing.history || ''} onChange={v => setEditing((p: any) => ({ ...p, history: v }))} hint="Historique détaillé — origines, moments clés, évolution" />
+                </div>
+              )}
+
+              {/* ── Stade ── */}
+              {activeTab === 'Stade' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Nom du stade *" type="select" value={editing.stadium || ''} 
+                      onChange={v => {
+                        const stList = JSON.parse(localStorage.getItem('mock_entity_stadiums') || '[]');
+                        const selected = stList.find((s: any) => s.name === v);
+                        setEditing((p: any) => ({
+                          ...p,
+                          stadium: v,
+                          stadiumCapacity: selected ? Number(selected.capacity) : p.stadiumCapacity,
+                          stadiumPhotoUrl: selected ? selected.photoUrl : p.stadiumPhotoUrl
+                        }));
+                      }}
+                      options={[
+                        { value: '', label: 'Sélectionner un stade...' },
+                        ...JSON.parse(localStorage.getItem('mock_entity_stadiums') || '[]').map((s: any) => ({ value: s.name, label: `${s.name} (${s.city})` }))
+                      ]}
+                      required 
+                      hint="Sélectionnez un stade enregistré" 
+                    />
+                    <FormField label="Capacité (spectateurs)" type="number" value={editing.stadiumCapacity || ''} onChange={v => setEditing((p: any) => ({ ...p, stadiumCapacity: v }))} />
                   </div>
+                  <MediaUploader label="Photo du stade" value={editing.stadiumPhotoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, stadiumPhotoUrl: v }))} acceptType="image" hint="Vue aérienne ou panoramique du stade" />
                 </div>
-                <FormField label="Description courte" type="textarea" value={editing.description || ''} onChange={v => setEditing((p: any) => ({ ...p, description: v }))} hint="Résumé affiché sur les cartes club" />
-                <FormField label="Histoire complète du club" type="textarea" value={editing.history || ''} onChange={v => setEditing((p: any) => ({ ...p, history: v }))} hint="Historique détaillé — origines, moments clés, évolution" />
-              </div>
-            )}
+              )}
 
-            {/* ── Stade ── */}
-            {activeTab === 'Stade' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Nom du stade *" value={editing.stadium || ''} onChange={v => setEditing((p: any) => ({ ...p, stadium: v }))} required hint="Stade domicile officiel" />
-                  <FormField label="Capacité (spectateurs)" type="number" value={editing.stadiumCapacity || ''} onChange={v => setEditing((p: any) => ({ ...p, stadiumCapacity: v }))} />
+              {/* ── Palmarès ── */}
+              {activeTab === 'Palmarès' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Titres Championnat" type="number" value={editing.achievements?.league ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, league: Number(v) } }))} />
+                    <FormField label="Coupes nationales" type="number" value={editing.achievements?.cup ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, cup: Number(v) } }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Trophées régionaux" type="number" value={editing.achievements?.regional ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, regional: Number(v) } }))} />
+                    <FormField label="Trophées africains" type="number" value={editing.achievements?.african ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, african: Number(v) } }))} />
+                  </div>
+                  <TagInput label="Liste des titres remportés" value={editing.palmares || []} onChange={v => setEditing((p: any) => ({ ...p, palmares: v }))}
+                    placeholder="Ex: MTN Elite One 2010" hint="Appuyez Entrée ou + pour ajouter chaque titre" />
                 </div>
-                <MediaUploader label="Photo du stade" value={editing.stadiumPhotoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, stadiumPhotoUrl: v }))} acceptType="image" hint="Vue aérienne ou panoramique du stade" />
-              </div>
-            )}
+              )}
 
-            {/* ── Palmarès ── */}
-            {activeTab === 'Palmarès' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Titres Championnat" type="number" value={editing.achievements?.league ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, league: Number(v) } }))} />
-                  <FormField label="Coupes nationales" type="number" value={editing.achievements?.cup ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, cup: Number(v) } }))} />
+              {/* ── Direction ── */}
+              {activeTab === 'Direction' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 items-end">
+                    <FormField label="Nom du président" type="select" value={editing.presidentName || ''} 
+                      onChange={v => setEditing((p: any) => ({ ...p, presidentName: v }))} 
+                      options={[
+                        { value: '', label: 'Sélectionner un président...' },
+                        { value: 'Fernand Tanin', label: 'Fernand Tanin' },
+                        { value: 'Pascal Owona', label: 'Pascal Owona' },
+                        { value: 'Njoya Seidou', label: 'Njoya Seidou' },
+                        { value: 'Samuel Eto\'o', label: 'Samuel Eto\'o' },
+                        ...JSON.parse(localStorage.getItem('mock_entity_sponsors') || '[]').map((s: any) => ({ value: s.name, label: s.name }))
+                      ]}
+                    />
+                    <FormField label="Budget annuel (FCFA)" type="number" value={editing.budget || ''} onChange={v => setEditing((p: any) => ({ ...p, budget: v }))} hint="Ex: 150000000" />
+                  </div>
+                  <MediaUploader label="Photo du président" value={editing.presidentPhotoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, presidentPhotoUrl: v }))} acceptType="image" hint="Portrait officiel du président du club" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Trophées régionaux" type="number" value={editing.achievements?.regional ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, regional: Number(v) } }))} />
-                  <FormField label="Trophées africains" type="number" value={editing.achievements?.african ?? 0} onChange={v => setEditing((p: any) => ({ ...p, achievements: { ...p.achievements, african: Number(v) } }))} />
-                </div>
-                <TagInput label="Liste des titres remportés" value={editing.palmares || []} onChange={v => setEditing((p: any) => ({ ...p, palmares: v }))}
-                  placeholder="Ex: MTN Elite One 2010" hint="Appuyez Entrée ou + pour ajouter chaque titre" />
-              </div>
-            )}
+              )}
 
-            {/* ── Direction ── */}
-            {activeTab === 'Direction' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 items-end">
-                  <FormField label="Nom du président" value={editing.presidentName || ''} onChange={v => setEditing((p: any) => ({ ...p, presidentName: v }))} />
-                  <FormField label="Budget annuel (FCFA)" type="number" value={editing.budget || ''} onChange={v => setEditing((p: any) => ({ ...p, budget: v }))} hint="Ex: 150000000" />
+              {/* ── Médias ── */}
+              {activeTab === 'Médias' && (
+                <div className="space-y-4">
+                  <MediaUploader label="Logo officiel" value={editing.logoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, logoUrl: v }))} acceptType="image" hint="Logo du club en PNG/WEBP avec transparence" />
+                  <MediaUploader label="Image bannière (hero)" value={editing.bannerUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, bannerUrl: v }))} acceptType="image" hint="Image de couverture haute résolution pour la page club" />
+                  <MediaUploader label="Vidéo de présentation" value={editing.videoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, videoUrl: v }))} acceptType="video" hint="Vidéo promo / intro du club (MP4, MOV)" />
                 </div>
-                <MediaUploader label="Photo du président" value={editing.presidentPhotoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, presidentPhotoUrl: v }))} acceptType="image" hint="Portrait officiel du président du club" />
-              </div>
-            )}
+              )}
 
-            {/* ── Médias ── */}
-            {activeTab === 'Médias' && (
-              <div className="space-y-4">
-                <MediaUploader label="Logo officiel" value={editing.logoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, logoUrl: v }))} acceptType="image" hint="Logo du club en PNG/WEBP avec transparence" />
-                <MediaUploader label="Image bannière (hero)" value={editing.bannerUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, bannerUrl: v }))} acceptType="image" hint="Image de couverture haute résolution pour la page club" />
-                <MediaUploader label="Vidéo de présentation" value={editing.videoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, videoUrl: v }))} acceptType="video" hint="Vidéo promo / intro du club (MP4, MOV)" />
-              </div>
-            )}
-
-            {/* ── Réseaux sociaux ── */}
-            {activeTab === 'Réseaux' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2"><Twitter className="h-4 w-4 text-sky-400 shrink-0" /><FormField label="Twitter / X" value={editing.socialMedia?.twitter || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, twitter: v } }))} hint="@handle ou URL complète" /></div>
-                  <div className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-400 shrink-0" /><FormField label="Instagram" value={editing.socialMedia?.instagram || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, instagram: v } }))} /></div>
+              {/* ── Réseaux sociaux ── */}
+              {activeTab === 'Réseaux' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2"><Twitter className="h-4 w-4 text-sky-400 shrink-0" /><FormField label="Twitter / X" value={editing.socialMedia?.twitter || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, twitter: v } }))} hint="@handle ou URL complète" /></div>
+                    <div className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-400 shrink-0" /><FormField label="Instagram" value={editing.socialMedia?.instagram || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, instagram: v } }))} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-400 shrink-0" /><FormField label="Facebook" value={editing.socialMedia?.facebook || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, facebook: v } }))} /></div>
+                    <div className="flex items-center gap-2"><Youtube className="h-4 w-4 text-red-400 shrink-0" /><FormField label="YouTube" value={editing.socialMedia?.youtube || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, youtube: v } }))} /></div>
+                  </div>
+                  <FormField label="TikTok" value={editing.socialMedia?.tiktok || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, tiktok: v } }))} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-400 shrink-0" /><FormField label="Facebook" value={editing.socialMedia?.facebook || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, facebook: v } }))} /></div>
-                  <div className="flex items-center gap-2"><Youtube className="h-4 w-4 text-red-400 shrink-0" /><FormField label="YouTube" value={editing.socialMedia?.youtube || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, youtube: v } }))} /></div>
-                </div>
-                <FormField label="TikTok" value={editing.socialMedia?.tiktok || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, tiktok: v } }))} />
-              </div>
-            )}
+              )}
 
-            <div className="flex justify-end gap-2 pt-4 border-t border-white/[0.05] mt-4">
-              <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
-              <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+              <div className="flex justify-end gap-2 pt-4 border-t border-white/[0.05] mt-4">
+                <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
+                <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+              </div>
+            </form>
+            <div className="flex flex-col gap-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Prévisualisation en direct</p>
+              <ClubCardPreview club={editing} />
             </div>
-          </form>
+          </div>
         </AdminCard>
       )}
 
@@ -431,7 +750,10 @@ export function PlayersTab({ clubs, showToast }: { clubs: any[]; showToast: Toas
   const run = async (fn: () => Promise<void>) => {
     setLoading(true);
     try { await fn(); }
-    catch (e: any) { showToast(e?.response?.data?.message || e.message, 'error'); }
+    catch (e: any) {
+      const msg = e?.response?.data?.message;
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || e.message), 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -449,8 +771,15 @@ export function PlayersTab({ clubs, showToast }: { clubs: any[]; showToast: Toas
   });
 
   const save = (e: React.FormEvent) => { e.preventDefault(); run(async () => {
+    // Strip server-computed fields — NestJS forbidNonWhitelisted will 400 if they are present.
+    // The player entity returns: id, createdAt, updatedAt, club (relation), matchEvents, stats
+    const {
+      id: _id, createdAt: _ca, updatedAt: _ua,
+      club: _cl, matchEvents: _me, stats: _st,
+      ...fields
+    } = editing as any;
     const dto = {
-      ...editing,
+      ...fields,
       jerseyNumber: editing.jerseyNumber ? Number(editing.jerseyNumber) : null,
       height: editing.height ? Number(editing.height) : undefined,
       weight: editing.weight ? Number(editing.weight) : undefined,
@@ -460,7 +789,7 @@ export function PlayersTab({ clubs, showToast }: { clubs: any[]; showToast: Toas
       assists: Number(editing.assists || 0),
       internationalCaps: Number(editing.internationalCaps || 0),
       internationalGoals: Number(editing.internationalGoals || 0),
-      clubId: editing.clubId || null,
+      clubId: editing.clubId ? Number(editing.clubId) : null,
     };
     if (editing.id) {
       const r = await layoutApi.updatePlayer(editing.id, dto);
@@ -527,117 +856,124 @@ export function PlayersTab({ clubs, showToast }: { clubs: any[]; showToast: Toas
         </AdminCard>
       )}
 
+
       {editing && (
         <AdminCard title={editing.id ? `Modifier — ${editing.firstName} ${editing.lastName}` : 'Enregistrer un Joueur'} accent>
-          <form onSubmit={save} className="space-y-4">
-            <FormTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <form onSubmit={save} className="space-y-4 lg:col-span-2">
+              <FormTabs tabs={TABS} active={activeTab} onChange={setActiveTab} isNew={!editing.id} />
 
-            {/* ── Identité ── */}
-            {activeTab === 'Identité' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Prénom *" value={editing.firstName || ''} onChange={v => setEditing((p: any) => ({ ...p, firstName: v }))} required />
-                  <FormField label="Nom *" value={editing.lastName || ''} onChange={v => setEditing((p: any) => ({ ...p, lastName: v }))} required />
-                  <FormField label="Surnom" value={editing.nickname || ''} onChange={v => setEditing((p: any) => ({ ...p, nickname: v }))} hint="Ex: Le Bison" />
+              {/* ── Identité ── */}
+              {activeTab === 'Identité' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Prénom *" value={editing.firstName || ''} onChange={v => setEditing((p: any) => ({ ...p, firstName: v }))} required />
+                    <FormField label="Nom *" value={editing.lastName || ''} onChange={v => setEditing((p: any) => ({ ...p, lastName: v }))} required />
+                    <FormField label="Surnom" value={editing.nickname || ''} onChange={v => setEditing((p: any) => ({ ...p, nickname: v }))} hint="Ex: Le Bison" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Poste *" type="select" value={editing.position || 'FWD'} onChange={v => setEditing((p: any) => ({ ...p, position: v }))}
+                      options={[{ value: 'GK', label: 'Gardien' }, { value: 'DEF', label: 'Défenseur' }, { value: 'MID', label: 'Milieu' }, { value: 'FWD', label: 'Attaquant' }]} />
+                    <FormField label="Nationalité *" value={editing.nationality || ''} onChange={v => setEditing((p: any) => ({ ...p, nationality: v }))} required />
+                    <FormField label="2e nationalité" value={editing.secondNationality || ''} onChange={v => setEditing((p: any) => ({ ...p, secondNationality: v }))} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Date de naissance" type="date" value={editing.birthDate?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, birthDate: v }))} />
+                    <FormField label="Lieu de naissance" value={editing.birthPlace || ''} onChange={v => setEditing((p: any) => ({ ...p, birthPlace: v }))} />
+                    <FormField label="Numéro de maillot" type="number" value={editing.jerseyNumber || ''} onChange={v => setEditing((p: any) => ({ ...p, jerseyNumber: v }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Club actuel" type="select" value={editing.clubId || ''} onChange={v => setEditing((p: any) => ({ ...p, clubId: v || null }))}
+                      options={[{ value: '', label: 'Sans club' }, ...clubs.map(c => ({ value: c.id, label: c.name }))]} />
+                    <FormField label="Statut" type="select" value={editing.status || 'ACTIVE'} onChange={v => setEditing((p: any) => ({ ...p, status: v }))}
+                      options={[{ value: 'ACTIVE', label: 'Actif' }, { value: 'INJURED', label: 'Blessé' }, { value: 'SUSPENDED', label: 'Suspendu' }, { value: 'LOANED', label: 'Prêté' }, { value: 'RETIRED', label: 'Retraité' }]} />
+                  </div>
+                  <FormField label="Biographie" type="textarea" value={editing.biography || ''} onChange={v => setEditing((p: any) => ({ ...p, biography: v }))} hint="Parcours, style de jeu, points forts" />
+                  <TagInput label="Clubs précédents" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Ex: Real Madrid, Chelsea…" />
+                  <SwitchToggle label="Joueur actif" checked={editing.isActive !== false} onChange={v => setEditing((p: any) => ({ ...p, isActive: v }))} />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Poste *" type="select" value={editing.position || 'FWD'} onChange={v => setEditing((p: any) => ({ ...p, position: v }))}
-                    options={[{ value: 'GK', label: 'Gardien' }, { value: 'DEF', label: 'Défenseur' }, { value: 'MID', label: 'Milieu' }, { value: 'FWD', label: 'Attaquant' }]} />
-                  <FormField label="Nationalité *" value={editing.nationality || ''} onChange={v => setEditing((p: any) => ({ ...p, nationality: v }))} required />
-                  <FormField label="2e nationalité" value={editing.secondNationality || ''} onChange={v => setEditing((p: any) => ({ ...p, secondNationality: v }))} />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Date de naissance" type="date" value={editing.birthDate?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, birthDate: v }))} />
-                  <FormField label="Lieu de naissance" value={editing.birthPlace || ''} onChange={v => setEditing((p: any) => ({ ...p, birthPlace: v }))} />
-                  <FormField label="Numéro de maillot" type="number" value={editing.jerseyNumber || ''} onChange={v => setEditing((p: any) => ({ ...p, jerseyNumber: v }))} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Club actuel" type="select" value={editing.clubId || ''} onChange={v => setEditing((p: any) => ({ ...p, clubId: v || null }))}
-                    options={[{ value: '', label: 'Sans club' }, ...clubs.map(c => ({ value: c.id, label: c.name }))]} />
-                  <FormField label="Statut" type="select" value={editing.status || 'ACTIVE'} onChange={v => setEditing((p: any) => ({ ...p, status: v }))}
-                    options={[{ value: 'ACTIVE', label: 'Actif' }, { value: 'INJURED', label: 'Blessé' }, { value: 'SUSPENDED', label: 'Suspendu' }, { value: 'LOANED', label: 'Prêté' }, { value: 'RETIRED', label: 'Retraité' }]} />
-                </div>
-                <FormField label="Biographie" type="textarea" value={editing.biography || ''} onChange={v => setEditing((p: any) => ({ ...p, biography: v }))} hint="Parcours, style de jeu, points forts" />
-                <TagInput label="Clubs précédents" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Ex: Real Madrid, Chelsea…" />
-                <SwitchToggle label="Joueur actif" checked={editing.isActive !== false} onChange={v => setEditing((p: any) => ({ ...p, isActive: v }))} />
-              </div>
-            )}
+              )}
 
-            {/* ── Physique ── */}
-            {activeTab === 'Physique' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Taille (cm)" type="number" value={editing.height || ''} onChange={v => setEditing((p: any) => ({ ...p, height: v }))} hint="Ex: 182" />
-                  <FormField label="Poids (kg)" type="number" value={editing.weight || ''} onChange={v => setEditing((p: any) => ({ ...p, weight: v }))} hint="Ex: 75" />
-                  <FormField label="Pied préféré" type="select" value={editing.preferredFoot || ''} onChange={v => setEditing((p: any) => ({ ...p, preferredFoot: v }))}
-                    options={[{ value: '', label: 'Non spécifié' }, { value: 'RIGHT', label: 'Droit' }, { value: 'LEFT', label: 'Gauche' }, { value: 'BOTH', label: 'Les deux' }]} />
+              {/* ── Physique ── */}
+              {activeTab === 'Physique' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Taille (cm)" type="number" value={editing.height || ''} onChange={v => setEditing((p: any) => ({ ...p, height: v }))} hint="Ex: 182" />
+                    <FormField label="Poids (kg)" type="number" value={editing.weight || ''} onChange={v => setEditing((p: any) => ({ ...p, weight: v }))} hint="Ex: 75" />
+                    <FormField label="Pied préféré" type="select" value={editing.preferredFoot || ''} onChange={v => setEditing((p: any) => ({ ...p, preferredFoot: v }))}
+                      options={[{ value: '', label: 'Non spécifié' }, { value: 'RIGHT', label: 'Droit' }, { value: 'LEFT', label: 'Gauche' }, { value: 'BOTH', label: 'Les deux' }]} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* ── Carrière ── */}
-            {activeTab === 'Carrière' && (
-              <div className="space-y-4">
-                <TagInput label="Anciens clubs" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Nom du club précédent" hint="Appuyez Entrée pour ajouter chaque club" />
-              </div>
-            )}
-
-            {/* ── Stats ── */}
-            {activeTab === 'Stats' && (
-              <div className="space-y-4">
-                <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Statistiques de carrière (cumulatives)</p>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Matchs joués" type="number" value={editing.appearances || 0} onChange={v => setEditing((p: any) => ({ ...p, appearances: Number(v) }))} />
-                  <FormField label="Buts marqués" type="number" value={editing.goals || 0} onChange={v => setEditing((p: any) => ({ ...p, goals: Number(v) }))} />
-                  <FormField label="Passes décisives" type="number" value={editing.assists || 0} onChange={v => setEditing((p: any) => ({ ...p, assists: Number(v) }))} />
+              {/* ── Carrière ── */}
+              {activeTab === 'Carrière' && (
+                <div className="space-y-4">
+                  <TagInput label="Anciens clubs" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Nom du club précédent" hint="Appuyez Entrée pour ajouter chaque club" />
                 </div>
-                <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider pt-2">Sélection nationale</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Sélections internationales" type="number" value={editing.internationalCaps || 0} onChange={v => setEditing((p: any) => ({ ...p, internationalCaps: Number(v) }))} />
-                  <FormField label="Buts internationaux" type="number" value={editing.internationalGoals || 0} onChange={v => setEditing((p: any) => ({ ...p, internationalGoals: Number(v) }))} />
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* ── Contrat ── */}
-            {activeTab === 'Contrat' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Valeur marchande (FCFA)" type="number" value={editing.marketValue || ''} onChange={v => setEditing((p: any) => ({ ...p, marketValue: v }))} hint="En millions de FCFA" />
-                  <FormField label="Expiration du contrat" type="date" value={editing.contractExpiry?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, contractExpiry: v }))} />
+              {/* ── Stats ── */}
+              {activeTab === 'Stats' && (
+                <div className="space-y-4">
+                  <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Statistiques de carrière (cumulatives)</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Matchs joués" type="number" value={editing.appearances || 0} onChange={v => setEditing((p: any) => ({ ...p, appearances: Number(v) }))} />
+                    <FormField label="Buts marqués" type="number" value={editing.goals || 0} onChange={v => setEditing((p: any) => ({ ...p, goals: Number(v) }))} />
+                    <FormField label="Passes décisives" type="number" value={editing.assists || 0} onChange={v => setEditing((p: any) => ({ ...p, assists: Number(v) }))} />
+                  </div>
+                  <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider pt-2">Sélection nationale</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Sélections internationales" type="number" value={editing.internationalCaps || 0} onChange={v => setEditing((p: any) => ({ ...p, internationalCaps: Number(v) }))} />
+                    <FormField label="Buts internationaux" type="number" value={editing.internationalGoals || 0} onChange={v => setEditing((p: any) => ({ ...p, internationalGoals: Number(v) }))} />
+                  </div>
                 </div>
-                <FormField label="Nom de l'agent" value={editing.agentName || ''} onChange={v => setEditing((p: any) => ({ ...p, agentName: v }))} hint="Agent / représentant du joueur" />
-              </div>
-            )}
+              )}
 
-            {/* ── Médias ── */}
-            {activeTab === 'Médias' && (
-              <div className="space-y-4">
-                <MediaUploader label="Photo officielle (portrait)" value={editing.photoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, photoUrl: v }))} acceptType="image" hint="Photo portrait officielle du joueur" />
-                <MediaUploader label="Photo action" value={editing.secondaryPhotoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, secondaryPhotoUrl: v }))} acceptType="image" hint="Photo en action sur le terrain" />
-                <MediaUploader label="Vidéo highlights" value={editing.videoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, videoUrl: v }))} acceptType="video" hint="Compilation de highlights du joueur (MP4)" />
-              </div>
-            )}
-
-            {/* ── Réseaux ── */}
-            {activeTab === 'Réseaux' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2"><Twitter className="h-4 w-4 text-sky-400 shrink-0" /><FormField label="Twitter / X" value={editing.socialMedia?.twitter || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, twitter: v } }))} /></div>
-                  <div className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-400 shrink-0" /><FormField label="Instagram" value={editing.socialMedia?.instagram || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, instagram: v } }))} /></div>
+              {/* ── Contrat ── */}
+              {activeTab === 'Contrat' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Valeur marchande (FCFA)" type="number" value={editing.marketValue || ''} onChange={v => setEditing((p: any) => ({ ...p, marketValue: v }))} hint="En millions de FCFA" />
+                    <FormField label="Expiration du contrat" type="date" value={editing.contractExpiry?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, contractExpiry: v }))} />
+                  </div>
+                  <FormField label="Nom de l'agent" value={editing.agentName || ''} onChange={v => setEditing((p: any) => ({ ...p, agentName: v }))} hint="Agent / représentant du joueur" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2"><Youtube className="h-4 w-4 text-red-400 shrink-0" /><FormField label="YouTube" value={editing.socialMedia?.youtube || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, youtube: v } }))} /></div>
-                  <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-white/40 shrink-0" /><FormField label="TikTok" value={editing.socialMedia?.tiktok || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, tiktok: v } }))} /></div>
-                </div>
-              </div>
-            )}
+              )}
 
-            <div className="flex justify-end gap-2 pt-4 border-t border-white/[0.05]">
-              <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
-              <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+              {/* ── Médias ── */}
+              {activeTab === 'Médias' && (
+                <div className="space-y-4">
+                  <MediaUploader label="Photo officielle (portrait)" value={editing.photoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, photoUrl: v }))} acceptType="image" hint="Photo portrait officielle du joueur" />
+                  <MediaUploader label="Photo action" value={editing.secondaryPhotoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, secondaryPhotoUrl: v }))} acceptType="image" hint="Photo en action sur le terrain" />
+                  <MediaUploader label="Vidéo highlights" value={editing.videoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, videoUrl: v }))} acceptType="video" hint="Compilation de highlights du joueur (MP4)" />
+                </div>
+              )}
+
+              {/* ── Réseaux ── */}
+              {activeTab === 'Réseaux' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2"><Twitter className="h-4 w-4 text-sky-400 shrink-0" /><FormField label="Twitter / X" value={editing.socialMedia?.twitter || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, twitter: v } }))} /></div>
+                    <div className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-400 shrink-0" /><FormField label="Instagram" value={editing.socialMedia?.instagram || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, instagram: v } }))} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2"><Youtube className="h-4 w-4 text-red-400 shrink-0" /><FormField label="YouTube" value={editing.socialMedia?.youtube || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, youtube: v } }))} /></div>
+                    <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-white/40 shrink-0" /><FormField label="TikTok" value={editing.socialMedia?.tiktok || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, tiktok: v } }))} /></div>
+                  </div>
+                </div>
+              )}
+
+              <WizardNav
+                tabs={TABS} active={activeTab} onChange={setActiveTab}
+                onCancel={() => setEditing(null)} loading={loading} isNew={!editing.id}
+              />
+            </form>
+            <div className="flex flex-col gap-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Prévisualisation en direct</p>
+              <PlayerCardPreview player={editing} clubs={clubs} />
             </div>
-          </form>
+          </div>
         </AdminCard>
       )}
 
@@ -683,7 +1019,10 @@ export function CoachesTab({ clubs, showToast }: { clubs: any[]; showToast: Toas
   const run = async (fn: () => Promise<void>) => {
     setLoading(true);
     try { await fn(); }
-    catch (e: any) { showToast(e?.response?.data?.message || e.message, 'error'); }
+    catch (e: any) {
+      const msg = e?.response?.data?.message;
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || e.message), 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -698,7 +1037,8 @@ export function CoachesTab({ clubs, showToast }: { clubs: any[]; showToast: Toas
   });
 
   const save = (e: React.FormEvent) => { e.preventDefault(); run(async () => {
-    const dto = { ...editing, clubId: editing.clubId || null };
+    const { id: _id, createdAt: _ca, updatedAt: _ua, club: _cl, ...fields } = editing as any;
+    const dto = { ...fields, clubId: editing.clubId ? Number(editing.clubId) : null };
     if (editing.id) {
       const r = await layoutApi.updateCoach(editing.id, dto);
       setCoaches(p => p.map(c => c.id === r.id ? r : c)); showToast('Entraîneur mis à jour.');
@@ -720,84 +1060,90 @@ export function CoachesTab({ clubs, showToast }: { clubs: any[]; showToast: Toas
 
       {editing && (
         <AdminCard title={editing.id ? 'Modifier Entraîneur' : 'Enregistrer un Entraîneur'} accent>
-          <form onSubmit={save} className="space-y-4">
-            <FormTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <form onSubmit={save} className="space-y-4 lg:col-span-2">
+              <FormTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-            {activeTab === 'Identité' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Prénom *" value={editing.firstName || ''} onChange={v => setEditing((p: any) => ({ ...p, firstName: v }))} required />
-                  <FormField label="Nom *" value={editing.lastName || ''} onChange={v => setEditing((p: any) => ({ ...p, lastName: v }))} required />
+              {activeTab === 'Identité' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Prénom *" value={editing.firstName || ''} onChange={v => setEditing((p: any) => ({ ...p, firstName: v }))} required />
+                    <FormField label="Nom *" value={editing.lastName || ''} onChange={v => setEditing((p: any) => ({ ...p, lastName: v }))} required />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Nationalité *" value={editing.nationality || ''} onChange={v => setEditing((p: any) => ({ ...p, nationality: v }))} required />
+                    <FormField label="Date de naissance" type="date" value={editing.birthDate?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, birthDate: v }))} />
+                    <FormField label="Lieu de naissance" value={editing.birthPlace || ''} onChange={v => setEditing((p: any) => ({ ...p, birthPlace: v }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Club actuel" type="select" value={editing.clubId || ''} onChange={v => setEditing((p: any) => ({ ...p, clubId: v || null }))}
+                      options={[{ value: '', label: 'Sans club' }, ...clubs.map(c => ({ value: c.id, label: c.name }))]} />
+                    <FormField label="Statut" type="select" value={editing.status || 'ACTIVE'} onChange={v => setEditing((p: any) => ({ ...p, status: v }))}
+                      options={[{ value: 'ACTIVE', label: 'Actif' }, { value: 'INACTIVE', label: 'Inactif' }]} />
+                  </div>
+                  <FormField label="Biographie" type="textarea" value={editing.biography || ''} onChange={v => setEditing((p: any) => ({ ...p, biography: v }))} hint="Parcours, philosophie de jeu, accomplissements" />
+                  <FormField label="Notes internes" type="textarea" value={editing.notes || ''} onChange={v => setEditing((p: any) => ({ ...p, notes: v }))} hint="Notes confidentielles (non publiques)" />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Nationalité *" value={editing.nationality || ''} onChange={v => setEditing((p: any) => ({ ...p, nationality: v }))} required />
-                  <FormField label="Date de naissance" type="date" value={editing.birthDate?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, birthDate: v }))} />
-                  <FormField label="Lieu de naissance" value={editing.birthPlace || ''} onChange={v => setEditing((p: any) => ({ ...p, birthPlace: v }))} />
+              )}
+
+              {activeTab === 'Qualifications' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Licence / Qualification" value={editing.qualification || ''} onChange={v => setEditing((p: any) => ({ ...p, qualification: v }))} hint="Ex: UEFA Pro, CAF A, CAF B" />
+                    <FormField label="Spécialisation" value={editing.specialization || ''} onChange={v => setEditing((p: any) => ({ ...p, specialization: v }))} hint="Ex: Offensif, Défensif, Gardiens" />
+                  </div>
+                  <FormField label="Expiration du contrat" type="date" value={editing.contractExpiry?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, contractExpiry: v }))} />
+                  <TagInput label="Clubs entraînés précédemment" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Nom du club précédent" />
+                  <TagInput label="Palmarès en tant qu'entraîneur" value={editing.trophies || []} onChange={v => setEditing((p: any) => ({ ...p, trophies: v }))} placeholder="Ex: MTN Elite One 2021" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Club actuel" type="select" value={editing.clubId || ''} onChange={v => setEditing((p: any) => ({ ...p, clubId: v || null }))}
-                    options={[{ value: '', label: 'Sans club' }, ...clubs.map(c => ({ value: c.id, label: c.name }))]} />
-                  <FormField label="Statut" type="select" value={editing.status || 'ACTIVE'} onChange={v => setEditing((p: any) => ({ ...p, status: v }))}
-                    options={[{ value: 'ACTIVE', label: 'Actif' }, { value: 'INACTIVE', label: 'Inactif' }]} />
+              )}
+
+              {activeTab === 'Staff' && (
+                <div className="space-y-4">
+                  <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Staff technique sous sa direction</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Entraîneur adjoint" value={editing.assistantCoachName || ''} onChange={v => setEditing((p: any) => ({ ...p, assistantCoachName: v }))} />
+                    <FormField label="Préparateur physique" value={editing.fitnessCoachName || ''} onChange={v => setEditing((p: any) => ({ ...p, fitnessCoachName: v }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField label="Entraîneur des gardiens" value={editing.goalkeeperCoachName || ''} onChange={v => setEditing((p: any) => ({ ...p, goalkeeperCoachName: v }))} />
+                    <FormField label="Analyste vidéo" value={editing.analystName || ''} onChange={v => setEditing((p: any) => ({ ...p, analystName: v }))} />
+                  </div>
                 </div>
-                <FormField label="Biographie" type="textarea" value={editing.biography || ''} onChange={v => setEditing((p: any) => ({ ...p, biography: v }))} hint="Parcours, philosophie de jeu, accomplissements" />
-                <FormField label="Notes internes" type="textarea" value={editing.notes || ''} onChange={v => setEditing((p: any) => ({ ...p, notes: v }))} hint="Notes confidentielles (non publiques)" />
-              </div>
-            )}
+              )}
 
-            {activeTab === 'Qualifications' && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Licence / Qualification" value={editing.qualification || ''} onChange={v => setEditing((p: any) => ({ ...p, qualification: v }))} hint="Ex: UEFA Pro, CAF A, CAF B" />
-                  <FormField label="Spécialisation" value={editing.specialization || ''} onChange={v => setEditing((p: any) => ({ ...p, specialization: v }))} hint="Ex: Offensif, Défensif, Gardiens" />
+              {activeTab === 'Carrière' && (
+                <div className="space-y-4">
+                  <TagInput label="Clubs entraînés" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Nom du club" />
+                  <TagInput label="Trophées remportés" value={editing.trophies || []} onChange={v => setEditing((p: any) => ({ ...p, trophies: v }))} placeholder="Ex: Coupe du Cameroun 2019" />
                 </div>
-                <FormField label="Expiration du contrat" type="date" value={editing.contractExpiry?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, contractExpiry: v }))} />
-                <TagInput label="Clubs entraînés précédemment" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Nom du club précédent" />
-                <TagInput label="Palmarès en tant qu'entraîneur" value={editing.trophies || []} onChange={v => setEditing((p: any) => ({ ...p, trophies: v }))} placeholder="Ex: MTN Elite One 2021" />
-              </div>
-            )}
+              )}
 
-            {activeTab === 'Staff' && (
-              <div className="space-y-4">
-                <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider">Staff technique sous sa direction</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Entraîneur adjoint" value={editing.assistantCoachName || ''} onChange={v => setEditing((p: any) => ({ ...p, assistantCoachName: v }))} />
-                  <FormField label="Préparateur physique" value={editing.fitnessCoachName || ''} onChange={v => setEditing((p: any) => ({ ...p, fitnessCoachName: v }))} />
+              {activeTab === 'Médias' && (
+                <div className="space-y-4">
+                  <MediaUploader label="Photo officielle" value={editing.photoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, photoUrl: v }))} acceptType="image" hint="Portrait officiel de l'entraîneur" />
+                  <MediaUploader label="Image bannière" value={editing.bannerUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, bannerUrl: v }))} acceptType="image" hint="Image de couverture pour la page profil" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Entraîneur des gardiens" value={editing.goalkeeperCoachName || ''} onChange={v => setEditing((p: any) => ({ ...p, goalkeeperCoachName: v }))} />
-                  <FormField label="Analyste vidéo" value={editing.analystName || ''} onChange={v => setEditing((p: any) => ({ ...p, analystName: v }))} />
+              )}
+
+              {activeTab === 'Réseaux' && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2"><Twitter className="h-4 w-4 text-sky-400 shrink-0" /><FormField label="Twitter / X" value={editing.socialMedia?.twitter || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, twitter: v } }))} /></div>
+                  <div className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-400 shrink-0" /><FormField label="Instagram" value={editing.socialMedia?.instagram || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, instagram: v } }))} /></div>
+                  <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-400 shrink-0" /><FormField label="LinkedIn" value={editing.socialMedia?.linkedin || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, linkedin: v } }))} /></div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'Carrière' && (
-              <div className="space-y-4">
-                <TagInput label="Clubs entraînés" value={editing.formerClubs || []} onChange={v => setEditing((p: any) => ({ ...p, formerClubs: v }))} placeholder="Nom du club" />
-                <TagInput label="Trophées remportés" value={editing.trophies || []} onChange={v => setEditing((p: any) => ({ ...p, trophies: v }))} placeholder="Ex: Coupe du Cameroun 2019" />
+              <div className="flex justify-end gap-2 pt-4 border-t border-white/[0.05]">
+                <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
+                <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
               </div>
-            )}
-
-            {activeTab === 'Médias' && (
-              <div className="space-y-4">
-                <MediaUploader label="Photo officielle" value={editing.photoUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, photoUrl: v }))} acceptType="image" hint="Portrait officiel de l'entraîneur" />
-                <MediaUploader label="Image bannière" value={editing.bannerUrl || ''} onChange={v => setEditing((p: any) => ({ ...p, bannerUrl: v }))} acceptType="image" hint="Image de couverture pour la page profil" />
-              </div>
-            )}
-
-            {activeTab === 'Réseaux' && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2"><Twitter className="h-4 w-4 text-sky-400 shrink-0" /><FormField label="Twitter / X" value={editing.socialMedia?.twitter || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, twitter: v } }))} /></div>
-                <div className="flex items-center gap-2"><Instagram className="h-4 w-4 text-pink-400 shrink-0" /><FormField label="Instagram" value={editing.socialMedia?.instagram || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, instagram: v } }))} /></div>
-                <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-blue-400 shrink-0" /><FormField label="LinkedIn" value={editing.socialMedia?.linkedin || ''} onChange={v => setEditing((p: any) => ({ ...p, socialMedia: { ...p.socialMedia, linkedin: v } }))} /></div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-4 border-t border-white/[0.05]">
-              <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
-              <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
+            </form>
+            <div className="flex flex-col gap-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/35">Prévisualisation en direct</p>
+              <CoachCardPreview coach={editing} clubs={clubs} />
             </div>
-          </form>
+          </div>
         </AdminCard>
       )}
 
@@ -859,7 +1205,10 @@ export function UsersTab({ showToast }: { showToast: ToastFn }) {
   const run = async (fn: () => Promise<void>) => {
     setLoading(true);
     try { await fn(); }
-    catch (e: any) { showToast(e?.response?.data?.message || e.message, 'error'); }
+    catch (e: any) {
+      const msg = e?.response?.data?.message;
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || e.message), 'error');
+    }
     finally { setLoading(false); }
   };
 

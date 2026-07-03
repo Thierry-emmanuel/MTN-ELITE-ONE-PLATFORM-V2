@@ -16,6 +16,8 @@ import {
 import { layoutApi, HomepageLayout, HeroBanner, Award as AwardType, Match, Article, HallOfFameLegend, TalentProfile } from '@/services/layoutApi';
 import { apiClient } from '@/services/api';
 import { SeasonsTab, ClubsTab, PlayersTab, CoachesTab, UsersTab } from './AdminEntityTabs';
+import { EntityCrudEngine } from '@/features/admin/engine/EntityCrudEngine';
+import { ENTITY_REGISTRY } from '@/features/admin/entityRegistry';
 import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
 
 // BF-06.1 — the three MVP award categories. Kept as plain strings (matches
@@ -111,7 +113,10 @@ export default function AdminPage() {
 
   const withLoading = async (fn: () => Promise<void>) => {
     setLoading(true);
-    try { await fn(); } catch (e: any) { showToast(e?.response?.data?.message || e.message || 'Erreur.', 'error'); }
+    try { await fn(); } catch (e: any) {
+      const msg = e?.response?.data?.message;
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || e.message || 'Erreur.'), 'error');
+    }
     finally { setLoading(false); }
   };
 
@@ -124,7 +129,7 @@ export default function AdminPage() {
       if (current) setCurrentSeasonId(current.id);
     }).catch(console.error);
 
-    layoutApi.getClubs().then(res => setClubs(res.data ?? res)).catch(console.error);
+    layoutApi.getClubs({ limit: 100 }).then(res => setClubs(res.data ?? res)).catch(console.error);
     layoutApi.getPlayers({ limit: 500 }).then(res => setPlayers(res.data ?? res)).catch(console.error);
 
     // Dashboard stats
@@ -242,15 +247,15 @@ export default function AdminPage() {
   /* ─── Match Handlers ──────────────────────────────────────────────────────── */
   const saveMatch = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
     const p = {
-      homeClubId: editingMatch!.homeClubId!,
-      awayClubId: editingMatch!.awayClubId!,
-      homeScore:  editingMatch!.homeScore !== undefined ? Number(editingMatch!.homeScore) : undefined,
-      awayScore:  editingMatch!.awayScore !== undefined ? Number(editingMatch!.awayScore) : undefined,
+      homeClubId: Number(editingMatch!.homeClubId!),
+      awayClubId: Number(editingMatch!.awayClubId!),
+      homeScore:  (editingMatch!.homeScore !== undefined && editingMatch!.homeScore !== '') ? Number(editingMatch!.homeScore) : undefined,
+      awayScore:  (editingMatch!.awayScore !== undefined && editingMatch!.awayScore !== '') ? Number(editingMatch!.awayScore) : undefined,
       status:     editingMatch!.status || 'SCHEDULED',
       round:      Number(editingMatch!.round || 1),
-      kickoff:    editingMatch!.kickoff || new Date().toISOString(),
+      scheduledAt: editingMatch!.kickoff || (editingMatch as any).scheduledAt || new Date().toISOString(),
       venue:      editingMatch!.venue || '',
-      seasonId:   editingMatch!.seasonId || currentSeasonId,
+      seasonId:   Number(editingMatch!.seasonId || currentSeasonId),
     };
     if (editingMatch!.id) {
       const r = await layoutApi.updateMatch(editingMatch!.id, p);
@@ -296,8 +301,8 @@ export default function AdminPage() {
       periodStart: editingAward!.periodStart || new Date().toISOString(),
       periodEnd:   editingAward!.periodEnd   || new Date().toISOString(),
       status:      editingAward!.status      || 'CLOSED',
-      seasonId:    editingAward!.seasonId    || currentSeasonId,
-      winnerId:    editingAward!.winnerId    || null,
+      seasonId:    Number(editingAward!.seasonId || currentSeasonId),
+      winnerId:    editingAward!.winnerId ? Number(editingAward!.winnerId) : null,
     };
     if (editingAward!.id) {
       const r = await layoutApi.updateAward(editingAward!.id, p);
@@ -1370,6 +1375,26 @@ export default function AdminPage() {
       {/* ── USERS ──────────────────────────────────────────────────────────── */}
       {activeTab === 'users' && (
         <UsersTab showToast={showToast} />
+      )}
+
+      {/* ── STADIUMS ───────────────────────────────────────────────────────── */}
+      {activeTab === 'stadiums' && (
+        <EntityCrudEngine config={ENTITY_REGISTRY.stadiums} showToast={showToast} lookupOptions={{ clubs }} />
+      )}
+
+      {/* ── EQUIPMENTS ─────────────────────────────────────────────────────── */}
+      {activeTab === 'equipments' && (
+        <EntityCrudEngine config={ENTITY_REGISTRY.equipments} showToast={showToast} lookupOptions={{ clubs }} />
+      )}
+
+      {/* ── SPONSORS ───────────────────────────────────────────────────────── */}
+      {activeTab === 'sponsors' && (
+        <EntityCrudEngine config={ENTITY_REGISTRY.sponsors} showToast={showToast} />
+      )}
+
+      {/* ── ACTIONS ────────────────────────────────────────────────────────── */}
+      {activeTab === 'actions' && (
+        <EntityCrudEngine config={ENTITY_REGISTRY.actions} showToast={showToast} lookupOptions={{ clubs, players }} />
       )}
     </AdminLayout>
   );

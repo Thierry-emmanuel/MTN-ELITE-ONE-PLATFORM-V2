@@ -292,4 +292,29 @@
   /* ── Section spacing — applied via Section wrapper in Index.tsx ── */
   /* py-12 = 48px (mobile) | lg:py-16 = 64px (desktop) */
   /* This creates consistent breathing room between every section */
+
+  /* ── Awards Gala: foil gradient text (moving highlight across gold) ── */
+  .text-foil {
+    background-image: linear-gradient(100deg, #8a6a24 0%, #FCD116 22%, #FFF3C4 38%, #FCD116 54%, #8a6a24 72%, #FCD116 90%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: foil-sweep 7s ease-in-out infinite;
+  }
+  @keyframes foil-sweep {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  /* ── Awards Gala: engraved hairline divider (double rule, plaque-style) ── */
+  .divider-engraved {
+    height: 5px;
+    background-image:
+      linear-gradient(90deg, transparent, rgba(252,209,22,0.55) 50%, transparent),
+      linear-gradient(90deg, transparent, rgba(252,209,22,0.18) 50%, transparent);
+    background-size: 100% 1px, 100% 1px;
+    background-position: top, bottom;
+    background-repeat: no-repeat;
+  }
 }
