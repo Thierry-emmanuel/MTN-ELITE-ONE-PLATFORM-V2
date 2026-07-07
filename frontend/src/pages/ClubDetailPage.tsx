@@ -1,38 +1,66 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  MapPin, Shield, Calendar, Users, Trophy, BarChart2,
-  ArrowLeft, Target, Lock,
-} from 'lucide-react';
-import { useClub, useClubSquad, useClubMatches } from '@/hooks/useFootball';
-import { ClubLogo } from '@/components/elite/FootballPrimitives';
+import { ArrowLeft, Shield } from 'lucide-react';
+import { useClub, useClubSquad, useClubMatches, useClubCoaches, useStandings, useClubStats } from '@/hooks/useFootball';
+import { DEV_SEASON_ID } from '@/services/mockData';
 import PageLayout from '@/layout/PageLayout';
+import {
+  ClubHero,
+  ClubSectionNav,
+  ClubSection,
+  ClubOverview,
+  ClubHistoryHonours,
+  ClubSquad,
+  ClubStaff,
+  ClubFixturesResults,
+  ClubStandingsSnapshot,
+  ClubStatsPanel,
+  ClubGallery,
+  ClubVideos,
+  ClubNews,
+  ClubSocialBar,
+  type ClubSectionMeta,
+} from '@/components/elite/club';
 
-type Tab = 'overview' | 'squad' | 'matches' | 'stats' | 'history';
-
-const STADIUMS: Record<string, string> = {
-  Garoua:     'Stade Roumdé Adjia',
-  Yaoundé:    'Stade Ahmadou Ahidjo',
-  Douala:     'Stade de la Réunification',
-  Bafoussam:  'Stade Omnisports de Kouékong',
-};
-const getStadium = (city: string) => STADIUMS[city] ?? 'Stade Municipal';
+const SECTIONS: ClubSectionMeta[] = [
+  { id: 'apercu',       label: "Aperçu" },
+  { id: 'histoire',     label: 'Histoire & Palmarès' },
+  { id: 'effectif',     label: 'Effectif' },
+  { id: 'staff',        label: 'Encadrement' },
+  { id: 'calendrier',   label: 'Calendrier' },
+  { id: 'classement',   label: 'Classement' },
+  { id: 'stats',        label: 'Statistiques' },
+  { id: 'galerie',      label: 'Galerie' },
+  { id: 'videos',       label: 'Vidéos' },
+  { id: 'actualites',   label: 'Actualités' },
+];
 
 export default function ClubDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const clubId = id || '';
 
-  const { data: club,    isLoading: clubLoading    } = useClub(id || '');
-  const { data: squad,   isLoading: squadLoading   } = useClubSquad(id || '');
-  const { data: matches, isLoading: matchesLoading } = useClubMatches(id || '');
+  const { data: club,      isLoading: clubLoading }     = useClub(clubId);
+  const { data: squad,     isLoading: squadLoading }    = useClubSquad(clubId);
+  const { data: matches,   isLoading: matchesLoading }  = useClubMatches(clubId);
+  const { data: coaches,   isLoading: coachesLoading }  = useClubCoaches(clubId);
+  const { data: standings, isLoading: standingsLoading } = useStandings();
+  const { data: clubStats, isLoading: statsLoading }    = useClubStats(DEV_SEASON_ID);
+
+  const clubStanding = useMemo(
+    () => standings?.find(s => s.club.id === clubId),
+    [standings, clubId],
+  );
+  const clubStat = useMemo(
+    () => clubStats?.find(s => s.clubId === clubId),
+    [clubStats, clubId],
+  );
 
   if (clubLoading) {
     return (
       <PageLayout>
-        <div className="min-h-[60vh] flex flex-col items-center justify-center">
-          <div className="h-12 w-12 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-xs text-muted-foreground mt-4 uppercase tracking-widest">Chargement du club…</span>
+        <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4" style={{ background: '#06090a' }}>
+          <div className="h-10 w-10 border-2 border-[#FCD116] border-t-transparent animate-spin rounded-full" />
+          <span className="text-[10px] text-white/40 uppercase tracking-[0.28em]">Ouverture de la galerie…</span>
         </div>
       </PageLayout>
     );
@@ -41,302 +69,76 @@ export default function ClubDetailPage() {
   if (!club) {
     return (
       <PageLayout>
-        <div className="min-h-[60vh] flex flex-col items-center justify-center p-4">
-          <Shield className="h-16 w-16 text-destructive mb-4" />
-          <h2 className="text-xl font-bold">Club introuvable</h2>
-          <Link to="/clubs" className="text-accent hover:underline mt-2 text-sm flex items-center gap-1">
-            <ArrowLeft className="h-4 w-4" /> Retour aux clubs
+        <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 p-4 text-center" style={{ background: '#06090a' }}>
+          <Shield className="h-14 w-14 text-white/20 mb-2" />
+          <h2 className="font-serif italic text-2xl text-white">Cette galerie n'existe pas</h2>
+          <p className="text-sm text-white/40 max-w-sm">Le club recherché est introuvable dans le musée MTN Elite One.</p>
+          <Link to="/clubs" className="text-[#FCD116] hover:underline mt-2 text-xs uppercase tracking-wider font-semibold flex items-center gap-1.5">
+            <ArrowLeft className="h-3.5 w-3.5" /> Retour à la galerie des clubs
           </Link>
         </div>
       </PageLayout>
     );
   }
 
-  const TABS = [
-    { id: 'overview', label: "Vue d'ensemble",    icon: <Shield    className="h-3.5 w-3.5" /> },
-    { id: 'squad',    label: 'Effectif',           icon: <Users     className="h-3.5 w-3.5" /> },
-    { id: 'matches',  label: 'Matchs',             icon: <Calendar  className="h-3.5 w-3.5" /> },
-    { id: 'stats',    label: 'Stats',              icon: <BarChart2 className="h-3.5 w-3.5" /> },
-    { id: 'history',  label: 'Histoire & Palmarès',icon: <Trophy    className="h-3.5 w-3.5" /> },
-  ] as const;
+  const primary = club.color || '#FCD116';
 
   return (
     <PageLayout>
-      {/* ─── Club Premium Header ──────────────────────────────────── */}
-      <div className="relative overflow-hidden border-b border-border/40 bg-gradient-to-b from-[hsl(168,45%,8%)] to-background/50 py-12">
-        {/* Colour glow */}
-        <div
-          className="absolute inset-0 opacity-10 blur-[120px] pointer-events-none"
-          style={{ background: `radial-gradient(circle at 50% 50%, ${club.color || '#FCD116'}, transparent 70%)` }}
-        />
+      <div className="container py-4 flex flex-wrap gap-x-6 gap-y-2 border-b border-white/[0.04] bg-white/[0.01] text-xs">
+        <Link to="/" className="text-white/40 hover:text-[#FCD116] flex items-center gap-1">
+          <ArrowLeft className="h-3 w-3" /> Accueil
+        </Link>
+        <Link to="/clubs" className="text-white/40 hover:text-[#FCD116] flex items-center gap-1">
+          Clubs
+        </Link>
+      </div>
 
-        <div className="container relative z-10">
-          <Link
-            to="/clubs"
-            className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white transition-colors mb-6 uppercase tracking-wider font-bold"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Retour à la liste
-          </Link>
+      <ClubHero club={club} standing={clubStanding} />
+      <ClubSectionNav sections={SECTIONS} accentColor={primary} />
 
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-            {/* Logo box */}
-            <div className="shrink-0 h-32 w-32 bg-white/[0.02] border border-white/10 rounded-3xl flex items-center justify-center p-4 shadow-xl">
-              <ClubLogo club={club} size={96} />
-            </div>
+      <ClubSection id="apercu">
+        <ClubOverview club={club} />
+      </ClubSection>
 
-            <div className="flex-1 text-center md:text-left space-y-3">
-              <div className="flex items-center justify-center md:justify-start gap-3">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent uppercase tracking-wider">
-                  MTN Elite One
-                </span>
-                <span className="text-xs text-white/35 font-mono">#{club.short}</span>
-              </div>
-              <h1 className="font-display text-4xl sm:text-5xl font-black text-white leading-none">
-                {club.name}
-              </h1>
-              <p className="text-sm text-muted-foreground flex items-center justify-center md:justify-start gap-3 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" />{club.city}, Cameroun
-                </span>
-                <span className="text-white/15">•</span>
-                <span>{getStadium(club.city)}</span>
-              </p>
-            </div>
-          </div>
+      <ClubSection id="histoire" tone="corridor">
+        <ClubHistoryHonours club={club} />
+      </ClubSection>
+
+      <ClubSection id="effectif">
+        <ClubSquad club={club} squad={squad} isLoading={squadLoading} />
+      </ClubSection>
+
+      <ClubSection id="staff" tone="corridor">
+        <ClubStaff club={club} coaches={coaches} isLoading={coachesLoading} />
+      </ClubSection>
+
+      <ClubSection id="calendrier">
+        <ClubFixturesResults club={club} matches={matches} isLoading={matchesLoading} />
+      </ClubSection>
+
+      <ClubSection id="classement" tone="corridor">
+        <ClubStandingsSnapshot club={club} standings={standings} isLoading={standingsLoading} />
+      </ClubSection>
+
+      <ClubSection id="stats">
+        <ClubStatsPanel club={club} clubStat={clubStat} isLoading={statsLoading} />
+      </ClubSection>
+
+      <ClubSection id="galerie" tone="corridor">
+        <ClubGallery club={club} />
+      </ClubSection>
+
+      <ClubSection id="videos">
+        <ClubVideos club={club} />
+      </ClubSection>
+
+      <ClubSection id="actualites" tone="corridor">
+        <ClubNews club={club} />
+        <div className="mt-10">
+          <ClubSocialBar club={club} />
         </div>
-      </div>
-
-      {/* ─── Tab bar ─────────────────────────────────────────────── */}
-      <div className="border-b border-border/40 sticky top-[62px] bg-background/95 backdrop-blur-xl z-20">
-        <div className="container">
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide py-3">
-            {TABS.map(tab => {
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0 ${
-                    active
-                      ? 'bg-accent/15 text-accent border border-accent/30'
-                      : 'bg-white/[0.02] text-muted-foreground border border-border/30 hover:bg-white/[0.05] hover:text-white'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Tab content ─────────────────────────────────────────── */}
-      <div className="container py-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.22 }}
-            className="space-y-8"
-          >
-            {/* ── 1 · OVERVIEW ─────────────────────────────────────── */}
-            {activeTab === 'overview' && (
-              <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="rounded-3xl border border-border bg-gradient-to-b from-white/[0.03] to-transparent p-6 space-y-3">
-                    <h3 className="font-display text-lg font-bold text-white uppercase tracking-wider">À propos du Club</h3>
-                    <p className="text-sm text-white/65 leading-relaxed">
-                      {club.name} est l'une des institutions de football les plus respectées du Cameroun.
-                      Fondé pour représenter l'excellence et la fierté régionale de {club.city}, le club
-                      s'est constamment battu au plus haut niveau de la ligue MTN Elite One, cultivant
-                      des talents locaux de classe mondiale.
-                    </p>
-                  </div>
-
-                  {/* Recent matches preview */}
-                  <div className="rounded-3xl border border-border bg-gradient-to-b from-white/[0.03] to-transparent p-6 space-y-4">
-                    <h3 className="font-display text-lg font-bold text-white uppercase tracking-wider">Dernières Rencontres</h3>
-                    {matchesLoading ? (
-                      <div className="space-y-3">
-                        {[0,1,2].map(i => <div key={i} className="h-12 bg-white/5 animate-pulse rounded-xl" />)}
-                      </div>
-                    ) : !matches || matches.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Aucun match disponible.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {matches.slice(0, 3).map((m: any, idx: number) => {
-                          const isHome = m.homeClub.id === club.id;
-                          return (
-                            <div key={idx} className="flex items-center justify-between p-3.5 bg-white/[0.02] border border-border/40 rounded-2xl text-xs hover:border-white/20 transition-all">
-                              <span className="text-muted-foreground uppercase font-mono w-8">{m.round ? `J${m.round}` : '—'}</span>
-                              <div className="flex items-center gap-3 font-semibold flex-1 justify-center">
-                                <span className={isHome ? 'text-accent' : ''}>{m.homeClub.name}</span>
-                                <span className="px-2 py-0.5 rounded bg-white/5 text-xs font-mono">
-                                  {m.homeScore !== null ? `${m.homeScore} – ${m.awayScore}` : 'vs'}
-                                </span>
-                                <span className={!isHome ? 'text-accent' : ''}>{m.awayClub.name}</span>
-                              </div>
-                              <span className="text-muted-foreground/50 w-14 text-right">
-                                {m.status === 'FT' ? 'Terminé' : 'À venir'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Sidebar */}
-                <div className="space-y-5">
-                  <div className="rounded-3xl border border-border bg-gradient-to-b from-white/[0.04] to-transparent p-6 space-y-4">
-                    <h3 className="font-display text-sm font-bold text-white uppercase tracking-wider border-b border-border/50 pb-2">Informations Clés</h3>
-                    <div className="space-y-3 text-xs">
-                      {[
-                        { label: 'Ville',           value: club.city },
-                        { label: 'Stade',           value: getStadium(club.city) },
-                        { label: 'Position actuelle', value: club.id === 'cot' ? '1er' : club.id === 'cnk' ? '2e' : 'En lice', accent: true },
-                      ].map(row => (
-                        <div key={row.label} className="flex justify-between gap-2">
-                          <span className="text-muted-foreground">{row.label}</span>
-                          <span className={`font-semibold text-right ${row.accent ? 'text-accent' : ''}`}>{row.value}</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between gap-2">
-                        <span className="text-muted-foreground">Couleurs</span>
-                        <span className="font-semibold flex items-center gap-1.5">
-                          <span className="h-3.5 w-3.5 rounded border border-white/20" style={{ backgroundColor: club.color }} />
-                          {club.color}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── 2 · SQUAD ────────────────────────────────────────── */}
-            {activeTab === 'squad' && (
-              <div className="space-y-6">
-                <h3 className="font-display text-lg font-bold text-white uppercase tracking-wider">Liste de l'Effectif</h3>
-                {squadLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="h-24 bg-white/5 animate-pulse rounded-2xl" />
-                    ))}
-                  </div>
-                ) : !squad || squad.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucun joueur répertorié pour ce club.</p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {squad.map((player: any) => (
-                      <Link
-                        to={`/players/${player.playerId || player.id}`}
-                        key={player.playerId || player.id}
-                        className="group flex items-center justify-between p-4 bg-white/[0.02] border border-border/50 rounded-2xl hover:border-white/20 transition-all hover:bg-white/[0.04]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-display text-sm font-bold text-accent">
-                            {player.position}
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold group-hover:text-accent transition-colors">
-                              {player.playerName || player.name}
-                            </div>
-                            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                              {player.age ? `${player.age} ans` : '—'} · {player.nationality || 'CMR'}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs font-mono font-bold text-white/40 block">Buts</span>
-                          <span className="text-sm font-bold text-white">{player.goals ?? 0}</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── 3 · MATCHES ──────────────────────────────────────── */}
-            {activeTab === 'matches' && (
-              <div className="space-y-4">
-                <h3 className="font-display text-lg font-bold text-white uppercase tracking-wider">Calendrier de la Saison</h3>
-                {matchesLoading ? (
-                  <div className="space-y-3 animate-pulse">
-                    {[0,1,2].map(i => <div key={i} className="h-14 bg-white/5 rounded-xl" />)}
-                  </div>
-                ) : !matches || matches.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucun match disponible.</p>
-                ) : (
-                  <div className="grid gap-3">
-                    {matches.map((m: any, idx: number) => {
-                      const isHome = m.homeClub.id === club.id;
-                      const isLive = m.status === 'LIVE';
-                      return (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-white/[0.02] border border-border/50 rounded-2xl hover:border-white/20 transition-all">
-                          <span className="text-xs font-mono text-muted-foreground uppercase w-8">J{m.round}</span>
-                          <div className="flex items-center gap-4 text-sm font-bold flex-1 justify-center">
-                            <span className={isHome ? 'text-accent' : ''}>{m.homeClub.name}</span>
-                            <span className="px-3 py-1 rounded-xl bg-white/5 font-mono text-xs">
-                              {m.homeScore !== null ? `${m.homeScore} – ${m.awayScore}` : 'vs'}
-                            </span>
-                            <span className={!isHome ? 'text-accent' : ''}>{m.awayClub.name}</span>
-                          </div>
-                          <span className={`text-[10px] uppercase font-bold tracking-wide w-16 text-right ${isLive ? 'text-destructive animate-pulse' : 'text-muted-foreground/60'}`}>
-                            {m.status === 'FT' ? 'Terminé' : isLive ? 'En direct' : 'À venir'}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── 4 · STATS ────────────────────────────────────────── */}
-            {activeTab === 'stats' && (
-              <div className="space-y-6">
-                <h3 className="font-display text-lg font-bold text-white uppercase tracking-wider">Statistiques du Club</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Buts Marqués',   value: club.id === 'cot' ? '38' : club.id === 'cnk' ? '30' : '—', color: 'text-accent',    icon: Target },
-                    { label: 'Buts Encaissés', value: club.id === 'cot' ? '16' : club.id === 'cnk' ? '16' : '—', color: 'text-white',     icon: Shield },
-                    { label: 'Clean Sheets',   value: club.id === 'cot' ? '8'  : club.id === 'cnk' ? '6'  : '—', color: 'text-[#10B981]', icon: Lock   },
-                    { label: 'Possession Moy.',value: club.id === 'cot' ? '54%': club.id === 'cnk' ? '52%': '—', color: 'text-white',     icon: BarChart2 },
-                  ].map(s => (
-                    <div key={s.label} className="p-5 bg-white/[0.02] border border-border/50 rounded-2xl text-center space-y-1">
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{s.label}</span>
-                      <div className={`text-3xl font-display font-black ${s.color}`}>{s.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── 5 · HISTORY ──────────────────────────────────────── */}
-            {activeTab === 'history' && (
-              <div className="space-y-6">
-                <div className="rounded-3xl border border-border bg-gradient-to-b from-white/[0.03] to-transparent p-6 space-y-4">
-                  <h3 className="font-display text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-accent" />
-                    Histoire &amp; Origines
-                  </h3>
-                  <p className="text-sm text-white/65 leading-relaxed">
-                    Le club est né de la passion locale pour le football camerounais et a grandi pour devenir
-                    un emblème de son peuple. À travers les décennies, il a participé à d'immenses campagnes
-                    de coupe continentale et a enrichi les sélections nationales de joueurs mythiques.
-                  </p>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      </ClubSection>
     </PageLayout>
   );
 }

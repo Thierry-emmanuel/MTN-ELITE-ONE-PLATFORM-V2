@@ -12,6 +12,8 @@ import { useVotingStore, useRealtimeStore } from '@/store/awards.store';
 import { AwardCard } from '@/components/elite/awards/AwardCard';
 import { FormationPitch } from '@/components/elite/awards/FormationPitch';
 import { PastWinnersGallery } from '@/components/elite/awards/BallonDorComponents';
+import { CeremonyBackdrop } from '@/components/elite/awards/CeremonyBackdrop';
+import { CEREMONY_PHOTOS } from '@/services/ceremonyPhotos';
 import { AWARD_GROUPS, AWARD_META } from '@/types/awards.types';
 import type { AwardGroup, AwardCategory, Award, PlayerNominee } from '@/types/awards.types';
 
@@ -64,7 +66,8 @@ const GalaHero = ({
     : null;
 
   return (
-    <div className="relative overflow-hidden border-b border-[#FCD116]/10 bg-[radial-gradient(ellipse_120%_60%_at_50%_-10%,rgba(252,209,22,0.09)_0%,transparent_55%),linear-gradient(180deg,#010302_0%,#000000_65%)]">
+    <div className="relative overflow-hidden border-b border-[#FCD116]/10 bg-black">
+      <CeremonyBackdrop photos={CEREMONY_PHOTOS} intensity="subtle" />
       <StageLights />
       {/* Stage floor sheen */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#FCD116]/[0.05] to-transparent" />
@@ -128,6 +131,31 @@ const GalaHero = ({
             </>
           )}
         </motion.div>
+
+        {/* Foreground winners strip — real faces, sharp, in front of the blurred backdrop */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.36 }}
+          className="mt-9 flex items-center justify-center"
+        >
+          <div className="flex -space-x-3">
+            {CEREMONY_PHOTOS.slice(0, 6).map((src, i) => (
+              <img
+                key={i}
+                src={src}
+                alt=""
+                className="h-11 w-11 sm:h-12 sm:w-12 rounded-full object-cover ring-2 ring-black"
+                style={{ zIndex: 6 - i }}
+                loading="lazy"
+              />
+            ))}
+            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-[#FCD116]/10 border-2 border-black ring-2 ring-[#FCD116]/30 flex items-center justify-center text-[10px] font-black text-[#FCD116]">
+              +{Math.max(totalAwards - 6, 0)}
+            </div>
+          </div>
+          <p className="ml-3 text-[11px] text-white/30 max-w-[10rem] text-left leading-tight">
+            De nouveaux visages rejoindront ce soir la légende du championnat
+          </p>
+        </motion.div>
       </div>
     </div>
   );
@@ -158,8 +186,9 @@ const PodiumSpotlight = () => {
       initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="relative rounded-3xl overflow-hidden border border-[#FCD116]/20 bg-[radial-gradient(ellipse_90%_80%_at_50%_0%,rgba(252,209,22,0.10)_0%,transparent_65%),#050505]"
+      className="relative rounded-3xl overflow-hidden border border-[#FCD116]/20 bg-black"
     >
+      <CeremonyBackdrop photos={CEREMONY_PHOTOS.slice().reverse()} intensity="subtle" />
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#FCD116]/55 to-transparent" />
       <StageLights />
 

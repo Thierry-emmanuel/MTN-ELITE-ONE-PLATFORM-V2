@@ -1,10 +1,10 @@
 import {
-  Controller, Get, Post, Param, ParseIntPipe,
+  Controller, Get, Post, Param, Query, ParseIntPipe,
   UseGuards, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags, ApiOperation, ApiBearerAuth,
-  ApiParam, ApiResponse,
+  ApiParam, ApiQuery, ApiResponse,
 } from '@nestjs/swagger';
 import { StandingsService } from './standings.service';
 import { Standing } from './standing.entity';
@@ -20,6 +20,7 @@ export class StandingsController {
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({ summary: 'Get full standings table for a season' })
   @ApiParam({ name: 'seasonId', description: 'Season ID' })
+  @ApiQuery({ name: 'type', required: false, enum: ['overall', 'home', 'away', 'form'], description: 'Standings view type (currently all return overall)' })
   @ApiResponse({
     status: 200,
     description: 'Standings ordered by position (pts, GD, GF)',
@@ -27,7 +28,9 @@ export class StandingsController {
   })
   async findBySeason(
     @Param('seasonId', ParseIntPipe) seasonId: number,
+    @Query('type') type?: 'overall' | 'home' | 'away' | 'form',
   ): Promise<Standing[]> {
+    // type is accepted for forward-compatibility; currently always returns overall
     return this.standingsService.findBySeason(seasonId);
   }
 

@@ -41,7 +41,7 @@ export const ClubLogo = memo(({ club, size = 32, className = '' }: ClubLogoProps
       }}
       aria-label={club.name}
     >
-      {club.short.slice(0, 3)}
+      {club.short?.slice(0, 3) ?? club.name?.slice(0, 3) ?? '?'}
     </div>
   );
 });

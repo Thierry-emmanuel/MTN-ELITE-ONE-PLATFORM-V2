@@ -296,7 +296,7 @@ const MobileMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) =
               <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" />
               <div>
                 <div className="font-display text-xs tracking-widest leading-none">MTN ELITE ONE</div>
-                <div className="text-[9px] text-muted-foreground/50 mt-0.5 uppercase tracking-wider">Saison 24/25</div>
+                <div className="text-[9px] text-muted-foreground/50 mt-0.5 uppercase tracking-wider">Saison 25/26</div>
               </div>
             </div>
             <button
@@ -394,7 +394,7 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
                 MTN ELITE ONE
               </span>
               <span className="text-[9px] uppercase tracking-[.22em] text-muted-foreground/55 mt-0.5">
-                Saison 24/25
+                Saison 25/26
               </span>
             </div>
           </Link>

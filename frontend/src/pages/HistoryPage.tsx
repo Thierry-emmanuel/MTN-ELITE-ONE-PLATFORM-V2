@@ -1,10 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Trophy, Award, Users, Star, Calendar, Bookmark, BarChart3,
-  ChevronRight, Compass, Shield, Zap, Search, Activity, Quote,
-  ChevronDown, ChevronLeft, ChevronRight as ChevronRightIcon,
-  BookOpen, Sparkles, HelpCircle, History
+  Trophy, Calendar, Bookmark, Quote,
+  ChevronDown, History, ArrowLeft
 } from 'lucide-react';
 import PageLayout from '@/layout/PageLayout';
 import { PageHero } from '@/components/elite/FootballPrimitives';
@@ -234,6 +233,12 @@ export default function HistoryPage() {
 
   return (
     <PageLayout>
+      <div className="container py-4 flex flex-wrap gap-x-6 gap-y-2 border-b border-white/[0.04] bg-white/[0.01] text-xs">
+        <Link to="/" className="text-white/40 hover:text-[#FCD116] flex items-center gap-1">
+          <ArrowLeft className="h-3 w-3" /> Accueil
+        </Link>
+      </div>
+
       <PageHero
         eyebrow="MTN Elite One · Musée &amp; Archives"
         title="Musée du Football"

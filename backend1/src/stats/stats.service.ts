@@ -193,9 +193,12 @@ export class StatsService {
 
     // Raw SQL — TypeORM ORM layer can't express window-function-free GROUP BY
     // aggregation over match results cleanly; raw gives us full control.
-    const seasonClause = input.seasonId ? `AND m."season_id" = $1` : '';
+    const seasonClause = input.seasonId ? `AND m."season_id" = $1::int` : '';
     const paramOffset  = input.seasonId ? 1 : 0;
 
+    // NOTE: match_stats stores per-player-per-match rows (not team-level rows).
+    // We aggregate player stats per club per match using a LATERAL subquery.
+    // Columns used: shots_on_target, yellow_cards, red_cards (actual entity fields).
     const sql = `
       SELECT
         c.id                                                                    AS "clubId",
@@ -216,16 +219,9 @@ export class StatsService {
                           ELSE m."away_score" END),0)::int
           - COALESCE(SUM(CASE WHEN m."home_club_id"=c.id THEN m."away_score"
                               ELSE m."home_score" END),0)::int                  AS "goalDifference",
-        COALESCE(SUM(ms."shots_home" + ms."shots_away"),0)::int                 AS shots,
-        COALESCE(SUM(ms."shots_on_target_home" + ms."shots_on_target_away"),0)::int AS "shotsOnTarget",
-        COALESCE(AVG(CASE WHEN m."home_club_id"=c.id THEN ms."possession_home"
-                          ELSE ms."possession_away" END),0)::numeric(5,1)       AS possession,
-        COALESCE(SUM(ms."yellow_cards_home" + ms."yellow_cards_away"),0)::int   AS "yellowCards",
-        COALESCE(SUM(ms."red_cards_home"    + ms."red_cards_away"),0)::int      AS "redCards",
-        COALESCE(SUM(CASE WHEN m."home_club_id"=c.id THEN ms."penalties_home"
-                          ELSE ms."penalties_away" END),0)::int                 AS "penaltiesFor",
-        COALESCE(SUM(CASE WHEN m."home_club_id"=c.id THEN ms."penalties_away"
-                          ELSE ms."penalties_home" END),0)::int                 AS "penaltiesAgainst",
+        COALESCE(SUM(ms_agg.shots_on_target_sum),0)::int                       AS "shotsOnTarget",
+        COALESCE(SUM(ms_agg.yellow_cards_sum),0)::int                          AS "yellowCards",
+        COALESCE(SUM(ms_agg.red_cards_sum),0)::int                             AS "redCards",
         SUM(CASE WHEN (m."home_club_id"=c.id AND m."away_score"=0)
                    OR (m."away_club_id"=c.id AND m."home_score"=0)
                  THEN 1 ELSE 0 END)::int                                        AS "cleanSheets",
@@ -237,7 +233,15 @@ export class StatsService {
         ON (m."home_club_id"=c.id OR m."away_club_id"=c.id)
         AND m.status = 'FINISHED'
         ${seasonClause}
-      LEFT JOIN match_stats ms ON ms."match_id" = m.id
+      LEFT JOIN LATERAL (
+        SELECT
+          COALESCE(SUM(ms."shots_on_target"),0)::int AS shots_on_target_sum,
+          COALESCE(SUM(ms."yellow_cards"),0)::int    AS yellow_cards_sum,
+          COALESCE(SUM(ms."red_cards"),0)::int       AS red_cards_sum
+        FROM match_stats ms
+        WHERE ms."match_id" = m.id
+          AND ms."club_id"  = c.id
+      ) ms_agg ON true
       GROUP BY c.id, c.name
       ORDER BY "${sortKey}" ${order}
       LIMIT $${paramOffset + 1} OFFSET $${paramOffset + 2}

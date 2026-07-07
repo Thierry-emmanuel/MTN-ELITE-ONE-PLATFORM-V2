@@ -197,8 +197,12 @@ export default function VotePage() {
       <div className="border-b border-border/40 bg-background/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="container flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
-            <Link to="/awards" className="text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-5 w-5" />
+            <Link to="/awards" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Récompenses
+            </Link>
+            <span className="text-muted-foreground/30">|</span>
+            <Link to="/" className="text-muted-foreground hover:text-foreground text-xs transition-colors">
+              Accueil
             </Link>
             <div>
               <h1 className="font-display text-sm font-black text-foreground">Espace de vote</h1>

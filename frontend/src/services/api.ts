@@ -8,6 +8,8 @@ import { clubs as MOCK_CLUBS, legends as MOCK_LEGENDS } from '../components/elit
 import { MOCK_PLAYER_STATS, MOCK_FIXTURES } from './mockData';
 import { MOCK_INJURIES, MOCK_TRANSFERS } from './transfersInjuriesMockData';
 import type { InjuryRecord, TransferRecord } from '../types/transfersInjuries.types';
+import { withClubProfile, getClubCoach } from './clubProfileData';
+import type { Club, CoachStaff } from '../types/football.types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -168,23 +170,26 @@ export const footballApi = {
     }>(`/stats/season/${seasonId}/summary`),
 
   // ── Clubs ──────────────────────────────────────────────────────────────────
-  getClubs: async () => {
+  getClubs: async (): Promise<Club[]> => {
     try {
       const res = await get<any>('/clubs');
       // NestJS backend returns paginated or array, handle both
-      return Array.isArray(res) ? res : res.data || Object.values(MOCK_CLUBS);
+      const list: Club[] = Array.isArray(res) ? res : res.data || Object.values(MOCK_CLUBS);
+      return list.map(withClubProfile);
     } catch (e) {
       console.warn('Failed to fetch clubs from backend, using mock data.', e);
-      return Object.values(MOCK_CLUBS);
+      return Object.values(MOCK_CLUBS).map(withClubProfile);
     }
   },
 
-  getClub: async (id: string) => {
+  getClub: async (id: string): Promise<Club> => {
     try {
-      return await get<any>(`/clubs/${id}`);
+      const club = await get<Club>(`/clubs/${id}`);
+      return withClubProfile(club);
     } catch (e) {
       console.warn(`Failed to fetch club ${id} from backend, using mock data.`, e);
-      return Object.values(MOCK_CLUBS).find(c => c.id === id) || MOCK_CLUBS.cot;
+      const fallback = Object.values(MOCK_CLUBS).find(c => c.id === id) || MOCK_CLUBS.cot;
+      return withClubProfile(fallback);
     }
   },
 
@@ -204,6 +209,21 @@ export const footballApi = {
       console.warn(`Failed to fetch matches for club ${id}, using mock fixtures.`, e);
       // Filter fixtures containing this club
       return MOCK_FIXTURES.flatMap(fd => fd.matches).filter(m => m.homeClub.id === id || m.awayClub.id === id);
+    }
+  },
+
+  // ── Coaching staff ────────────────────────────────────────────────────────
+  getClubCoaches: async (id: string): Promise<CoachStaff[]> => {
+    try {
+      const res = await get<any>('/coaches', { params: { clubId: id } });
+      const list: CoachStaff[] = Array.isArray(res) ? res : res.data || [];
+      if (list.length > 0) return list;
+      const mock = getClubCoach(id);
+      return mock ? [mock] : [];
+    } catch (e) {
+      console.warn(`Failed to fetch coaching staff for club ${id}, using mock data.`, e);
+      const mock = getClubCoach(id);
+      return mock ? [mock] : [];
     }
   },
 
@@ -286,6 +306,7 @@ export const QK = {
   club:           (id: string)                         => ['club', id]                     as const,
   clubSquad:      (id: string)                         => ['clubSquad', id]                as const,
   clubMatches:    (id: string)                         => ['clubMatches', id]              as const,
+  clubCoaches:    (id: string)                         => ['clubCoaches', id]              as const,
   players:        (filters?: object)                   => ['players', filters]             as const,
   player:         (id: string)                         => ['player', id]                   as const,
   legends:        ()                                   => ['legends']                      as const,

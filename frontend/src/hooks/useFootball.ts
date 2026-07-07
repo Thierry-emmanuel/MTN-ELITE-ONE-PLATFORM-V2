@@ -173,6 +173,16 @@ export function useClubMatches(id: string) {
   });
 }
 
+// ─── useClubCoaches ───────────────────────────────────────────────────────────
+export function useClubCoaches(id: string) {
+  return useQuery({
+    queryKey: QK.clubCoaches(id),
+    queryFn: () => footballApi.getClubCoaches(id),
+    enabled: !!id,
+    staleTime: 300_000,
+  });
+}
+
 // ─── usePlayers ───────────────────────────────────────────────────────────────
 export function usePlayers(filters?: { position?: string; clubId?: string }) {
   return useQuery({

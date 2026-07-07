@@ -30,6 +30,21 @@ export type ClubStatCategory =
 
 // ─── Core Entities ────────────────────────────────────────────────────────────
 
+export interface ClubAchievements {
+  league?: number;
+  cup?: number;
+  regional?: number;
+  african?: number;
+}
+
+export interface ClubSocialMedia {
+  twitter?: string;
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  tiktok?: string;
+}
+
 export interface Club {
   id: string;
   name: string;
@@ -37,6 +52,44 @@ export interface Club {
   color: string;
   city: string;
   logoUrl?: string;
+  /** Extended club-hub profile fields (optional — mirrors backend Club entity) */
+  nickname?: string;
+  region?: string;
+  foundedYear?: number;
+  websiteUrl?: string;
+  bannerUrl?: string;
+  videoUrl?: string;
+  secondaryColor?: string;
+  stadium?: string;
+  stadiumCapacity?: number;
+  stadiumPhotoUrl?: string;
+  description?: string;
+  history?: string;
+  palmares?: string[];
+  presidentName?: string;
+  presidentPhotoUrl?: string;
+  achievements?: ClubAchievements;
+  socialMedia?: ClubSocialMedia;
+}
+
+// ─── Coaching Staff ───────────────────────────────────────────────────────────
+
+export interface CoachStaff {
+  id: string;
+  firstName: string;
+  lastName: string;
+  nationality: string;
+  photoUrl?: string;
+  qualification?: string;
+  specialization?: string;
+  biography?: string;
+  formerClubs?: string[];
+  trophies?: string[];
+  assistantCoachName?: string;
+  fitnessCoachName?: string;
+  goalkeeperCoachName?: string;
+  analystName?: string;
+  clubId: string;
 }
 
 export interface Venue {
@@ -179,6 +232,23 @@ export interface ClubStat {
   penaltiesAgainst: number;
   cleanSheets: number;
   points: number;
+}
+
+// ─── Club media (gallery / videos) ────────────────────────────────────────────
+
+export interface ClubGalleryImage {
+  id: string;
+  url: string;
+  caption: string;
+}
+
+export interface ClubVideo {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  duration: string;
+  date: string;
+  category: string;
 }
 
 // ─── API shapes ───────────────────────────────────────────────────────────────

@@ -82,7 +82,7 @@ export const Footer = () => (
             </div>
             <div>
               <div className="font-display text-sm tracking-widest">MTN ELITE ONE</div>
-              <div className="text-[10px] uppercase tracking-[.2em] text-muted-foreground">Cameroon · Saison 24/25</div>
+              <div className="text-[10px] uppercase tracking-[.2em] text-muted-foreground">Cameroon · Saison 25/26</div>
             </div>
           </div>
 

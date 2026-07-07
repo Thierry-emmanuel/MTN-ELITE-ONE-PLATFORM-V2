@@ -1,6 +1,6 @@
 import type { MatchDay, Standing, PlayerStat, ClubStat } from '../types/football.types';
 
-export const DEV_SEASON_ID = 'season-2025-26';
+export const DEV_SEASON_ID = '1'; // Backend uses integer PKs (@PrimaryGeneratedColumn)
 
 // ─── Clubs ────────────────────────────────────────────────────────────────────
 

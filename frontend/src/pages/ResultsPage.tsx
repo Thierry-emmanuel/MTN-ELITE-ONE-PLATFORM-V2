@@ -1,221 +1,55 @@
-import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, RefreshCw, ChevronDown, ChevronUp, Home, Plane } from 'lucide-react';
-import { footballApi as api } from "@/services/api";
-import { MOCK_RESULTS, DEV_SEASON_ID } from '../services/mockData';
-import { filterMatchDays, extractRounds, extractClubs, calcResultsSummary, formatKickoff } from '../utils/football.utils';
-import type { Match, MatchDay } from '../types/football.types';
 import {
-  ClubLogo, MatchStatusChip, FilterPill, PageHero,
-  ResultCardSkeleton, EmptyState, ErrorState,
-  SummaryCard, MatchdayHeader, EventsTimeline, MatchMeta,
-} from '../components/elite/FootballPrimitives';
+  Search, Filter, RefreshCw, Target, TrendingUp, Home, Plane, Equal,
+} from 'lucide-react';
+import { MOCK_RESULTS } from '../services/mockData';
+import { filterMatchDays, extractRounds, extractClubs, calcResultsSummary } from '../utils/football.utils';
+import type { MatchDay } from '../types/football.types';
+import {
+  FilterPill, PageHero, ResultCardSkeleton, EmptyState, ErrorState,
+} from '@/components/ui/football';
+import { MatchdayCard } from '@/components/elite/matches/MatchdayCard';
+import { MatchStatCard } from '@/components/elite/matches/MatchStatCard';
+import { SegmentedTabs } from '@/components/elite/matches/SegmentedTabs';
 import { useResults } from '@/hooks/useFootball';
 
-const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
-
-// ─── xG bar (placeholder — replace val with real xG from API) ────────────────
-const XgBar = ({ home, away }: { home: number; away: number }) => {
-  const total = home + away || 1;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-[9px] text-muted-foreground/50 uppercase tracking-wider">
-        <span className="tabular-nums">{home.toFixed(1)}</span>
-        <span>xG</span>
-        <span className="tabular-nums">{away.toFixed(1)}</span>
-      </div>
-      <div className="flex h-1 rounded-full overflow-hidden">
-        <div className="h-full rounded-l-full bg-[#1F8A4C]/60 transition-all" style={{ width: `${(home / total) * 100}%` }} />
-        <div className="h-full rounded-r-full flex-1 bg-[#CE1126]/40" />
-      </div>
-    </div>
-  );
-};
-
-// ─── Result Card ──────────────────────────────────────────────────────────────
-const ResultCard = memo(({ match, index }: { match: Match; index: number }) => {
-  const [expanded, setExpanded] = useState(false);
-  const hs = match.homeScore ?? 0;
-  const as_ = match.awayScore ?? 0;
-  const homeWon = hs > as_, awayWon = as_ > hs, draw = hs === as_;
-  // Mock xG until real data is wired
-  const xg = { home: +(hs + Math.random() * 0.6 - 0.1).toFixed(1), away: +(as_ + Math.random() * 0.6 - 0.1).toFixed(1) };
-
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
-      className="group rounded-xl border border-border bg-gradient-to-b from-white/[0.04] to-transparent hover:border-white/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all duration-300 overflow-hidden"
-    >
-      <div className="h-[2px] bg-gradient-to-r from-[#008751]/40 via-[#FCD116]/40 to-[#CE1126]/40" />
-
-      <div
-        className="p-4 cursor-pointer"
-        onClick={() => setExpanded(v => !v)}
-        role="button"
-        aria-expanded={expanded}
-      >
-        {/* Round + status */}
-        <div className="flex items-center justify-between mb-3 text-[10px]">
-          <span className="text-muted-foreground/40 uppercase tracking-wider">
-            {formatKickoff(match.kickoffUtc)} · J{match.round}
-          </span>
-          <MatchStatusChip status={match.status} />
-        </div>
-
-        {/* Teams + score */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          {/* Home */}
-          <div className="flex items-center gap-2 min-w-0">
-            <ClubLogo club={match.homeClub} size={32} className="shrink-0" />
-            <div className="min-w-0">
-              <span className={`font-display text-xs leading-tight block truncate ${homeWon ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
-                {match.homeClub.name}
-              </span>
-              <span className="text-[8px] text-muted-foreground/40 uppercase flex items-center gap-0.5">
-                <Home className="h-2 w-2" /> Domicile
-              </span>
-            </div>
-          </div>
-
-          {/* Score */}
-          <div className="flex flex-col items-center justify-center shrink-0">
-            <div className="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 font-mono font-bold text-amber-500 text-xs flex items-center gap-1 shadow-inner">
-              <span>{hs}</span>
-              <span className="text-stone-600">:</span>
-              <span>{as_}</span>
-            </div>
-            {draw && <span className="text-[8px] text-[#FCD116]/60 uppercase tracking-widest font-black mt-0.5">Nul</span>}
-          </div>
-
-          {/* Away */}
-          <div className="flex items-center gap-2 min-w-0 flex-row-reverse">
-            <ClubLogo club={match.awayClub} size={32} className="shrink-0" />
-            <div className="min-w-0 text-right">
-              <span className={`font-display text-xs leading-tight block truncate ${awayWon ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>
-                {match.awayClub.name}
-              </span>
-              <span className="text-[8px] text-muted-foreground/40 uppercase flex items-center gap-0.5 justify-end">
-                <Plane className="h-2 w-2" /> Extérieur
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Micro-grid of events */}
-        {match.events && match.events.length > 0 && (
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-3 mt-3 pt-2 border-t border-border/20 text-[9px] text-muted-foreground/60 font-mono">
-            <div className="text-right space-y-0.5 min-w-0 truncate">
-              {match.events.filter(e => e.clubId === match.homeClub.id).map(e => (
-                <div key={e.id} className="truncate">
-                  {e.playerName} ({e.minute}') {e.type === 'GOAL' || e.type === 'PENALTY_GOAL' ? '⚽' : e.type === 'YELLOW_CARD' ? '🟨' : e.type === 'RED_CARD' ? '🟥' : ''}
-                </div>
-              ))}
-            </div>
-            <div className="w-4" />
-            <div className="text-left space-y-0.5 min-w-0 truncate">
-              {match.events.filter(e => e.clubId === match.awayClub.id).map(e => (
-                <div key={e.id} className="truncate">
-                  {e.type === 'GOAL' || e.type === 'PENALTY_GOAL' ? '⚽' : e.type === 'YELLOW_CARD' ? '🟨' : e.type === 'RED_CARD' ? '🟥' : ''} {e.playerName} ({e.minute}')
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* xG */}
-        <div className="mt-3 pt-3 border-t border-border/30">
-          <XgBar home={xg.home} away={xg.away} />
-        </div>
-
-        {/* Venue / referee */}
-        {(match.venue || match.referee || match.attendance) && (
-          <div className="mt-2 flex justify-center">
-            <MatchMeta match={match} showTime={false} />
-          </div>
-        )}
-
-        {/* Expand toggle */}
-        {match.events && match.events.length > 0 && (
-          <div className="flex items-center justify-center mt-2 text-muted-foreground/20 group-hover:text-muted-foreground/40 transition-colors">
-            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          </div>
-        )}
-      </div>
-
-      {/* Expandable events */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-border/30 bg-white/[0.02] px-4"
-          >
-            {match.events && match.events.length > 0 && (
-              <EventsTimeline events={match.events} homeClubId={match.homeClub.id} />
-            )}
-            {match.attendance && (
-              <div className="py-2 text-center text-[10px] text-muted-foreground/30 uppercase tracking-wider">
-                {match.attendance.toLocaleString('fr-FR')} spectateurs
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.article>
-  );
-});
-ResultCard.displayName = 'ResultCard';
-
-// ─── Matchday group ───────────────────────────────────────────────────────────
-const MatchdayGroup = memo(({ day, globalIndex }: { day: MatchDay; globalIndex: number }) => (
-  <motion.section
-    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-    transition={{ duration: 0.3, delay: globalIndex * 0.06 }}
-    aria-label={`Journée ${day.round}`}
-  >
-    <MatchdayHeader round={day.round} date={day.date} matchCount={day.matches.length} />
-    <div className="space-y-3">
-      {day.matches.map((m, i) => <ResultCard key={m.id} match={m as Match} index={i} />)}
-    </div>
-  </motion.section>
-));
-MatchdayGroup.displayName = 'MatchdayGroup';
-
-// ─── Summary bar ──────────────────────────────────────────────────────────────
-const SummaryBar = memo(({ days }: { days: MatchDay[] }) => {
-  const s = calcResultsSummary(days as any);
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-      <SummaryCard label="Matchs joués"    value={s.totalMatches} delay={0} />
-      <SummaryCard label="Buts marqués"    value={s.totalGoals}   delay={0.06} />
-      <SummaryCard label="Moy. buts/match" value={s.avgGoals}     delay={0.12} />
-      <SummaryCard label="Victoires dom."  value={s.homeWins}     delay={0.18} color="text-[#1F8A4C]" />
-      <SummaryCard label="Victoires ext."  value={s.awayWins}     delay={0.24} color="text-[#008751]" />
-    </div>
-  );
-});
-SummaryBar.displayName = 'SummaryBar';
+type OutcomeFilter = 'all' | 'home' | 'draw' | 'away';
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ResultsPage() {
-  const { data: daysData, isLoading: loading } = useResults();
+  const { data: daysData, isLoading: loading, error, refetch } = useResults();
   const days = daysData ?? MOCK_RESULTS;
-  const [roundFilter, setRoundFilter] = useState<number | null>(null);
-  const [clubFilter,  setClubFilter]  = useState<string | null>(null);
-  const [search,      setSearch]      = useState('');
+
+  const [roundFilter,   setRoundFilter]   = useState<number | null>(null);
+  const [clubFilter,    setClubFilter]    = useState<string | null>(null);
+  const [outcomeFilter, setOutcomeFilter] = useState<OutcomeFilter>('all');
+  const [search,        setSearch]        = useState('');
 
   const rounds = useMemo(() => extractRounds(days as any, 'desc'), [days]);
   const clubs  = useMemo(() => extractClubs(days as any), [days]);
 
-  const filtered = useMemo(
+  const baseFiltered = useMemo(
     () => filterMatchDays(days as any, { round: roundFilter, clubId: clubFilter, search }),
     [days, roundFilter, clubFilter, search],
   ) as MatchDay[];
 
+  const filtered = useMemo(() => {
+    if (outcomeFilter === 'all') return baseFiltered;
+    return baseFiltered
+      .map(day => ({
+        ...day,
+        matches: day.matches.filter(m => {
+          const hs = m.homeScore ?? 0, as_ = m.awayScore ?? 0;
+          if (outcomeFilter === 'home') return hs > as_;
+          if (outcomeFilter === 'away') return as_ > hs;
+          return hs === as_;
+        }),
+      }))
+      .filter(day => day.matches.length > 0);
+  }, [baseFiltered, outcomeFilter]);
+
+  const summary = useMemo(() => calcResultsSummary((filtered.length > 0 ? filtered : days) as any), [filtered, days]);
   const latestRound = rounds[0] ?? 0;
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,11 +59,13 @@ export default function ResultsPage() {
   }, []);
 
   const resetFilters = useCallback(() => {
-    setRoundFilter(null); setClubFilter(null); setSearch('');
+    setRoundFilter(null); setClubFilter(null); setSearch(''); setOutcomeFilter('all');
   }, []);
 
+  const load = () => refetch();
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <PageHero
         eyebrow="MTN Elite One · Saison 2025–26"
         title="Résultats"
@@ -237,14 +73,42 @@ export default function ResultsPage() {
         accentColor="gold"
       />
 
-      <div className="container py-6 lg:py-8 space-y-6">
-        {!loading && !error && <SummaryBar days={filtered.length > 0 ? filtered : days} />}
+      <div className="container py-6 lg:py-8 space-y-8">
 
-        {/* Filters */}
-        <motion.div
+        {/* ── Vue d'ensemble ─────────────────────────────────────────────── */}
+        <section aria-label="Vue d'ensemble des résultats">
+          <div className="mb-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-0.5">
+              Vue d'ensemble
+            </p>
+            <h2 className="text-lg font-display font-bold text-foreground">La journée en chiffres</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <MatchStatCard icon={Target}     label="Matchs joués"    value={summary.totalMatches} delay={0}    />
+            <MatchStatCard icon={Target}     label="Buts marqués"    value={summary.totalGoals}   color="text-accent" delay={0.05} />
+            <MatchStatCard icon={TrendingUp} label="Moy. buts/match" value={summary.avgGoals}     delay={0.10} />
+            <MatchStatCard icon={Home}       label="Victoires dom."  value={summary.homeWins}     color="text-[#1F8A4C]" delay={0.15} />
+            <MatchStatCard icon={Plane}      label="Victoires ext."  value={summary.awayWins}     color="text-[#008751]" delay={0.20} />
+          </div>
+        </section>
+
+        {/* ── Filters ────────────────────────────────────────────────────── */}
+        <motion.section
+          aria-label="Filtres"
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }} className="space-y-3"
+          transition={{ duration: 0.35, delay: 0.1 }} className="space-y-4"
         >
+          <SegmentedTabs
+            tabs={[
+              { id: 'all',  label: 'Tous',            icon: Target },
+              { id: 'home', label: 'Victoires dom.',  icon: Home },
+              { id: 'draw', label: 'Nuls',            icon: Equal },
+              { id: 'away', label: 'Victoires ext.',  icon: Plane },
+            ]}
+            active={outcomeFilter}
+            onChange={id => setOutcomeFilter(id as OutcomeFilter)}
+          />
+
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none" />
             <input
@@ -257,7 +121,7 @@ export default function ResultsPage() {
           <div className="flex items-center gap-2">
             <Filter className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x">
-              <FilterPill label="Toutes" active={roundFilter === null} onClick={() => setRoundFilter(null)} />
+              <FilterPill label="Toutes les journées" active={roundFilter === null} onClick={() => setRoundFilter(null)} />
               {rounds.map(r => (
                 <FilterPill
                   key={r} label={`J${r}`} active={roundFilter === r}
@@ -279,12 +143,12 @@ export default function ResultsPage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </motion.section>
 
-        {/* Content */}
+        {/* ── Content ────────────────────────────────────────────────────── */}
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+            <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
               {[0, 1].map(g => (
                 <div key={g} className="space-y-3">
                   <div className="h-4 w-40 rounded bg-white/6 animate-pulse mb-2" />
@@ -294,7 +158,7 @@ export default function ResultsPage() {
             </motion.div>
           ) : error ? (
             <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ErrorState message={error} onRetry={load} />
+              <ErrorState message={(error as Error).message ?? 'Une erreur est survenue.'} onRetry={load} />
             </motion.div>
           ) : filtered.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -304,22 +168,22 @@ export default function ResultsPage() {
               />
             </motion.div>
           ) : (
-            <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+            <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
               {filtered.map((day, i) => (
-                <MatchdayGroup key={`${day.date}-${day.round}`} day={day} globalIndex={i} />
+                <MatchdayCard key={`${day.date}-${day.round}`} day={day} globalIndex={i} showXg />
               ))}
             </motion.div>
           )}
         </AnimatePresence>
 
         {!loading && (
-          <div className="flex justify-center pt-4">
+          <div className="flex justify-center pt-2">
             <button onClick={load} className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors">
               <RefreshCw className="h-3.5 w-3.5" /> Actualiser
             </button>
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

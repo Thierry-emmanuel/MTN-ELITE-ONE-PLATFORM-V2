@@ -46,7 +46,9 @@ export class StandingsService {
    */
   async findBySeason(seasonId: number): Promise<Standing[]> {
     const season = await this.seasonRepo.findOne({ where: { id: seasonId } });
-    if (!season) throw new NotFoundException(`Season "${seasonId}" not found`);
+    // Return empty array (not 404) when season doesn't exist yet — avoids
+    // crashing the frontend during development before the DB is seeded.
+    if (!season) return [];
 
     return this.standingRepo.find({
       where:     { seasonId },

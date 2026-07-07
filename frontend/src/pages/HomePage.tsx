@@ -14,7 +14,6 @@ import { useFixtures, useStandings } from '@/hooks/useFootball';
 import { Hero } from '@/components/elite/Hero';
 import { HallOfFame } from '@/components/elite/HallOfFame';
 import { RoadToLions } from '@/components/elite/RoadToLions';
-import { News } from '@/components/elite/News';
 import { layoutApi, HomepageLayout } from '@/services/layoutApi';
 import type { Match, MatchDay } from '@/types/football.types';
 

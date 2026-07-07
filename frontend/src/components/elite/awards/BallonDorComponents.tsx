@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useAwardCountdown } from '@/hooks/useAwards';
 import { MOCK_HISTORICAL } from '@/services/mockAwards';
+import { CEREMONY_PHOTOS } from '@/services/ceremonyPhotos';
+import { CeremonyBackdrop } from './CeremonyBackdrop';
 import type { BallonDorEdition, HistoricalWinner } from '@/types/awards.types';
 
 // ─── Floating particles ───────────────────────────────────────────────────────
@@ -48,6 +50,16 @@ const TrophyShowcase = ({ src, alt = "Trophée Ballon d'Or Cameroun", width = 24
   const leafAngles = [98, 118, 138, 158, 82, 62, 42, 22];
   return (
     <div className="relative flex flex-col items-center" style={{ width }}>
+      {/* spotlight cone falling onto the piece from above */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 -z-10 pointer-events-none"
+        style={{
+          top: -40, width: width * 0.9, height: height + 60,
+          background: 'conic-gradient(from 180deg at 50% 0%, transparent 40%, rgba(252,209,22,0.16) 50%, transparent 60%)',
+          filter: 'blur(6px)',
+        }}
+      />
+
       {/* ambient stage glow behind the piece */}
       <div
         className="absolute -z-10 rounded-full blur-3xl"
@@ -90,7 +102,11 @@ const TrophyShowcase = ({ src, alt = "Trophée Ballon d'Or Cameroun", width = 24
             src={src}
             alt={alt}
             className="absolute inset-0 h-full w-full object-contain p-7"
-            style={{ filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.55))' }}
+            style={{
+              filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.55)) contrast(1.05) saturate(1.08)',
+              maskImage: 'radial-gradient(closest-side, black 68%, transparent 100%)',
+              WebkitMaskImage: 'radial-gradient(closest-side, black 68%, transparent 100%)',
+            }}
             loading="lazy"
           />
         ) : (
@@ -103,6 +119,25 @@ const TrophyShowcase = ({ src, alt = "Trophée Ballon d'Or Cameroun", width = 24
           </div>
         )}
       </div>
+
+      {/* floor reflection — faint mirrored echo, like a trophy on a lit stage floor */}
+      {src && (
+        <div className="w-2/3 overflow-hidden -mt-1" style={{ height: height * 0.22 }}>
+          <img
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className="w-full object-contain object-top"
+            style={{
+              height: height * 0.55,
+              transform: 'scaleY(-1)',
+              filter: 'blur(1.5px) contrast(1.05) saturate(1.08)',
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 85%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.28), transparent 85%)',
+            }}
+          />
+        </div>
+      )}
 
       {/* grounding shadow */}
       <div className="w-3/4 h-3.5 rounded-full blur-md bg-black/70 -mt-1.5" />
@@ -152,7 +187,8 @@ VoteCountdown.displayName = 'VoteCountdown';
 export const BallonDorHero = memo(({ edition, trophyImageSrc }: { edition: BallonDorEdition; trophyImageSrc?: string }) => {
   const top = edition.ranking[0];
   return (
-    <section className="relative min-h-[72vh] flex flex-col items-center justify-center overflow-hidden rounded-3xl bg-[#050505]">
+    <section className="relative min-h-[72vh] flex flex-col items-center justify-center overflow-hidden rounded-3xl bg-black">
+      <CeremonyBackdrop photos={CEREMONY_PHOTOS} intensity="medium" className="rounded-3xl" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_70%,rgba(252,209,22,0.13)_0%,transparent_65%)]" />
       <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#FCD116]/5 to-transparent" />
       <Spotlight />

@@ -267,20 +267,25 @@ export default function BallonDorPage() {
       className="min-h-screen bg-[#060606]"
     >
       {/* Back nav */}
-      <div className="container pt-6 pb-2">
+      <div className="container pt-6 pb-2 flex gap-4 text-xs">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-white/30 hover:text-white/70 transition-colors group"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+          Accueil
+        </Link>
         <Link
           to="/awards"
-          className="inline-flex items-center gap-2 text-sm text-white/30 hover:text-white/70 transition-colors group"
+          className="text-white/30 hover:text-white/70 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           Récompenses
         </Link>
       </div>
 
       {/* Hero */}
       <div className="container pb-8">
-        {/* Once you've uncommented the import above, change this to: trophyImageSrc={trophyImageSrc} */}
-        <BallonDorHero edition={edition} />
+        <BallonDorHero edition={edition} trophyImageSrc={trophyImageSrc} />
       </div>
 
       {/* Tabs + content */}

@@ -200,10 +200,13 @@ export default function TeamOfWeekPage() {
     <div className="min-h-screen bg-background">
       <div className="container py-6 max-w-xl mx-auto">
         {/* Back */}
-        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-          <Link to="/awards" className="inline-flex items-center gap-2 text-sm text-white/30 hover:text-white/70 transition-colors group mb-6">
-            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-            Retour aux récompenses
+        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex gap-4 mb-6 text-xs">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-white/30 hover:text-white/70 transition-colors group">
+            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            Accueil
+          </Link>
+          <Link to="/awards" className="text-white/30 hover:text-white/70 transition-colors">
+            Récompenses
           </Link>
         </motion.div>
 
