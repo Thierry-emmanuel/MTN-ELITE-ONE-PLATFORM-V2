@@ -2,12 +2,11 @@ import {
   Controller, Get, Post, Patch, Delete,
   Param, Body, Query, ParseIntPipe, HttpCode, HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { PlayersService } from './players.service';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
-import { PaginationDto } from '../common/dto/pagination.dto';
-import { PlayerPosition } from './player.entity';
+import { FindPlayersDto } from './dto/find-players.dto';
 
 @ApiTags('players')
 @ApiBearerAuth()
