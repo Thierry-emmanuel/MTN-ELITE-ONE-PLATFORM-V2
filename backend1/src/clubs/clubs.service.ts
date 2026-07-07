@@ -71,8 +71,11 @@ export class ClubsService {
   async findMatches(id: number): Promise<Club> {
     const club = await this.clubRepo.findOne({
       where: { id },
-      relations: ['homeMatches', 'awayMatches',
-                  'homeMatches.awayClub', 'awayMatches.homeClub'],
+      relations: [
+        'homeMatches', 'awayMatches',
+        'homeMatches.homeClub', 'homeMatches.awayClub',
+        'awayMatches.homeClub', 'awayMatches.awayClub'
+      ],
     });
     if (!club) throw new NotFoundException(`Club with id "${id}" not found`);
     return club;

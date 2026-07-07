@@ -195,7 +195,11 @@ export const footballApi = {
 
   getClubSquad: async (id: string) => {
     try {
-      return await get<any[]>(`/clubs/${id}/squad`);
+      // Backend returns the full Club entity with a nested `players` relation,
+      // not a bare array — extract it here.
+      const res = await get<any>(`/clubs/${id}/squad`);
+      const players = Array.isArray(res) ? res : (res?.players ?? []);
+      return players as any[];
     } catch (e) {
       console.warn(`Failed to fetch squad for club ${id}, using mock players.`, e);
       return MOCK_PLAYER_STATS.filter(p => p.clubId === id);
@@ -204,7 +208,11 @@ export const footballApi = {
 
   getClubMatches: async (id: string) => {
     try {
-      return await get<any>(`/clubs/${id}/matches`);
+      const res = await get<any>(`/clubs/${id}/matches`);
+      if (Array.isArray(res)) return res;
+      const homeMatches = res?.homeMatches ?? [];
+      const awayMatches = res?.awayMatches ?? [];
+      return [...homeMatches, ...awayMatches];
     } catch (e) {
       console.warn(`Failed to fetch matches for club ${id}, using mock fixtures.`, e);
       // Filter fixtures containing this club

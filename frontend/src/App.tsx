@@ -22,6 +22,7 @@ const VotePage        = lazy(() => import("./pages/VotePage"));
 const TeamOfWeekPage  = lazy(() => import("./pages/TeamOfWeekPage"));
 const ClubsPage       = lazy(() => import("./pages/ClubsPage"));
 const ClubDetailPage  = lazy(() => import("./pages/ClubDetailPage"));
+const MatchDetailPage = lazy(() => import("./pages/MatchDetailPage"));
 const PlayersPage     = lazy(() => import("./pages/PlayersPage"));
 const PlayerDetailPage = lazy(() => import("./pages/PlayerDetailPage"));
 const HallOfFamePage  = lazy(() => import("./pages/HallOfFamePage"));
@@ -59,6 +60,7 @@ const App = () => (
         {/* All inner pages — wrapped in shared PageLayout */}
         <Route path="/fixtures"            element={<PageLayout><FixturesPage /></PageLayout>} />
         <Route path="/results"             element={<PageLayout><ResultsPage /></PageLayout>} />
+        <Route path="/matches/:id"         element={<PageLayout><MatchDetailPage /></PageLayout>} />
         <Route path="/standings"           element={<PageLayout><StandingsPage /></PageLayout>} />
         <Route path="/stats"               element={<PageLayout><StatsPage /></PageLayout>} />
         <Route path="/news"                element={<PageLayout><NewsPage /></PageLayout>} />

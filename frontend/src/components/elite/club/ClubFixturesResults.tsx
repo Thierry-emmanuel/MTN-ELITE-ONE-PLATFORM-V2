@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { CalendarDays, ArrowRight } from 'lucide-react';
 import { SectionHeading, Reveal } from './ClubSectionShell';
 import { ClubLogo, MatchStatusChip } from '@/components/ui/football';
@@ -91,11 +92,14 @@ const MatchRow = memo(({ club, match }: { club: Club; match: Match }) => {
   const played = match.status === 'FT' || match.status === 'FINISHED';
 
   return (
-    <div className="flex items-center justify-between gap-3 p-4 bg-white/[0.02] border border-white/10 hover:border-white/25 transition-all">
+    <Link 
+      to={`/matches/${match.id}`}
+      className="flex items-center justify-between gap-3 p-4 bg-white/[0.02] border border-white/10 hover:border-white/25 transition-all relative group"
+    >
       <div className="flex items-center gap-3 min-w-0">
         <ClubLogo club={opponent} size={32} />
         <div className="min-w-0">
-          <div className="text-sm font-bold truncate">
+          <div className="text-sm font-bold truncate group-hover:text-accent transition-colors">
             {isHome ? 'vs' : '@'} {opponent.name}
           </div>
           <div className="text-[10px] text-white/40 uppercase tracking-wide">
@@ -112,7 +116,7 @@ const MatchRow = memo(({ club, match }: { club: Club; match: Match }) => {
           <MatchStatusChip status={match.status} minute={match.liveMinute} />
         )}
       </div>
-    </div>
+    </Link>
   );
 });
 MatchRow.displayName = 'MatchRow';

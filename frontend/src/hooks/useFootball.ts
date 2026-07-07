@@ -97,6 +97,33 @@ export function useResults(filters?: Partial<ResultsFilter>) {
   });
 }
 
+// ─── useMatch ─────────────────────────────────────────────────────────────────
+
+export function useMatch(matchId: string | null) {
+  return useQuery({
+    queryKey: QK.match(matchId ?? ''),
+    queryFn: async () => {
+      try {
+        return await footballApi.getMatch(matchId!);
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
+          // Find in mock data
+          const allMatches = [...MOCK_FIXTURES, ...MOCK_RESULTS].flatMap(day => day.matches);
+          const match = allMatches.find(m => m.id === matchId || m.id === Number(matchId));
+          if (match) return match;
+        }
+        throw err;
+      }
+    },
+    staleTime: STALE.live, // Short stale time for live updates
+    enabled: !!matchId,
+    refetchInterval: (query) => {
+      const match = query.state.data;
+      return (match?.status === 'LIVE' || match?.status === 'HT') ? STALE.live : false;
+    },
+  });
+}
+
 // ─── useStandings ─────────────────────────────────────────────────────────────
 
 export function useStandings(filters?: Partial<StandingsFilter>) {
@@ -123,16 +150,6 @@ export function useStandings(filters?: Partial<StandingsFilter>) {
   });
 }
 
-// ─── useMatch — single match for expandable detail ────────────────────────────
-
-export function useMatch(matchId: string | null) {
-  return useQuery({
-    queryKey: QK.match(matchId ?? ''),
-    queryFn:  () => footballApi.getMatch(matchId!),
-    enabled:  !!matchId,
-    staleTime: STALE.live,
-  });
-}
 
 // ─── useClubs ─────────────────────────────────────────────────────────────────
 export function useClubs() {

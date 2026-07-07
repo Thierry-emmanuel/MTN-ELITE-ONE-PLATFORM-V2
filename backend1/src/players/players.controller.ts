@@ -21,22 +21,14 @@ export class PlayersController {
     return this.playersService.create(dto);
   }
 
-  // GET /players?page=1&limit=10&position=FWD&clubId=xxx&isActive=true
+  // GET /players?page=1&limit=10&position=GK&clubId=1&isActive=true
   @Get()
   @ApiOperation({ summary: 'Get all players with filters' })
-  @ApiQuery({ name: 'position', enum: PlayerPosition, required: false })
-  @ApiQuery({ name: 'clubId', required: false, type: Number })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
-  findAll(
-    @Query() pagination: PaginationDto,
-    @Query('position') position?: PlayerPosition,
-    @Query('clubId') clubId?: string,
-    @Query('isActive') isActive?: string,
-  ) {
-    return this.playersService.findAll(pagination, {
-      position,
-      clubId: clubId ? Number(clubId) : undefined,
-      isActive: isActive !== undefined ? isActive === 'true' : undefined,
+  findAll(@Query() query: FindPlayersDto) {
+    return this.playersService.findAll(query, {
+      position: query.position,
+      clubId:   query.clubId ? Number(query.clubId) : undefined,
+      isActive: query.isActive,
     });
   }
 

@@ -45,7 +45,7 @@ export const MatchdayCard = memo(({ day, globalIndex, showXg = false }: Matchday
 
     <div>
       {day.matches.map((m, i) => (
-        <MatchRow key={m.id} match={m as Match} index={i} showXg={showXg} />
+        <MatchRow key={m.id ?? `match-${i}`} match={m as Match} index={i} showXg={showXg} />
       ))}
     </div>
   </motion.section>

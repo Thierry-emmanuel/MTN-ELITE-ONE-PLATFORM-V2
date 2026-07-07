@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, CircleDot,
@@ -79,8 +80,11 @@ export const MatchRow = memo(({ match, index, showXg = false }: MatchRowProps) =
     <div className={`relative border-b border-border/20 last:border-0 ${isLive ? 'bg-live/[0.03]' : ''}`}>
       {isLive && <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-live" />}
 
+      <Link to={`/matches/${match.id}`} className="absolute inset-0 z-0" aria-label="Voir le match complet" />
+
       <motion.div
         initial={{ opacity: 0, y: 8 }}
+
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, delay: Math.min(index * 0.03, 0.3), ease: [0.22, 1, 0.36, 1] }}
         onClick={() => hasDetails && setExpanded(v => !v)}

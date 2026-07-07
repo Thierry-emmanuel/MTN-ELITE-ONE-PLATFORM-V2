@@ -67,9 +67,10 @@ export const STADIUM_FALLBACK_IMAGE = heroStadium;
 export const TROPHY_ICON_IMAGE = trophyBallonDor;
 
 /** Builds a stable, varied gallery for a given club id (6 images). */
-export function buildClubGallery(clubId: string): string[] {
-  const dedicated = CLUB_ACTION_SHOTS[clubId] ?? [];
-  const seed = clubId.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+export function buildClubGallery(clubId: string | number): string[] {
+  const id = String(clubId);
+  const dedicated = CLUB_ACTION_SHOTS[id] ?? [];
+  const seed = id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
   const rotated = [...ACTION_POOL.slice(seed % ACTION_POOL.length), ...ACTION_POOL.slice(0, seed % ACTION_POOL.length)];
   const fillers = rotated.filter(img => !dedicated.includes(img));
   return [...dedicated, ...fillers].slice(0, 6);
