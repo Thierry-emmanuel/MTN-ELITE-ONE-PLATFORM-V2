@@ -289,12 +289,37 @@ export const footballApi = {
   },
 
   // ── Injuries ───────────────────────────────────────────────────────────────
-  getInjuries: async (params?: { status?: string; clubId?: string }) => {
+  getInjuries: async (params?: { status?: string; clubId?: string }): Promise<InjuryRecord[]> => {
     try {
       const res = await get<any>('/injuries', { params });
-      const list: InjuryRecord[] = Array.isArray(res) ? res : res.data;
-      if (!list || list.length === 0) return MOCK_INJURIES;
-      return list;
+      const rawList = Array.isArray(res) ? res : res.data || [];
+      if (rawList.length === 0) return MOCK_INJURIES;
+
+      return rawList.map((i: any) => {
+        // Coerce position from backend enum (e.g. DEF -> DF)
+        const REVERSE_POS: Record<string, 'GK' | 'DF' | 'MF' | 'FW'> = {
+          GK: 'GK', DEF: 'DF', MID: 'MF', FWD: 'FW',
+        };
+        const pos = REVERSE_POS[i.player?.position] || 'MF';
+
+        return {
+          id: String(i.id),
+          playerId: String(i.playerId),
+          playerName: i.player ? [i.player.firstName, i.player.lastName].filter(Boolean).join(' ') : 'Inconnu',
+          playerPhotoUrl: i.player?.photoUrl,
+          position: pos,
+          club: i.player?.club || MOCK_CLUBS.cot, // fallback to avoid crash
+          bodyPart: i.type || 'Autre',
+          diagnosis: i.notes || 'Pas de diagnostic disponible',
+          severity: i.severity || 'MINOR',
+          status: i.status || 'ACTIVE',
+          injuredAt: i.injuredAt,
+          expectedReturn: i.expectedReturn || undefined,
+          gamesMissed: 0,
+          medicalNotes: i.notes || undefined,
+          updatedAt: i.createdAt || i.injuredAt,
+        } as InjuryRecord;
+      });
     } catch (e) {
       console.warn('Failed to fetch injuries from backend, using mock medical data.', e);
       return MOCK_INJURIES;
@@ -302,12 +327,38 @@ export const footballApi = {
   },
 
   // ── Transfers ──────────────────────────────────────────────────────────────
-  getTransfers: async (params?: { windowLabel?: string; clubId?: string }) => {
+  getTransfers: async (params?: { windowLabel?: string; clubId?: string }): Promise<TransferRecord[]> => {
     try {
       const res = await get<any>('/transfers', { params });
-      const list: TransferRecord[] = Array.isArray(res) ? res : res.data;
-      if (!list || list.length === 0) return MOCK_TRANSFERS;
-      return list;
+      const rawList = Array.isArray(res) ? res : res.data || [];
+      if (rawList.length === 0) return MOCK_TRANSFERS;
+
+      return rawList.map((t: any) => {
+        const REVERSE_POS: Record<string, 'GK' | 'DF' | 'MF' | 'FW'> = {
+          GK: 'GK', DEF: 'DF', MID: 'MF', FWD: 'FW',
+        };
+        const pos = REVERSE_POS[t.player?.position] || 'MF';
+
+        const birthYear = t.player?.birthDate ? new Date(t.player.birthDate).getFullYear() : 2004;
+
+        return {
+          id: String(t.id),
+          playerId: String(t.playerId),
+          playerName: t.player ? [t.player.firstName, t.player.lastName].filter(Boolean).join(' ') : 'Inconnu',
+          playerPhotoUrl: t.player?.photoUrl,
+          position: pos,
+          age: 2026 - birthYear,
+          fromClub: t.fromClub || null,
+          toClub: t.toClub || MOCK_CLUBS.cot,
+          kind: t.type || 'PERMANENT',
+          stage: 'CONFIRMED',
+          confidence: 5,
+          fee: t.fee ? Number(t.fee) : undefined,
+          windowLabel: t.windowLabel || 'Été 2025',
+          transferDate: t.transferDate,
+          announced: t.announced ?? true,
+        } as TransferRecord;
+      });
     } catch (e) {
       console.warn('Failed to fetch transfers from backend, using mock mercato data.', e);
       return MOCK_TRANSFERS;

@@ -192,7 +192,7 @@ export default function MatchesPage() {
           ) : (
             <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
               {filtered.map((day, i) => (
-                <MatchdayCard key={`${tab}-${day.date}-${day.round}`} day={day} globalIndex={i} showXg={tab === 'results'} />
+                <MatchdayCard key={`${tab}-${day.date}-${i}`} day={day} globalIndex={i} showXg={tab === 'results'} />
               ))}
             </motion.div>
           )}

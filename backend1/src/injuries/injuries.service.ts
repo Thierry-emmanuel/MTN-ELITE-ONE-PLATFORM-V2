@@ -11,6 +11,7 @@ export class InjuriesService {
   findAll(status?: string): Promise<Injury[]> {
     return this.repo.find({
       where: status ? { status: status as Injury['status'] } : {},
+      relations: ['player', 'player.club'],
       order: { injuredAt: 'DESC' },
     });
   }

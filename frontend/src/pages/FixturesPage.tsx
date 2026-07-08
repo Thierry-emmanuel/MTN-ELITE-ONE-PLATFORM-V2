@@ -199,7 +199,7 @@ export default function FixturesPage() {
           ) : (
             <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
               {filtered.map((day, i) => (
-                <MatchdayCard key={`${day.date}-${day.round}`} day={day} globalIndex={i} />
+                <MatchdayCard key={`${day.date}-${i}`} day={day} globalIndex={i} />
               ))}
             </motion.div>
           )}
