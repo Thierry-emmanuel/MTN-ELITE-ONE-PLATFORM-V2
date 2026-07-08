@@ -1,15 +1,17 @@
 import { memo, useState } from 'react';
 
 interface Props {
-  name: string;
+  name?: string | null;
   photoUrl?: string;
   size?: number;
   ring?: string; // border color override, e.g. club color
   className?: string;
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
+function initials(name?: string | null): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }

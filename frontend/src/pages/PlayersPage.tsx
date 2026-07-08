@@ -22,8 +22,16 @@ const POSITIONS = [
   { id: 'FW',  label: 'Attaquants' },
 ] as const;
 
+// Map UI short codes → backend enum values (GK=GK, DF→DEF, MF→MID, FW→FWD)
+const POSITION_API_MAP: Record<string, string> = {
+  GK: 'GK', DF: 'DEF', MF: 'MID', FW: 'FWD',
+};
+
 const POSITION_COLOR: Record<string, string> = {
+  // Mock data keys
   GK: '#FCD116', DF: '#3B82F6', MF: '#22C55E', FW: '#EF4444',
+  // Backend enum keys
+  DEF: '#3B82F6', MID: '#22C55E', FWD: '#EF4444',
 };
 
 type ViewMode = 'grid' | 'list';
@@ -38,15 +46,20 @@ export default function PlayersPage() {
 
   const { data: clubs }                        = useClubs();
   const { data: players, isLoading }           = usePlayers({
-    position: positionFilter !== 'ALL' ? positionFilter : undefined,
+    position: positionFilter !== 'ALL' ? POSITION_API_MAP[positionFilter] : undefined,
     clubId:   clubFilter     !== 'ALL' ? clubFilter     : undefined,
   });
 
   const filteredPlayers = useMemo(() => {
     if (!players) return [];
-    return (players as PlayerStat[]).filter((p: PlayerStat) =>
-      p.playerName.toLowerCase().includes(search.toLowerCase())
-    );
+    const q = search.toLowerCase();
+    return (players as PlayerStat[]).filter((p: PlayerStat) => {
+      const name = (
+        p.playerName ??
+        [(p as any).firstName, (p as any).lastName].filter(Boolean).join(' ')
+      );
+      return name.toLowerCase().includes(q);
+    });
   }, [players, search]);
 
   return (
@@ -171,6 +184,11 @@ export default function PlayersPage() {
               className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5"
             >
               {filteredPlayers.map((player: PlayerStat, idx: number) => {
+                const pid = player.playerId ?? String((player as any).id ?? idx);
+                const p = player as any;
+                const displayName = player.playerName
+                  || [p.firstName, p.lastName].filter(Boolean).join(' ')
+                  || '—';
                 const club = CLUB_DIRECTORY[player.clubId];
                 const baseColor = club?.color ?? '#1F8A4C';
                 const { jerseyNumber } = getQuickMeta(player);
@@ -178,13 +196,13 @@ export default function PlayersPage() {
 
                 return (
                   <motion.div
-                    key={player.playerId}
+                    key={pid}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(idx * 0.03, 0.4), ease: [0.22, 1, 0.36, 1] }}
                   >
                     <Link
-                      to={`/players/${player.playerId}`}
+                      to={`/players/${pid}`}
                       className="group relative flex flex-col justify-between overflow-hidden rounded-3xl aspect-[3/4] border border-white/10 shadow-[0_8px_28px_rgba(0,0,0,0.35)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.55)] hover:-translate-y-1 transition-all duration-300"
                       style={{
                         background: `linear-gradient(150deg, ${shade(baseColor, -0.55)} 0%, ${shade(baseColor, -0.15)} 55%, ${shade(baseColor, -0.6)} 100%)`,
@@ -213,7 +231,7 @@ export default function PlayersPage() {
                       {/* Portrait */}
                       <div className="relative z-10 flex-1 flex items-center justify-center">
                         <PlayerAvatar
-                          name={player.playerName}
+                          name={displayName}
                           photoUrl={player.photoUrl}
                           size={84}
                           ring="#FFFFFF"
@@ -224,7 +242,7 @@ export default function PlayersPage() {
                       {/* Bottom info block */}
                       <div className="relative z-10 p-3.5 pt-2 bg-gradient-to-t from-black/55 via-black/20 to-transparent">
                         <h3 className="font-display text-[15px] sm:text-base font-black text-white leading-[1.05] truncate">
-                          {player.playerName}
+                          {displayName}
                         </h3>
                         <div className="flex items-center gap-1.5 mt-1 mb-2.5 min-w-0">
                           {club && <ClubBadge club={club} size={14} />}

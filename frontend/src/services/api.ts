@@ -242,9 +242,12 @@ export const footballApi = {
       return Array.isArray(res) ? res : res.data || MOCK_PLAYER_STATS;
     } catch (e) {
       console.warn('Failed to fetch players, using mock data.', e);
+      // Reverse-map backend enum values back to mock data short codes
+      const REVERSE_POS: Record<string, string> = { DEF: 'DF', MID: 'MF', FWD: 'FW', GK: 'GK' };
       let filtered = [...MOCK_PLAYER_STATS];
       if (params?.position && params.position !== 'ALL') {
-        filtered = filtered.filter(p => p.position === params.position);
+        const mockPos = REVERSE_POS[params.position] ?? params.position;
+        filtered = filtered.filter(p => p.position === mockPos || p.position === params.position);
       }
       if (params?.clubId) {
         filtered = filtered.filter(p => p.clubId === params.clubId);

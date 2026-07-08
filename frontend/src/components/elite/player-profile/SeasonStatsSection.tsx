@@ -27,13 +27,13 @@ export function SeasonStatsSection({ player }: Props) {
   const mins = player.minutesPlayed;
   const cards = [
     { icon: BarChart2, label: 'Matchs joués', value: player.appearances, accent: '#FCD116' },
-    { icon: Target, label: 'Buts', value: player.goals, sub: `${per90(player.goals, mins).toFixed(2)} / 90`, accent: '#EF4444' },
-    { icon: Footprints, label: 'Passes décisives', value: player.assists, sub: `${per90(player.assists, mins).toFixed(2)} / 90`, accent: '#22C55E' },
+    { icon: Target, label: 'Buts', value: player.goals, sub: `${per90(Number(player.goals), mins).toFixed(2)} / 90`, accent: '#EF4444' },
+    { icon: Footprints, label: 'Passes décisives', value: player.assists, sub: `${per90(Number(player.assists), mins).toFixed(2)} / 90`, accent: '#22C55E' },
     { icon: Crosshair, label: 'Tirs cadrés', value: player.shotsOnTarget, sub: `${player.shots} tentés`, accent: '#3B82F6' },
-    { icon: Send, label: 'xG', value: (player.xG ?? 0).toFixed(1), sub: 'Buts attendus', accent: '#A78BFA' },
+    { icon: Send, label: 'xG', value: Number(player.xG ?? 0).toFixed(1), sub: 'Buts attendus', accent: '#A78BFA' },
     { icon: KeyRound, label: 'Passes clés', value: player.keyPasses, accent: '#F472B6' },
-    { icon: ShieldCheck, label: 'Précision passes', value: `${player.passAccuracy ?? 78}%`, accent: '#14B8A6' },
-    { icon: Clock, label: 'Minutes jouées', value: mins.toLocaleString('fr-FR'), accent: '#FB923C' },
+    { icon: ShieldCheck, label: 'Précision passes', value: `${Number(player.passAccuracy ?? 78).toFixed(0)}%`, accent: '#14B8A6' },
+    { icon: Clock, label: 'Minutes jouées', value: Number(mins ?? 0).toLocaleString('fr-FR'), accent: '#FB923C' },
   ];
 
   const discipline = [

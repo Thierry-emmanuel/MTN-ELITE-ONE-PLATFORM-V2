@@ -22,7 +22,8 @@ const ACTION_SHOTS = [action1, action2, action3, action4, action5, action6, acti
 const WIDE_SHOTS = [playerWide1, playerWide2, playerWide3];
 
 // ─── Deterministic PRNG — same playerId always yields the same "random" profile ──
-function hashSeed(str: string): number {
+function hashSeed(str: string | undefined | null): number {
+  if (!str) return 0;
   let h = 1779033703 ^ str.length;
   for (let i = 0; i < str.length; i++) {
     h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
@@ -305,8 +306,9 @@ function buildTransferHistory(p: PlayerStat, rng: () => number, timeline: Career
 
 /** Cheap accessor for listing pages — avoids building the full profile (timeline, gallery, etc.) per card. */
 export function getQuickMeta(p: PlayerStat): { jerseyNumber: number; nickname?: string } {
-  const rng = mulberry32(hashSeed(p.playerId));
-  const curated = CURATED[p.playerId];
+  const pid = p.playerId ?? String((p as any).id ?? '');
+  const rng = mulberry32(hashSeed(pid));
+  const curated = CURATED[pid];
   return {
     jerseyNumber: curated?.jerseyNumber ?? (1 + Math.floor(rng() * 29)),
     nickname: curated?.nickname,
