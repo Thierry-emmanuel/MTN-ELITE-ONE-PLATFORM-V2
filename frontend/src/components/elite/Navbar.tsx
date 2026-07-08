@@ -21,6 +21,7 @@ const NAV_LINKS = [
     label: "Championnat",
     icon: <Trophy className="h-3.5 w-3.5" />,
     children: [
+      { label: "Matchs",     href: "/matches",   icon: <Radio     className="h-3.5 w-3.5 text-live" /> },
       { label: "Classement", href: "/standings", icon: <Trophy    className="h-3.5 w-3.5 text-accent" /> },
       { label: "Résultats",  href: "/results",   icon: <Star      className="h-3.5 w-3.5 text-accent" /> },
       { label: "Calendrier", href: "/fixtures",  icon: <Calendar  className="h-3.5 w-3.5 text-accent" /> },

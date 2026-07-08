@@ -50,6 +50,9 @@ export interface Article {
   status: ArticleStatus;
   featured: boolean;             // pinned as hero article
   imageUrl?: string;
+  gallery?: string[];            // additional images
+  videoUrl?: string;             // uploaded mp4 or embed URL (YouTube/Vimeo)
+  videoThumbnail?: string;
   author: ArticleAuthor;
   tags: string[];
   publishedAt: string;           // ISO string
@@ -78,12 +81,17 @@ export interface PaginatedArticles {
 
 export interface CreateArticlePayload {
   title: string;
+  slug?: string;                 // auto-generated from title when omitted
   excerpt: string;
   content: string;
   category: ArticleCategory;
   status: ArticleStatus;
   featured: boolean;
   imageUrl?: string;
+  gallery?: string[];
+  videoUrl?: string;
+  videoThumbnail?: string;
+  author?: string;                // display name of the writer
   tags: string[];
 }
 

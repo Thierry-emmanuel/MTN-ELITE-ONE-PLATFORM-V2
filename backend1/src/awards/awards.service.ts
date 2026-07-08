@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Award, AwardStatus } from './entities/award.entity';
-import { AwardNomination } from './entities/award-nomination.entity';
+import { AwardNomination, NomineeType } from './entities/award-nomination.entity';
 import { Vote } from './entities/vote.entity';
 import { VoteDto } from './dto/vote.dto';
 import * as crypto from 'crypto';
@@ -98,7 +98,10 @@ export class AwardsService {
     )[0];
 
     award.status = AwardStatus.ANNOUNCED;
-    award.winnerId = winner?.playerId ?? null;
+    // winnerId points at whichever entity the winning nomination actually
+    // represents (player, team/club, or coach) — resolved generically so
+    // Team/Coach categories close correctly, not just Player ones.
+    award.winnerId = winner ? (winner.playerId ?? winner.teamId ?? winner.coachId ?? null) : null;
     const saved = await this.awardRepo.save(award);
 
     this.wsGateway.server.to(`award-${id}`).emit('award_status_changed', {
@@ -107,17 +110,27 @@ export class AwardsService {
     return saved;
   }
 
-  async addNomination(awardId: number, playerId: number): Promise<AwardNomination> {
-    const award = await this.findOne(awardId);
-    
-    // Check if nomination already exists
-    const existing = await this.nominationRepo.findOne({ where: { awardId, playerId } });
-    if (existing) throw new BadRequestException('Player is already nominated for this award');
+  /** Accepts either the legacy `{ playerId }` shape or the generic
+   *  `{ nomineeType, nomineeId }` shape so Team (Club) and Coach categories
+   *  can be nominated the same way Player categories always could. */
+  async addNomination(awardId: number, dto: { playerId?: number; nomineeType?: NomineeType; nomineeId?: number }): Promise<AwardNomination> {
+    await this.findOne(awardId);
+
+    const nomineeType = dto.nomineeType ?? NomineeType.PLAYER;
+    const nomineeId = dto.nomineeId ?? dto.playerId;
+    if (!nomineeId) throw new BadRequestException('nomineeId (or playerId) is required');
+
+    const fkColumn = nomineeType === NomineeType.TEAM ? 'teamId' : nomineeType === NomineeType.COACH ? 'coachId' : 'playerId';
+    const existing = await this.nominationRepo.findOne({ where: { awardId, [fkColumn]: nomineeId } as any });
+    if (existing) throw new BadRequestException('This nominee is already nominated for this award');
 
     const nomination = this.nominationRepo.create({
       awardId,
-      playerId,
+      nomineeType,
       voteCount: 0,
+      playerId: nomineeType === NomineeType.PLAYER ? nomineeId : null,
+      teamId: nomineeType === NomineeType.TEAM ? nomineeId : null,
+      coachId: nomineeType === NomineeType.COACH ? nomineeId : null,
     });
     return this.nominationRepo.save(nomination);
   }

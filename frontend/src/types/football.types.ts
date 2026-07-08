@@ -311,6 +311,76 @@ export interface GroupedMatchResponse {
   total: number;
 }
 
+// ─── Match Center (stats / lineups / head-to-head) ────────────────────────────
+// Everything below powers the Sofascore-style match detail view.
+
+export interface TeamMatchStats {
+  possession?: number;
+  shots?: number;
+  shotsOnTarget?: number;
+  corners?: number;
+  fouls?: number;
+  offsides?: number;
+  yellowCards: number;
+  redCards: number;
+  passes?: number;
+  passAccuracy?: number;
+  saves?: number;
+}
+
+export interface MatchStatsResponse {
+  home: TeamMatchStats;
+  away: TeamMatchStats;
+}
+
+export interface LineupPlayer {
+  playerId: string;
+  name: string;
+  shirtNumber?: number;
+  position?: PlayerPosition | string;
+  isCaptain?: boolean;
+  /** x/y as percentages (0-100) for pitch placement, home attacks upward */
+  x?: number;
+  y?: number;
+}
+
+export interface TeamLineup {
+  formation?: string;
+  coach?: string;
+  startXI: LineupPlayer[];
+  substitutes: LineupPlayer[];
+}
+
+export interface MatchLineups {
+  home: TeamLineup;
+  away: TeamLineup;
+  confirmed?: boolean;
+}
+
+export interface HeadToHeadMeeting {
+  id: string;
+  kickoffUtc: string;
+  round?: number;
+  homeClub: Club;
+  awayClub: Club;
+  homeScore: number;
+  awayScore: number;
+}
+
+export interface HeadToHeadSummary {
+  played: number;
+  homeWins: number;
+  draws: number;
+  awayWins: number;
+  homeGoals: number;
+  awayGoals: number;
+}
+
+export interface HeadToHead {
+  summary: HeadToHeadSummary;
+  meetings: HeadToHeadMeeting[];
+}
+
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
 export interface FixturesFilter {

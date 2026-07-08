@@ -3,8 +3,11 @@ import { footballApi, QK, ApiError } from '../services/api';
 import {
   MOCK_FIXTURES, MOCK_RESULTS, MOCK_STANDINGS, MOCK_PLAYER_STATS, MOCK_CLUB_STATS, DEV_SEASON_ID,
 } from '../services/mockData';
+import {
+  buildFallbackStats, buildFallbackLineups, buildFallbackHeadToHead,
+} from '../services/matchCenterMock';
 import type {
-  FixturesFilter, ResultsFilter, StandingsFilter, MatchDay,
+  FixturesFilter, ResultsFilter, StandingsFilter, MatchDay, Match,
   PlayerStatsFilter, ClubStatsFilter,
 } from '../types/football.types';
 
@@ -121,6 +124,67 @@ export function useMatch(matchId: string | null) {
       const match = query.state.data;
       return (match?.status === 'LIVE' || match?.status === 'HT') ? STALE.live : false;
     },
+  });
+}
+
+// ─── useMatchStats ────────────────────────────────────────────────────────────
+// Team-level stats (possession, shots, cards…). Falls back to a deterministic
+// placeholder — consistent with a scoreline — whenever the backend hasn't
+// recorded real stats for this match yet (404) or is unreachable.
+
+export function useMatchStats(match: Match | undefined | null) {
+  const matchId = match?.id ? String(match.id) : '';
+  return useQuery({
+    queryKey: QK.matchStats(matchId),
+    queryFn: async () => {
+      try {
+        return await footballApi.getMatchStats(matchId);
+      } catch (err) {
+        if (err instanceof ApiError && match) return buildFallbackStats(match);
+        throw err;
+      }
+    },
+    staleTime: STALE.live,
+    enabled: !!match,
+    refetchInterval: () => (match?.status === 'LIVE' || match?.status === 'HT') ? STALE.live : false,
+  });
+}
+
+// ─── useMatchLineups ──────────────────────────────────────────────────────────
+
+export function useMatchLineups(match: Match | undefined | null) {
+  const matchId = match?.id ? String(match.id) : '';
+  return useQuery({
+    queryKey: QK.matchLineups(matchId),
+    queryFn: async () => {
+      try {
+        return await footballApi.getMatchLineups(matchId);
+      } catch (err) {
+        if (err instanceof ApiError && match) return buildFallbackLineups(match);
+        throw err;
+      }
+    },
+    staleTime: STALE.fixtures,
+    enabled: !!match,
+  });
+}
+
+// ─── useHeadToHead ────────────────────────────────────────────────────────────
+
+export function useHeadToHead(match: Match | undefined | null) {
+  const matchId = match?.id ? String(match.id) : '';
+  return useQuery({
+    queryKey: QK.headToHead(matchId),
+    queryFn: async () => {
+      try {
+        return await footballApi.getHeadToHead(matchId);
+      } catch (err) {
+        if (err instanceof ApiError && match) return buildFallbackHeadToHead(match);
+        throw err;
+      }
+    },
+    staleTime: STALE.results,
+    enabled: !!match,
   });
 }
 

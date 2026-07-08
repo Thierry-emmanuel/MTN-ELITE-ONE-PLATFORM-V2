@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, MessageCircle, Eye, ArrowRight } from 'lucide-react';
+import { Clock, MessageCircle, Eye, ArrowRight, PlayCircle } from 'lucide-react';
 import { CategoryBadge } from './ArticleCard';
 import type { Article } from '@/types/news.types';
 
@@ -43,11 +43,17 @@ export const FeaturedArticle = memo(({ article }: FeaturedArticleProps) => (
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]" />
 
       {/* À la une badge */}
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent text-black text-[10px] font-black uppercase tracking-widest shadow-[0_0_14px_rgba(252,209,22,0.40)]">
           <span className="h-1.5 w-1.5 rounded-full bg-black" />
           À la une
         </span>
+        {article.videoUrl && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 border border-white/20 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-widest">
+            <PlayCircle className="h-3 w-3" />
+            Vidéo
+          </span>
+        )}
       </div>
 
       {/* Content */}

@@ -1,63 +1,95 @@
 import { apiClient } from './api';
+import { getSocket } from './socket';
+import { useRealtimeStore } from '../store/awards.store';
 import type {
   Award, BallonDorEdition, TeamOfWeek, VoteResults,
   RealtimeLeaderboardEntry, AwardCategory,
 } from '../types/awards.types';
 
-// ─── Awards REST API ──────────────────────────────────────────────────────────
+// --- Awards REST API -- talks to AwardsPublicController (/awards/public/*) ---
+// The admin CRUD surface (/awards/*, raw entities) is a separate contract
+// used only by AdminPage via services/layoutApi.ts -- don't merge the two.
 
 export const awardsApi = {
   getAll: (season?: string) =>
-    apiClient.get<Award[]>('/awards', { params: { season } }).then(r => r.data),
+    apiClient.get<Award[]>('/awards/public', { params: { season } }).then(r => r.data),
 
   getById: (id: string) =>
-    apiClient.get<Award>(`/awards/${id}`).then(r => r.data),
+    apiClient.get<Award>(`/awards/public/${id}`).then(r => r.data),
 
   getByCategory: (category: AwardCategory, season?: string) =>
-    apiClient.get<Award>('/awards/category', { params: { category, season } }).then(r => r.data),
+    apiClient.get<Award[]>('/awards/public', { params: { season } })
+      .then(r => r.data.filter(a => a.category === category)),
 
   getBallonDor: (year?: number) =>
-    apiClient.get<BallonDorEdition>('/awards/ballon-dor', { params: { year } }).then(r => r.data),
+    apiClient.get<BallonDorEdition>('/awards/public/ballon-dor', { params: { year } }).then(r => r.data),
 
-  getTeamOfWeek: (period?: string) =>
-    apiClient.get<TeamOfWeek>('/awards/team-of-week', { params: { period } }).then(r => r.data),
+  getTeamOfWeek: (_period?: string) =>
+    apiClient.get<TeamOfWeek>('/awards/public/team-of-week').then(r => r.data),
 
   getVoteResults: (awardId: string) =>
-    apiClient.get<VoteResults>(`/awards/${awardId}/votes`).then(r => r.data),
+    apiClient.get<VoteResults>(`/awards/public/${awardId}/votes`).then(r => r.data),
 
+  // nomineeId is the stringified nomination id handed out in Award.nominees[].id
   castVote: (awardId: string, nomineeId: string) =>
     apiClient.post<{ success: boolean; results: VoteResults }>(
-      `/awards/${awardId}/vote`,
+      `/awards/public/${awardId}/vote`,
       { nomineeId },
     ).then(r => r.data),
 
   getLeaderboard: (awardId: string) =>
-    apiClient.get<RealtimeLeaderboardEntry[]>(`/awards/${awardId}/leaderboard`).then(r => r.data),
+    apiClient.get<RealtimeLeaderboardEntry[]>(`/awards/public/${awardId}/leaderboard`).then(r => r.data),
 
   getHistorical: (category?: AwardCategory) =>
-    apiClient.get('/awards/historical', { params: { category } }).then(r => r.data),
+    apiClient.get('/awards/public/historical', { params: { category } }).then(r => r.data),
 };
 
-// ─── Socket event names ───────────────────────────────────────────────────────
+// --- Realtime -- thin wrapper around the shared socket.io client (services/socket.ts) --
+// Backend gateway (websocket.gateway.ts) rooms are named `award-${id}` and
+// emits `vote_updated` / `award_status_changed`, matching useAwardLiveVotes.ts.
 
-export const AWARD_EVENTS = {
-  VOTE_UPDATE:        'award:vote_update',
-  LEADERBOARD_UPDATE: 'award:leaderboard_update',
-  VOTE_CAST:          'award:vote_cast',
-  WINNER_ANNOUNCED:   'award:winner_announced',
-  TRENDING_UPDATE:    'award:trending_update',
-  COUNTDOWN_SYNC:     'award:countdown_sync',
-  SUBSCRIBE_AWARD:    'award:subscribe',
-  UNSUBSCRIBE_AWARD:  'award:unsubscribe',
-  CAST_VOTE:          'award:cast',
-} as const;
+let refCount = 0;
+let boundOnce = false;
 
-// ─── Socket stubs ─────────────────────────────────────────────────────────────
-// Real-time is disabled until socket.io-client is installed.
-// To enable: npm install socket.io-client --legacy-peer-deps
-// Then replace these stubs with the full socket implementation.
+function bindGlobalListenersOnce() {
+  if (boundOnce) return;
+  boundOnce = true;
+  const socket = getSocket();
+  const store = () => useRealtimeStore.getState();
 
-export function connectAwardsSocket():             void {}
-export function disconnectAwardsSocket():          void {}
-export function subscribeToAward(_id: string):     void {}
-export function unsubscribeFromAward(_id: string): void {}
+  socket.on('connect', () => store().setConnected(true));
+  socket.on('disconnect', () => store().setConnected(false));
+  store().setConnected(socket.connected);
+
+  socket.on('vote_updated', (payload: { awardId: number; nominationId: number; voteCount: number }) => {
+    store().incrementTotalVotes();
+    store().pushLiveEvent({
+      awardId: String(payload.awardId),
+      nomineeId: String(payload.nominationId),
+      nomineeName: 'Un supporter',
+      timestamp: new Date().toISOString(),
+    });
+    store().setLastSync(new Date().toISOString());
+  });
+}
+
+export function connectAwardsSocket(): void {
+  refCount += 1;
+  bindGlobalListenersOnce();
+  getSocket().connect();
+}
+
+export function disconnectAwardsSocket(): void {
+  refCount = Math.max(0, refCount - 1);
+  // Keep the shared socket alive if another consumer (e.g. useAwardLiveVotes
+  // on an admin/vote page) is still using it -- just stop tracking here.
+  if (refCount === 0) useRealtimeStore.getState().setConnected(false);
+}
+
+export function subscribeToAward(id: string): void {
+  getSocket().emit('join_award', Number(id));
+}
+
+export function unsubscribeFromAward(id: string): void {
+  getSocket().emit('leave_award', Number(id));
+}

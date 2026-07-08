@@ -97,7 +97,7 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <div className="container py-6">
+      <div className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* ── Page heading ───────────────────────────────────────────────── */}
         <div className="mb-6 flex items-end justify-between">
@@ -106,7 +106,7 @@ export default function EditorPage() {
               Gestion des articles
             </h1>
             <p className="text-sm text-muted-foreground/50 mt-0.5">
-              Créez, modifiez et publiez les articles du site d'actualités.
+              Rédigez, mettez en forme et publiez les articles du site d'actualités.
             </p>
           </div>
 
@@ -120,7 +120,7 @@ export default function EditorPage() {
 
         {/* ── Editor panel ───────────────────────────────────────────────── */}
         {isLoading ? (
-          <div className="h-[680px] rounded-xl border border-border/40 bg-white/[0.02] flex flex-col items-center justify-center gap-3 animate-pulse">
+          <div className="h-[720px] rounded-xl border border-border/40 bg-white/[0.02] flex flex-col items-center justify-center gap-3 animate-pulse">
             <div className="h-6 w-6 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
             <p className="text-muted-foreground/30 text-sm">Chargement des articles…</p>
           </div>

@@ -195,7 +195,7 @@ export default function NewsPage() {
                 exit={{ opacity: 0 }}
                 className="text-center py-24 border border-dashed border-border/30 rounded-2xl"
               >
-                <p className="text-4xl mb-4">📰</p>
+                <Newspaper className="h-9 w-9 text-muted-foreground/20 mx-auto mb-4" />
                 <p className="text-muted-foreground/50 text-sm mb-4">
                   Aucun article trouvé pour ces critères.
                 </p>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { awardsApi, connectAwardsSocket, disconnectAwardsSocket, subscribeToAward } from '../services/awardsApi';
+import { awardsApi, connectAwardsSocket, disconnectAwardsSocket, subscribeToAward, unsubscribeFromAward } from '../services/awardsApi';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '../store/awards.store';
 import { MOCK_AWARDS, MOCK_BALLON_DOR, MOCK_TEAM_OF_WEEK } from '../services/mockAwards';
 // (no additional type imports needed)
@@ -73,6 +73,9 @@ export function useVoting(awardId: string) {
     onSuccess: (data) => {
       updateAwardVotes(awardId, data.results);
       setSuccess(awardId);
+      qc.setQueryData<any[]>(AWARD_QK.all(SEASON_ID), (prev) =>
+        prev?.map(a => a.id === awardId ? { ...a, voteResults: data.results } : a) ?? prev,
+      );
       qc.invalidateQueries({ queryKey: AWARD_QK.votes(awardId) });
       setTimeout(() => setSuccess(null), 3000);
     },
@@ -91,7 +94,17 @@ export function useVoting(awardId: string) {
 // ─── useRealtimeVotes ─────────────────────────────────────────────────────────
 export function useRealtimeVotes() {
   const { connected, liveFeed, totalLiveVotes } = useRealtimeStore();
+  const { data: awards } = useAwards();
+
   useEffect(() => { connectAwardsSocket(); return () => disconnectAwardsSocket(); }, []);
+
+  useEffect(() => {
+    const openIds = awards.filter(a => a.votingStatus === 'OPEN').map(a => a.id);
+    openIds.forEach(subscribeToAward);
+    return () => openIds.forEach(unsubscribeFromAward);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awards]);
+
   return { connected, liveFeed, totalLiveVotes };
 }
 

@@ -7,3 +7,9 @@ export class VoteDto {
   @IsNotEmpty()
   nominationId: number;
 }
+
+export class PublicVoteDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  nomineeId: string;
+}

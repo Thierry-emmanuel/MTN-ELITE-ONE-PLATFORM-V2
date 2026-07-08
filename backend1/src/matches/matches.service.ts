@@ -4,8 +4,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Match, MatchStatus } from './match.entity';
+import { MatchLineup } from './match-lineup.entity';
 import { CreateMatchDto }      from './dto/create-match.dto';
 import { UpdateMatchDto }      from './dto/update-match.dto';
+import { SetLineupsDto }       from './dto/set-lineup.dto';
 import { PaginationDto }       from '../common/dto/pagination.dto';
 import { StandingsService }    from '../standings/standings.service';
 
@@ -34,6 +36,27 @@ export interface MatchDay {
   matches: Match[];
 }
 
+// ─── Match-center response shapes ──────────────────────────────────────────────
+export interface TeamMatchStats {
+  shotsOnTarget: number;
+  yellowCards:   number;
+  redCards:      number;
+  passes:        number;
+}
+
+export interface MatchStatsResult {
+  home: TeamMatchStats;
+  away: TeamMatchStats;
+}
+
+export interface HeadToHeadResult {
+  summary: {
+    played: number; homeWins: number; draws: number; awayWins: number;
+    homeGoals: number; awayGoals: number;
+  };
+  meetings: Match[];
+}
+
 @Injectable()
 export class MatchesService {
   private readonly logger = new Logger(MatchesService.name);
@@ -41,6 +64,9 @@ export class MatchesService {
   constructor(
     @InjectRepository(Match)
     private readonly matchRepo: Repository<Match>,
+
+    @InjectRepository(MatchLineup)
+    private readonly lineupRepo: Repository<MatchLineup>,
 
     // WHY: injected here (not inside StandingsModule) to trigger
     // recalculation automatically when a match finishes.
@@ -237,6 +263,156 @@ export class MatchesService {
       throw new BadRequestException('Cannot delete a live match');
     await this.matchRepo.remove(match);
     return { message: 'Match deleted successfully' };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MATCH CENTER — stats / lineups / head-to-head
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Aggregates per-player match_stats rows into team-level totals.
+   * WHY: only the fields actually tracked at player level are returned here
+   * (shots on target, cards, passes) — possession/corners/fouls aren't
+   * recorded per-player, so the frontend fills those in as a visual estimate
+   * when they're missing.
+   */
+  async getTeamStats(id: number): Promise<MatchStatsResult> {
+    const match = await this.findOne(id);
+
+    const rows: { clubId: number; onTarget: string; yellow: string; red: string; passes: string }[] =
+      await this.matchRepo.manager
+        .createQueryBuilder()
+        .select('ms.club_id', 'clubId')
+        .addSelect('COALESCE(SUM(ms.shots_on_target), 0)', 'onTarget')
+        .addSelect('COALESCE(SUM(ms.yellow_cards), 0)', 'yellow')
+        .addSelect('COALESCE(SUM(ms.red_cards), 0)', 'red')
+        .addSelect('COALESCE(SUM(ms.passes_completed), 0)', 'passes')
+        .from('match_stats', 'ms')
+        .where('ms.match_id = :id', { id })
+        .groupBy('ms.club_id')
+        .getRawMany();
+
+    const byClub = new Map(rows.map(r => [r.clubId, r]));
+    const toTeamStats = (clubId: number): TeamMatchStats => {
+      const r = byClub.get(clubId);
+      return {
+        shotsOnTarget: r ? Number(r.onTarget) : 0,
+        yellowCards:   r ? Number(r.yellow)   : 0,
+        redCards:      r ? Number(r.red)      : 0,
+        passes:        r ? Number(r.passes)   : 0,
+      };
+    };
+
+    return {
+      home: toTeamStats(match.homeClubId),
+      away: toTeamStats(match.awayClubId),
+    };
+  }
+
+  /** Returns confirmed lineups for a match, split by starters/substitutes. */
+  async getLineups(id: number) {
+    const match = await this.findOne(id);
+    const entries = await this.lineupRepo.find({
+      where: { matchId: id },
+      relations: ['player'],
+      order: { isStarting: 'DESC', id: 'ASC' },
+    });
+
+    const bySide = (clubId: number) => entries.filter(e => e.clubId === clubId);
+    const shape = (clubId: number, formation: string | null) => {
+      const teamEntries = bySide(clubId);
+      return {
+        formation,
+        startXI: teamEntries.filter(e => e.isStarting),
+        substitutes: teamEntries.filter(e => !e.isStarting),
+      };
+    };
+
+    return {
+      confirmed: entries.length > 0,
+      home: shape(match.homeClubId, match.homeFormation),
+      away: shape(match.awayClubId, match.awayFormation),
+    };
+  }
+
+  /** Replaces the full lineup set for a match (admin only). */
+  async setLineups(id: number, dto: SetLineupsDto): Promise<{ message: string }> {
+    const match = await this.findOne(id);
+
+    if (![dto.homeClubId, dto.awayClubId].includes(match.homeClubId) ||
+        ![dto.homeClubId, dto.awayClubId].includes(match.awayClubId)) {
+      throw new BadRequestException('homeClubId/awayClubId must match the fixture');
+    }
+
+    await this.lineupRepo.delete({ matchId: id });
+
+    const buildRows = (clubId: number, team: SetLineupsDto['home']) =>
+      team.players.map(p => this.lineupRepo.create({
+        matchId: id,
+        clubId,
+        playerId: p.playerId,
+        position: p.position ?? null,
+        shirtNumber: p.shirtNumber ?? null,
+        isStarting: p.isStarting ?? true,
+        isCaptain: p.isCaptain ?? false,
+        posX: p.posX ?? null,
+        posY: p.posY ?? null,
+      }));
+
+    const rows = [
+      ...buildRows(dto.homeClubId, dto.home),
+      ...buildRows(dto.awayClubId, dto.away),
+    ];
+
+    if (rows.length) await this.lineupRepo.save(rows);
+
+    match.homeFormation = dto.home.formation ?? match.homeFormation;
+    match.awayFormation = dto.away.formation ?? match.awayFormation;
+    await this.matchRepo.save(match);
+
+    return { message: 'Lineups saved' };
+  }
+
+  /**
+   * Previous meetings between the same two clubs (either home/away order),
+   * most recent first, excluding the current fixture.
+   */
+  async getHeadToHead(id: number, limit = 6): Promise<HeadToHeadResult> {
+    const match = await this.findOne(id);
+    const { homeClubId, awayClubId } = match;
+
+    const meetings = await this.matchRepo
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.homeClub', 'homeClub')
+      .leftJoinAndSelect('match.awayClub', 'awayClub')
+      .where('match.id != :id', { id })
+      .andWhere('match.status = :status', { status: MatchStatus.FINISHED })
+      .andWhere(
+        '((match.homeClubId = :homeClubId AND match.awayClubId = :awayClubId) OR ' +
+        '(match.homeClubId = :awayClubId AND match.awayClubId = :homeClubId))',
+        { homeClubId, awayClubId },
+      )
+      .orderBy('match.scheduledAt', 'DESC')
+      .take(limit)
+      .getMany();
+
+    const summary = meetings.reduce(
+      (acc, m) => {
+        acc.played++;
+        const homeSideIsRefHome = m.homeClubId === homeClubId;
+        const refHomeGoals = homeSideIsRefHome ? m.homeScore ?? 0 : m.awayScore ?? 0;
+        const refAwayGoals = homeSideIsRefHome ? m.awayScore ?? 0 : m.homeScore ?? 0;
+        acc.homeGoals += refHomeGoals;
+        acc.awayGoals += refAwayGoals;
+        if (refHomeGoals > refAwayGoals) acc.homeWins++;
+        else if (refHomeGoals < refAwayGoals) acc.awayWins++;
+        else acc.draws++;
+        return acc;
+      },
+      { played: 0, homeWins: 0, draws: 0, awayWins: 0, homeGoals: 0, awayGoals: 0 },
+    );
+
+    return { summary, meetings };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

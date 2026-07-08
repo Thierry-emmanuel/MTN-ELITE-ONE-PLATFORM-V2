@@ -7,6 +7,7 @@ import { Club } from '../clubs/club.entity';
 import { Season } from '../seasons/season.entity';
 import { MatchEvent } from './match-event.entity';
 import { MatchStats } from './match-stats.entity';
+import { MatchLineup } from './match-lineup.entity';
 
 export enum MatchStatus {
   SCHEDULED  = 'SCHEDULED',
@@ -49,6 +50,12 @@ export class Match {
   @Column({ length: 100, nullable: true })
   city: string;
 
+  @Column({ name: 'home_formation', type: 'varchar', length: 12, nullable: true })
+  homeFormation: string | null;
+
+  @Column({ name: 'away_formation', type: 'varchar', length: 12, nullable: true })
+  awayFormation: string | null;
+
   // ── FK columns ──────────────────────────────────────────────────────────────
   @Column({ name: 'home_club_id' })
   homeClubId: number;
@@ -77,6 +84,9 @@ export class Match {
 
   @OneToMany(() => MatchStats, (stats) => stats.match, { cascade: true })
   stats: MatchStats[];
+
+  @OneToMany(() => MatchLineup, (lineup) => lineup.match, { cascade: true })
+  lineups: MatchLineup[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -4,7 +4,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
-import { ArticleType, ArticleCategory } from '../schemas/article.schema';
+import { ArticleType, ArticleCategory, ArticleStatus } from '../schemas/article.schema';
 
 class LocalizedString {
   @IsString() fr: string;
@@ -45,6 +45,10 @@ export class CreateArticleDto {
   @ApiProperty()
   @IsString()
   author: string;
+
+  @ApiPropertyOptional({ enum: ArticleStatus, default: ArticleStatus.DRAFT })
+  @IsOptional() @IsEnum(ArticleStatus)
+  status?: ArticleStatus;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional() @IsBoolean()

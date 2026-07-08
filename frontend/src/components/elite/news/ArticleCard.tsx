@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, MessageCircle, Eye } from 'lucide-react';
+import { Clock, MessageCircle, Eye, Newspaper, PlayCircle } from 'lucide-react';
 import { CATEGORY_META } from '@/types/news.types';
 import type { Article } from '@/types/news.types';
 
@@ -84,13 +84,20 @@ export const ArticleCard = memo(({ article, index = 0, variant = 'default' }: Ar
         className="group flex gap-4 rounded-xl border border-border/40 bg-white/[0.02] hover:border-border/70 hover:bg-white/[0.04] transition-all overflow-hidden"
       >
         {article.imageUrl ? (
-          <img src={article.imageUrl} alt={article.title}
-            className="w-28 sm:w-36 shrink-0 object-cover"
-            loading="lazy"
-          />
+          <div className="relative w-28 sm:w-36 shrink-0">
+            <img src={article.imageUrl} alt={article.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            {article.videoUrl && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <PlayCircle className="h-6 w-6 text-white/90" />
+              </div>
+            )}
+          </div>
         ) : (
           <div className="w-28 sm:w-36 shrink-0 bg-white/[0.04] flex items-center justify-center">
-            <span className="text-3xl opacity-20">📰</span>
+            <Newspaper className="h-6 w-6 text-muted-foreground/20" />
           </div>
         )}
         <div className="flex-1 min-w-0 py-4 pr-4">
@@ -125,7 +132,14 @@ export const ArticleCard = memo(({ article, index = 0, variant = 'default' }: Ar
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-white/[0.05] to-white/[0.02] flex items-center justify-center">
-            <span className="text-5xl opacity-10">⚽</span>
+            <Newspaper className="h-10 w-10 text-muted-foreground/15" />
+          </div>
+        )}
+        {article.videoUrl && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-full bg-black/50 border border-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform">
+              <PlayCircle className="h-6 w-6 text-white" />
+            </div>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

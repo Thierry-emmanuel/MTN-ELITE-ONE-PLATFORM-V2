@@ -10,6 +10,7 @@ const AuthPage        = lazy(() => import("./pages/AuthPage").then(m => ({ defau
 const NotFound        = lazy(() => import("./pages/NotFound"));
 const FixturesPage    = lazy(() => import("./pages/FixturesPage"));
 const ResultsPage     = lazy(() => import("./pages/ResultsPage"));
+const MatchesPage     = lazy(() => import("./pages/MatchesPage"));
 const StandingsPage   = lazy(() => import("./pages/StandingsPage"));
 const StatsPage       = lazy(() => import("./pages/StatsPage"));
 const NewsPage        = lazy(() => import("./pages/NewsPage"));
@@ -60,7 +61,9 @@ const App = () => (
         {/* All inner pages — wrapped in shared PageLayout */}
         <Route path="/fixtures"            element={<PageLayout><FixturesPage /></PageLayout>} />
         <Route path="/results"             element={<PageLayout><ResultsPage /></PageLayout>} />
-        <Route path="/matches/:id"         element={<PageLayout><MatchDetailPage /></PageLayout>} />
+        <Route path="/matches"             element={<PageLayout><MatchesPage /></PageLayout>} />
+        {/* MatchDetailPage wraps itself in PageLayout (needs to control layout around the hero) */}
+        <Route path="/matches/:id"         element={<MatchDetailPage />} />
         <Route path="/standings"           element={<PageLayout><StandingsPage /></PageLayout>} />
         <Route path="/stats"               element={<PageLayout><StatsPage /></PageLayout>} />
         <Route path="/news"                element={<PageLayout><NewsPage /></PageLayout>} />

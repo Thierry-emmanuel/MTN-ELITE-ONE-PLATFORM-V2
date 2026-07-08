@@ -34,11 +34,13 @@ export class ArticlesService {
     const bodyText  = dto.body?.fr ?? dto.body?.en ?? '';
     const readTime  = dto.read_time ?? Math.max(1, Math.ceil(bodyText.split(/\s+/).length / 200));
 
+    const status = dto.status ?? ArticleStatus.DRAFT;
+
     const article = new this.articleModel({
       ...dto,
       read_time:   readTime,
-      status:      ArticleStatus.DRAFT,   // always start as draft
-      publishedAt: null,
+      status,
+      publishedAt: status === ArticleStatus.PUBLISHED ? new Date() : null,
       views:       0,
       comments:    [],
     });
@@ -118,6 +120,10 @@ export class ArticlesService {
     if (dto.body) {
       const bodyText = dto.body.fr ?? dto.body.en ?? '';
       (dto as any).read_time = Math.max(1, Math.ceil(bodyText.split(/\s+/).length / 200));
+    }
+
+    if (dto.status === ArticleStatus.PUBLISHED && article.status !== ArticleStatus.PUBLISHED) {
+      article.publishedAt = new Date();
     }
 
     Object.assign(article, dto);

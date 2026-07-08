@@ -3,6 +3,7 @@ import type {
   MatchDay, Standing, GroupedMatchResponse,
   PlayerStat, ClubStat, PaginatedResponse,
   PlayerStatsFilter, ClubStatsFilter, TopPerformer, StatCategory,
+  MatchStatsResponse, MatchLineups, HeadToHead,
 } from '../types/football.types';
 import { clubs as MOCK_CLUBS, legends as MOCK_LEGENDS } from '../components/elite/data';
 import { MOCK_PLAYER_STATS, MOCK_FIXTURES } from './mockData';
@@ -105,6 +106,18 @@ export const footballApi = {
 
   getMatch: (matchId: string) =>
     get<import('../types/football.types').Match>(`/matches/${matchId}`),
+
+  /** GET /matches/:id/stats — aggregated team stats (shots, possession, cards…) */
+  getMatchStats: (matchId: string) =>
+    get<MatchStatsResponse>(`/matches/${matchId}/stats`),
+
+  /** GET /matches/:id/lineups — starting XI, substitutes, formations */
+  getMatchLineups: (matchId: string) =>
+    get<MatchLineups>(`/matches/${matchId}/lineups`),
+
+  /** GET /matches/:id/head-to-head — past meetings between the two clubs */
+  getHeadToHead: (matchId: string, limit = 6) =>
+    get<HeadToHead>(`/matches/${matchId}/head-to-head`, { params: { limit } }),
 
   // ── Standings ──────────────────────────────────────────────────────────────
 
@@ -309,6 +322,9 @@ export const QK = {
   fixtures:       (seasonId: string, filters?: object) => ['fixtures',   seasonId, filters] as const,
   standings:      (seasonId: string, type?: string)    => ['standings',  seasonId, type]    as const,
   match:          (matchId: string)                    => ['match',      matchId]            as const,
+  matchStats:     (matchId: string)                    => ['matchStats', matchId]            as const,
+  matchLineups:   (matchId: string)                    => ['matchLineups', matchId]          as const,
+  headToHead:     (matchId: string)                    => ['headToHead', matchId]            as const,
   playerStats:    (seasonId: string, filters?: object) => ['playerStats',seasonId, filters] as const,
   clubStats:      (seasonId: string, filters?: object) => ['clubStats',  seasonId, filters] as const,
   topPerformers:  (seasonId: string, category: string) => ['topPerf',   seasonId, category] as const,

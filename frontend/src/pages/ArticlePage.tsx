@@ -11,6 +11,15 @@ import { CategoryBadge, ArticleCard } from '@/components/elite/news/ArticleCard'
 import { CommentsSection } from '@/components/elite/news/CommentsSection';
 import type { Article, Comment } from '@/types/news.types';
 
+// ─── Video embed helper ────────────────────────────────────────────────────────
+function toEmbedUrl(url: string): string | null {
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  const vimeo = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`;
+  return null;
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -118,8 +127,23 @@ export default function ArticlePage() {
         <div id="reading-progress" className="h-full bg-accent transition-all duration-100" style={{ width: '0%' }} />
       </div>
 
-      {/* Hero image */}
-      {article.imageUrl && (
+      {/* Hero media — video takes precedence over the static cover image */}
+      {article.videoUrl ? (
+        <div className="relative w-full aspect-video bg-black">
+          {toEmbedUrl(article.videoUrl) ? (
+            <iframe
+              src={toEmbedUrl(article.videoUrl)!}
+              title={article.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          ) : (
+            <video src={article.videoUrl} controls poster={article.videoThumbnail ?? article.imageUrl} className="w-full h-full object-contain" />
+          )}
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]" />
+        </div>
+      ) : article.imageUrl && (
         <div className="relative w-full aspect-[21/8] overflow-hidden">
           <img src={article.imageUrl} alt={article.title}
             className="w-full h-full object-cover" loading="eager" />
@@ -198,9 +222,27 @@ export default function ArticlePage() {
               prose-a:text-accent prose-a:no-underline hover:prose-a:underline
               prose-ul:text-foreground/75 prose-li:text-[15px]
               prose-blockquote:border-l-accent prose-blockquote:text-muted-foreground/70
+              [&_img]:rounded-xl [&_img]:border [&_img]:border-border/30
+              [&_video]:rounded-xl [&_video]:w-full [&_video]:border [&_video]:border-border/30
             "
             dangerouslySetInnerHTML={{ __html: article.content }}
           />
+
+          {/* Photo gallery */}
+          {article.gallery && article.gallery.length > 0 && (
+            <div className="mt-10 pt-8 border-t border-border/30">
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/40 mb-4">
+                Galerie photo
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {article.gallery.map(src => (
+                  <a key={src} href={src} target="_blank" rel="noreferrer" className="block rounded-xl overflow-hidden border border-border/30 aspect-square">
+                    <img src={src} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tags footer */}
           {article.tags.length > 0 && (

@@ -7,9 +7,13 @@ import {
   ApiTags, ApiOperation, ApiBearerAuth,
   ApiQuery, ApiParam, ApiResponse,
 } from '@nestjs/swagger';
-import { MatchesService, MatchFilters, MatchDay, PaginatedMatches } from './matches.service';
+import {
+  MatchesService, MatchFilters, MatchDay, PaginatedMatches,
+  MatchStatsResult, HeadToHeadResult,
+} from './matches.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
+import { SetLineupsDto }  from './dto/set-lineup.dto';
 import { PaginationDto }  from '../common/dto/pagination.dto';
 import { Match, MatchStatus } from './match.entity';
 import { IsInt, IsOptional, Min } from 'class-validator';
@@ -94,6 +98,42 @@ export class MatchesController {
   @ApiOperation({ summary: 'Get full match details (events, stats)' })
   findOne(@Param('id', ParseIntPipe) id: number): Promise<Match> {
     return this.matchesService.findOne(id);
+  }
+
+  // ── GET /matches/:id/stats ────────────────────────────────────────────────
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Team-level match stats aggregated from player stats' })
+  getStats(@Param('id', ParseIntPipe) id: number): Promise<MatchStatsResult> {
+    return this.matchesService.getTeamStats(id);
+  }
+
+  // ── GET /matches/:id/lineups ──────────────────────────────────────────────
+  @Get(':id/lineups')
+  @ApiOperation({ summary: 'Starting XI, substitutes and formations for both teams' })
+  getLineups(@Param('id', ParseIntPipe) id: number) {
+    return this.matchesService.getLineups(id);
+  }
+
+  // ── PATCH /matches/:id/lineups ────────────────────────────────────────────
+  @Patch(':id/lineups')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set/replace lineups for a match (admin)' })
+  setLineups(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SetLineupsDto,
+  ): Promise<{ message: string }> {
+    return this.matchesService.setLineups(id, dto);
+  }
+
+  // ── GET /matches/:id/head-to-head ─────────────────────────────────────────
+  @Get(':id/head-to-head')
+  @ApiOperation({ summary: 'Past meetings between the two clubs in this fixture' })
+  @ApiQuery({ name: 'limit', type: Number, required: false })
+  getHeadToHead(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('limit') limit?: number,
+  ): Promise<HeadToHeadResult> {
+    return this.matchesService.getHeadToHead(id, limit ? +limit : 6);
   }
 
   // ── PATCH /matches/:id ────────────────────────────────────────────────────
