@@ -3,36 +3,41 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useClub, useClubSquad, useClubMatches, useClubCoaches, useStandings, useClubStats } from '@/hooks/useFootball';
 import { DEV_SEASON_ID } from '@/services/mockData';
+import { getClubHubProfile } from '@/services/clubHubData';
 import PageLayout from '@/layout/PageLayout';
 import {
   ClubHero,
   ClubSectionNav,
   ClubSection,
-  ClubOverview,
-  ClubHistoryHonours,
+  ClubIdentity,
+  ClubSeasonOverview,
   ClubSquad,
-  ClubStaff,
-  ClubFixturesResults,
-  ClubStandingsSnapshot,
-  ClubStatsPanel,
+  ClubRoadToLions,
+  ClubTrophyRoom,
+  ClubLegends,
+  ClubTimeline,
+  ClubHistoricSeasons,
+  ClubRecords,
+  ClubAcademy,
   ClubGallery,
-  ClubVideos,
   ClubNews,
   ClubSocialBar,
   type ClubSectionMeta,
 } from '@/components/elite/club';
 
 const SECTIONS: ClubSectionMeta[] = [
-  { id: 'apercu',       label: "Aperçu" },
-  { id: 'histoire',     label: 'Histoire & Palmarès' },
-  { id: 'effectif',     label: 'Effectif' },
-  { id: 'staff',        label: 'Encadrement' },
-  { id: 'calendrier',   label: 'Calendrier' },
-  { id: 'classement',   label: 'Classement' },
-  { id: 'stats',        label: 'Statistiques' },
-  { id: 'galerie',      label: 'Galerie' },
-  { id: 'videos',       label: 'Vidéos' },
-  { id: 'actualites',   label: 'Actualités' },
+  { id: 'identite',    label: 'Identité' },
+  { id: 'saison',      label: 'Saison' },
+  { id: 'effectif',    label: 'Effectif' },
+  { id: 'lions',       label: 'Route vers les Lions' },
+  { id: 'trophees',    label: 'Trophées' },
+  { id: 'legendes',    label: 'Légendes' },
+  { id: 'chronologie', label: 'Chronologie' },
+  { id: 'saisons',     label: 'Saisons Historiques' },
+  { id: 'records',     label: 'Records' },
+  { id: 'academie',    label: 'Académie' },
+  { id: 'actualites',  label: 'Actualités' },
+  { id: 'galerie',     label: 'Galerie' },
 ];
 
 export default function ClubDetailPage() {
@@ -42,7 +47,7 @@ export default function ClubDetailPage() {
   const { data: club,      isLoading: clubLoading }     = useClub(clubId);
   const { data: squad,     isLoading: squadLoading }    = useClubSquad(clubId);
   const { data: matches,   isLoading: matchesLoading }  = useClubMatches(clubId);
-  const { data: coaches,   isLoading: coachesLoading }  = useClubCoaches(clubId);
+  const { data: coaches }  = useClubCoaches(clubId);
   const { data: standings, isLoading: standingsLoading } = useStandings();
   const { data: clubStats, isLoading: statsLoading }    = useClubStats(DEV_SEASON_ID);
 
@@ -55,6 +60,9 @@ export default function ClubDetailPage() {
     [clubStats, clubId],
   );
 
+  const hub = useMemo(() => (club ? getClubHubProfile(club) : undefined), [club]);
+  const seasonLoading = matchesLoading || standingsLoading || statsLoading;
+
   if (clubLoading) {
     return (
       <PageLayout>
@@ -66,7 +74,7 @@ export default function ClubDetailPage() {
     );
   }
 
-  if (!club) {
+  if (!club || !hub) {
     return (
       <PageLayout>
         <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 p-4 text-center" style={{ background: '#06090a' }}>
@@ -97,44 +105,59 @@ export default function ClubDetailPage() {
       <ClubHero club={club} standing={clubStanding} />
       <ClubSectionNav sections={SECTIONS} accentColor={primary} />
 
-      <ClubSection id="apercu">
-        <ClubOverview club={club} />
+      <ClubSection id="identite">
+        <ClubIdentity club={club} identity={hub.identity} headCoach={coaches?.[0]} />
       </ClubSection>
 
-      <ClubSection id="histoire" tone="corridor">
-        <ClubHistoryHonours club={club} />
+      <ClubSection id="saison" tone="corridor">
+        <ClubSeasonOverview
+          club={club}
+          standing={clubStanding}
+          matches={matches}
+          clubStat={clubStat}
+          seasonObjective={hub.identity.seasonObjective}
+          isLoading={seasonLoading}
+        />
       </ClubSection>
 
       <ClubSection id="effectif">
         <ClubSquad club={club} squad={squad} isLoading={squadLoading} />
       </ClubSection>
 
-      <ClubSection id="staff" tone="corridor">
-        <ClubStaff club={club} coaches={coaches} isLoading={coachesLoading} />
+      <ClubSection id="lions" tone="corridor">
+        <ClubRoadToLions club={club} callUps={hub.lionsCallUps} />
       </ClubSection>
 
-      <ClubSection id="calendrier">
-        <ClubFixturesResults club={club} matches={matches} isLoading={matchesLoading} />
+      <ClubSection id="trophees">
+        <ClubTrophyRoom club={club} trophies={hub.trophies} />
       </ClubSection>
 
-      <ClubSection id="classement" tone="corridor">
-        <ClubStandingsSnapshot club={club} standings={standings} isLoading={standingsLoading} />
+      <ClubSection id="legendes" tone="corridor">
+        <ClubLegends club={club} legends={hub.legends} />
       </ClubSection>
 
-      <ClubSection id="stats">
-        <ClubStatsPanel club={club} clubStat={clubStat} isLoading={statsLoading} />
+      <ClubSection id="chronologie">
+        <ClubTimeline club={club} events={hub.timeline} />
+      </ClubSection>
+
+      <ClubSection id="saisons" tone="corridor">
+        <ClubHistoricSeasons club={club} seasons={hub.historicSeasons} />
+      </ClubSection>
+
+      <ClubSection id="records">
+        <ClubRecords club={club} records={hub.records} />
+      </ClubSection>
+
+      <ClubSection id="academie" tone="corridor">
+        <ClubAcademy club={club} prospects={hub.academy} />
+      </ClubSection>
+
+      <ClubSection id="actualites">
+        <ClubNews club={club} />
       </ClubSection>
 
       <ClubSection id="galerie" tone="corridor">
         <ClubGallery club={club} />
-      </ClubSection>
-
-      <ClubSection id="videos">
-        <ClubVideos club={club} />
-      </ClubSection>
-
-      <ClubSection id="actualites" tone="corridor">
-        <ClubNews club={club} />
         <div className="mt-10">
           <ClubSocialBar club={club} />
         </div>
@@ -142,3 +165,4 @@ export default function ClubDetailPage() {
     </PageLayout>
   );
 }
+

@@ -422,6 +422,123 @@ export interface ClubStatsFilter {
   limit?: number;
 }
 
+// ─── Club Hub — museum wings (trophies, legends, timeline, records…) ──────────
+// Curated / editorial content that has no live backend source yet. Structured
+// so a real API (`/clubs/:id/hub`) can slot in later without touching the UI.
+
+export type TrophyCategory = 'league' | 'cup' | 'african' | 'regional';
+
+export interface TrophyStat {
+  label: string;
+  value: string;
+}
+
+export interface ClubTrophy {
+  id: string;
+  title: string;
+  competition: string;
+  year: string;
+  category: TrophyCategory;
+  imageUrl?: string;
+  story: {
+    journey: string;
+    finalOpponent?: string;
+    finalScore?: string;
+    historicSquad?: string;
+    stats?: TrophyStat[];
+  };
+}
+
+export type LegendRole = 'Joueur' | 'Entraîneur' | 'Capitaine';
+
+export interface ClubLegend {
+  id: string;
+  name: string;
+  role: LegendRole;
+  years: string;
+  position?: string;
+  photoUrl?: string;
+  bio: string;
+  highlight: string;
+}
+
+export type TimelineEventType = 'foundation' | 'title' | 'golden-generation' | 'moment';
+
+export interface ClubTimelineEvent {
+  year: string;
+  title: string;
+  description: string;
+  type: TimelineEventType;
+}
+
+export interface ClubHistoricSeason {
+  season: string;
+  position: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  points: number;
+  awards?: string[];
+  note?: string;
+}
+
+export interface ClubRecordEntry {
+  category: string;
+  holder: string;
+  value: string;
+  detail?: string;
+}
+
+export interface LionsCallUp {
+  playerName: string;
+  photoUrl?: string;
+  position?: string;
+  period: string;
+  caps: number;
+  competitions: string[];
+  note?: string;
+  active?: boolean;
+}
+
+export interface AcademyProspect {
+  name: string;
+  position: string;
+  age: number;
+  photoUrl?: string;
+  note: string;
+  status: 'prospect' | 'graduate';
+  destinationClub?: string;
+}
+
+export interface ClubRivalry {
+  clubId: string;
+  clubName: string;
+  intensity: 'Derby historique' | 'Rivalité continentale' | 'Rivalité régionale';
+  note: string;
+}
+
+export interface ClubIdentityExtra {
+  philosophy: string;
+  captainName?: string;
+  captainPhotoUrl?: string;
+  rivalries: ClubRivalry[];
+  seasonObjective?: string;
+}
+
+export interface ClubHubProfile {
+  identity: ClubIdentityExtra;
+  trophies: ClubTrophy[];
+  legends: ClubLegend[];
+  timeline: ClubTimelineEvent[];
+  historicSeasons: ClubHistoricSeason[];
+  records: ClubRecordEntry[];
+  lionsCallUps: LionsCallUp[];
+  academy: AcademyProspect[];
+}
+
 export interface TopPerformersQuery {
   seasonId: string;
   category: StatCategory;

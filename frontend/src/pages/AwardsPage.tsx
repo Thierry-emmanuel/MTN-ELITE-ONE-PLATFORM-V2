@@ -4,8 +4,8 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import {
   Wifi, WifiOff, Sparkles, Vote, ChevronRight,
   Trophy, Users, Shield, ClipboardList, CircleDot,
-  Rocket, Lock, ArrowUpRight, Crown, CalendarDays,
-  Medal, Ticket, ScrollText,
+  Rocket, Lock, ArrowUpRight, Crown,
+  Medal,
 } from 'lucide-react';
 import { useAwards, useTeamOfWeek, useRealtimeVotes, useBallonDor } from '@/hooks/useAwards';
 import { useVotingStore, useRealtimeStore } from '@/store/awards.store';
@@ -13,6 +13,7 @@ import { AwardCard } from '@/components/elite/awards/AwardCard';
 import { FormationPitch } from '@/components/elite/awards/FormationPitch';
 import { PastWinnersGallery } from '@/components/elite/awards/BallonDorComponents';
 import { CeremonyBackdrop } from '@/components/elite/awards/CeremonyBackdrop';
+import { CinematicHero, FeaturedWinner } from '@/components/elite/awards/AwardsCinematicHero';
 import { CEREMONY_PHOTOS } from '@/services/ceremonyPhotos';
 import { AWARD_GROUPS, AWARD_META } from '@/types/awards.types';
 import type { AwardGroup, AwardCategory, Award, PlayerNominee } from '@/types/awards.types';
@@ -56,110 +57,6 @@ const StageLights = () => (
     />
   </div>
 );
-
-// ─── Gala hero — the digital equivalent of walking into the ceremony ─────────
-const GalaHero = ({
-  totalAwards, totalCategories, ceremonyDate, totalVotes,
-}: { totalAwards: number; totalCategories: number; ceremonyDate?: string; totalVotes: number }) => {
-  const formattedDate = ceremonyDate
-    ? new Date(ceremonyDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null;
-
-  return (
-    <div className="relative overflow-hidden border-b border-[#FCD116]/10 bg-black">
-      <CeremonyBackdrop photos={CEREMONY_PHOTOS} intensity="subtle" />
-      <StageLights />
-      {/* Stage floor sheen */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#FCD116]/[0.05] to-transparent" />
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#FCD116]/40 to-transparent" />
-
-      <div className="container relative py-14 lg:py-20 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="flex items-center justify-center gap-2 mb-5"
-        >
-          <span className="h-px w-8 bg-[#FCD116]/50" />
-          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[.32em] text-[#FCD116]/80">
-            MTN Elite One · Saison 2025–26
-          </p>
-          <span className="h-px w-8 bg-[#FCD116]/50" />
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.08 }}
-          className="font-serif italic font-medium leading-[0.95] text-[2.6rem] sm:text-6xl lg:text-7xl text-white"
-        >
-          La nuit des <span className="text-foil not-italic font-black">Lions</span>
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.18 }}
-          className="mt-4 max-w-xl mx-auto text-sm sm:text-base text-white/45"
-        >
-          Le palmarès officiel du championnat — homme du match, équipe type, plus beau but, Ballon d'Or.
-          Chaque trophée honore une performance qui a marqué la saison.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.28 }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3"
-        >
-          <div className="flex items-center gap-2">
-            <Ticket className="h-3.5 w-3.5 text-[#FCD116]/60" />
-            <span className="font-display text-sm font-bold text-white/80 tabular-nums">{totalAwards}</span>
-            <span className="text-[11px] text-white/35 uppercase tracking-wider">récompenses en jeu</span>
-          </div>
-          <span className="hidden sm:block h-4 w-px bg-white/10" />
-          <div className="flex items-center gap-2">
-            <ScrollText className="h-3.5 w-3.5 text-[#FCD116]/60" />
-            <span className="font-display text-sm font-bold text-white/80 tabular-nums">{totalCategories}</span>
-            <span className="text-[11px] text-white/35 uppercase tracking-wider">catégories au programme</span>
-          </div>
-          <span className="hidden sm:block h-4 w-px bg-white/10" />
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-[#FCD116]/60" />
-            <span className="font-display text-sm font-bold text-white/80 tabular-nums">{totalVotes.toLocaleString('fr-FR')}</span>
-            <span className="text-[11px] text-white/35 uppercase tracking-wider">votes des supporters</span>
-          </div>
-          {formattedDate && (
-            <>
-              <span className="hidden sm:block h-4 w-px bg-white/10" />
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-3.5 w-3.5 text-[#FCD116]/60" />
-                <span className="text-[11px] text-white/35 uppercase tracking-wider">Cérémonie le {formattedDate}</span>
-              </div>
-            </>
-          )}
-        </motion.div>
-
-        {/* Foreground winners strip — real faces, sharp, in front of the blurred backdrop */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.36 }}
-          className="mt-9 flex items-center justify-center"
-        >
-          <div className="flex -space-x-3">
-            {CEREMONY_PHOTOS.slice(0, 6).map((src, i) => (
-              <img
-                key={i}
-                src={src}
-                alt=""
-                className="h-11 w-11 sm:h-12 sm:w-12 rounded-full object-cover ring-2 ring-black"
-                style={{ zIndex: 6 - i }}
-                loading="lazy"
-              />
-            ))}
-            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-full bg-[#FCD116]/10 border-2 border-black ring-2 ring-[#FCD116]/30 flex items-center justify-center text-[10px] font-black text-[#FCD116]">
-              +{Math.max(totalAwards - 6, 0)}
-            </div>
-          </div>
-          <p className="ml-3 text-[11px] text-white/30 max-w-[10rem] text-left leading-tight">
-            De nouveaux visages rejoindront ce soir la légende du championnat
-          </p>
-        </motion.div>
-      </div>
-    </div>
-  );
-};
 
 // ─── Podium spotlight — the Ballon d'Or top 3, staged like an award ceremony ─
 const PodiumAvatar = ({ nominee, size }: { nominee: PlayerNominee; size: number }) =>
@@ -527,16 +424,16 @@ export default function AwardsPage() {
 
   const nonBallonDorGroups = AWARD_GROUPS.filter(g => g.id !== 'BALLON_DOR');
   const totalCategories = AWARD_GROUPS.reduce((n, g) => n + g.categories.length, 0);
-  const totalVotes = awards.reduce((n, a) => n + (a.voteResults?.totalVotes ?? 0), 0) + (ballonDor?.totalVotes ?? 0);
+  const ballonDorAwardId = awards.find(a => a.category === 'BALLON_DOR')?.id ?? '';
+  const season = ballonDor?.year ? `${ballonDor.year}–${String((ballonDor.year + 1) % 100).padStart(2, '0')}` : '2025–26';
 
   return (
     <div className="min-h-screen bg-black text-stone-100">
-      <GalaHero
-        totalAwards={awards.length}
-        totalCategories={totalCategories}
-        ceremonyDate={ballonDor?.ceremonyDate}
-        totalVotes={totalVotes}
-      />
+      <CinematicHero season={season} scrollTargetId="featured-winner" />
+
+      {ballonDor && (
+        <FeaturedWinner edition={ballonDor} votedNomineeId={votedMap[ballonDorAwardId] ?? null} />
+      )}
 
       <div className="container py-6 lg:py-10">
 

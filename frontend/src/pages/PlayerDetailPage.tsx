@@ -1,18 +1,28 @@
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Shield, ArrowLeft, User, BarChart2, History, Trophy, Repeat, TrendingUp, Images, Newspaper } from 'lucide-react';
+import {
+  Shield, ArrowLeft, User, BarChart2, History, Trophy, Repeat, TrendingUp, Images, Newspaper,
+  BookMarked, Compass, BookOpen, Flag, Archive, Dna,
+} from 'lucide-react';
 import { usePlayerStats, usePlayer } from '@/hooks/useFootball';
 import { useArticles } from '@/hooks/useNews';
 import PageLayout from '@/layout/PageLayout';
 import { getPlayerProfile } from '@/data/playerProfile.mock';
+import { buildPassportData } from '@/data/passport.mock';
 import { DEV_SEASON_ID } from '@/services/mockData';
 
 import { PlayerProfileHero } from '@/components/elite/player-profile/PlayerProfileHero';
 import { PlayerSubNav, type ProfileNavSection } from '@/components/elite/player-profile/PlayerSubNav';
 import { OverviewSection } from '@/components/elite/player-profile/OverviewSection';
 import { SeasonStatsSection } from '@/components/elite/player-profile/SeasonStatsSection';
+import { PassportStampsSection } from '@/components/elite/player-profile/passport/PassportStampsSection';
+import { JourneyIndexSection } from '@/components/elite/player-profile/passport/JourneyIndexSection';
+import { CareerChaptersSection } from '@/components/elite/player-profile/passport/CareerChaptersSection';
 import { CareerSection } from '@/components/elite/player-profile/CareerSection';
+import { RoadToLionsSection } from '@/components/elite/player-profile/passport/RoadToLionsSection';
 import { AchievementsSection } from '@/components/elite/player-profile/AchievementsSection';
+import { MemoryBoxSection } from '@/components/elite/player-profile/passport/MemoryBoxSection';
+import { CareerDnaSection } from '@/components/elite/player-profile/passport/CareerDnaSection';
 import { TransfersInjuriesSection } from '@/components/elite/player-profile/TransfersInjuriesSection';
 import { TrendsSection } from '@/components/elite/player-profile/TrendsSection';
 import { GallerySection } from '@/components/elite/player-profile/GallerySection';
@@ -22,8 +32,14 @@ import type { PlayerStat } from '@/types/football.types';
 const NAV_SECTIONS: ProfileNavSection[] = [
   { id: 'apercu', label: 'Aperçu', icon: User },
   { id: 'statistiques', label: 'Stats', icon: BarChart2 },
+  { id: 'passeport', label: 'Passeport', icon: BookMarked },
+  { id: 'parcours', label: 'Parcours', icon: Compass },
+  { id: 'chapitres', label: 'Chapitres', icon: BookOpen },
   { id: 'carriere', label: 'Carrière', icon: History },
+  { id: 'lions', label: 'Lions', icon: Flag },
   { id: 'palmares', label: 'Palmarès', icon: Trophy },
+  { id: 'souvenirs', label: 'Souvenirs', icon: Archive },
+  { id: 'dna', label: 'ADN', icon: Dna },
   { id: 'transferts', label: 'Transferts', icon: Repeat },
   { id: 'tendances', label: 'Tendances', icon: TrendingUp },
   { id: 'galerie', label: 'Galerie', icon: Images },
@@ -96,6 +112,7 @@ export default function PlayerDetailPage() {
   }, [baseStat, backendPlayer]);
 
   const player = useMemo(() => (effectiveStat ? getPlayerProfile(effectiveStat) : undefined), [effectiveStat]);
+  const passport = useMemo(() => (player ? buildPassportData(player) : undefined), [player]);
 
   const relatedPlayers = useMemo(() => {
     if (!player || !allPlayers) return [];
@@ -160,8 +177,28 @@ export default function PlayerDetailPage() {
 
       <OverviewSection player={player} />
       <SeasonStatsSection player={player} />
+      {passport && (
+        <>
+          <PassportStampsSection
+            player={player}
+            stamps={passport.stamps}
+            passportNumber={passport.passportNumber}
+            issueDate={passport.issueDate}
+            motto={passport.motto}
+          />
+          <JourneyIndexSection player={player} stamps={passport.stamps} />
+          <CareerChaptersSection player={player} chapters={passport.chapters} />
+        </>
+      )}
       <CareerSection player={player} />
+      {passport && <RoadToLionsSection events={passport.roadToLions} />}
       <AchievementsSection player={player} />
+      {passport && (
+        <>
+          <MemoryBoxSection items={passport.memoryBox} />
+          <CareerDnaSection player={player} dna={passport.dna} />
+        </>
+      )}
       <TransfersInjuriesSection player={player} />
       <TrendsSection player={player} />
       <GallerySection player={player} />

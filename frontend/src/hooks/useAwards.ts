@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { awardsApi, connectAwardsSocket, disconnectAwardsSocket, subscribeToAward, unsubscribeFromAward } from '../services/awardsApi';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '../store/awards.store';
 import { MOCK_AWARDS, MOCK_BALLON_DOR, MOCK_TEAM_OF_WEEK } from '../services/mockAwards';
-// (no additional type imports needed)
+import type { BallonDorEdition } from '../types/awards.types';
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? 'season-2025-26';
 
@@ -112,8 +112,19 @@ export function useRealtimeVotes() {
 export function useBallonDor(year?: number) {
   const { setBallonDor } = useAwardsStore();
   const query = useQuery({
+    // NOTE: the backend has no dedicated Ballon d'Or route yet — awardsApi.getBallonDor()
+    // resolves an `Award | null` (filtered from /awards/active), not a full BallonDorEdition
+    // (ranking, ceremonyDate, votingOpen...). Until that endpoint exists, treat anything
+    // that isn't already a proper edition as unavailable and use the mock edition instead.
     queryKey: AWARD_QK.ballonDor(year),
-    queryFn:  async () => { try { return await awardsApi.getBallonDor(year); } catch { return MOCK_BALLON_DOR; } },
+    queryFn:  async (): Promise<BallonDorEdition> => {
+      try {
+        const result = await awardsApi.getBallonDor(year);
+        return result && 'ranking' in result ? (result as unknown as BallonDorEdition) : MOCK_BALLON_DOR;
+      } catch {
+        return MOCK_BALLON_DOR;
+      }
+    },
     staleTime: 120_000,
   });
   useEffect(() => { if (query.data) setBallonDor(query.data); }, [query.data]);
