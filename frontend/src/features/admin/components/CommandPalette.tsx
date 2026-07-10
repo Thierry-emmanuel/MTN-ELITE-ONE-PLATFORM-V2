@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Layers, Image, Calendar, Trophy, FileText, Star,
   BarChart2, MapPin, Shirt, Handshake, Zap, Eye, Flag, Archive, Users,
-  Shield, UserCog, Sparkles,
+  Shield, UserCog, Sparkles, CalendarPlus, Swords,
 } from 'lucide-react';
 import {
   CommandDialog, CommandInput, CommandList, CommandEmpty,
@@ -13,6 +13,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onNavigate: (tab: string) => void;
   onCreatePlayer: () => void;
+  onCreateClub: () => void;
+  onCreateSeason: () => void;
+  onCreateMatch: () => void;
 }
 
 const NAV_ITEMS = [
@@ -40,7 +43,7 @@ const NAV_ITEMS = [
 
 const GROUP_ORDER = ['Compétition', 'Personnes', 'Héritage', 'Médias', 'Éditorial', 'Administration'];
 
-export function CommandPalette({ open, onOpenChange, onNavigate, onCreatePlayer }: Props) {
+export function CommandPalette({ open, onOpenChange, onNavigate, onCreatePlayer, onCreateClub, onCreateSeason, onCreateMatch }: Props) {
   const run = (fn: () => void) => {
     fn();
     onOpenChange(false);
@@ -56,6 +59,18 @@ export function CommandPalette({ open, onOpenChange, onNavigate, onCreatePlayer 
           <CommandItem onSelect={() => run(onCreatePlayer)}>
             <Sparkles className="mr-2 h-4 w-4" />
             <span>Nouveau joueur — Builder guidé</span>
+          </CommandItem>
+          <CommandItem onSelect={() => run(onCreateClub)}>
+            <Shield className="mr-2 h-4 w-4" />
+            <span>Nouveau club — Builder guidé</span>
+          </CommandItem>
+          <CommandItem onSelect={() => run(onCreateMatch)}>
+            <Swords className="mr-2 h-4 w-4" />
+            <span>Nouveau match — Builder guidé</span>
+          </CommandItem>
+          <CommandItem onSelect={() => run(onCreateSeason)}>
+            <CalendarPlus className="mr-2 h-4 w-4" />
+            <span>Nouvelle saison — Builder guidé</span>
           </CommandItem>
         </CommandGroup>
 

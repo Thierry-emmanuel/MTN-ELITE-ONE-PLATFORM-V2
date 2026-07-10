@@ -163,7 +163,7 @@ export function renderEntityField<T>(
     <div key={String(field.key)} className={wrapClass}>
       <FormField
         label={field.label}
-        type={field.type as 'text' | 'textarea' | 'number' | 'select' | 'date'}
+        type={field.type as 'text' | 'textarea' | 'number' | 'select' | 'date' | 'datetime-local'}
         value={value as string | number}
         onChange={onChange}
         options={options}

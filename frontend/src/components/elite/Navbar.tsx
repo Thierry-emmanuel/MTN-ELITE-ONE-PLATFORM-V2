@@ -48,8 +48,10 @@ const NAV_LINKS = [
     icon: <Newspaper className="h-3.5 w-3.5" />,
     accent: true,
     children: [
-      { label: "Toutes les actus", href: "/news",   icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Espace éditeur",   href: "/editor", icon: <Edit3     className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "The League Journal", href: "/journal",        icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Toutes les actus",   href: "/news",            icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Espace éditeur",     href: "/editor",          icon: <Edit3     className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Story Builder (CMS)",href: "/journal/studio",  icon: <Edit3     className="h-3.5 w-3.5 text-[#FCD116]" /> },
     ],
   },
   {

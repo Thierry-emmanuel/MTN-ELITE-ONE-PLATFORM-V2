@@ -7,6 +7,8 @@ import { playersConfig } from './configs/players.config';
 import { stadiumsConfig } from './configs/stadiums.config';
 import { equipmentsConfig } from './configs/equipments.config';
 import { sponsorsConfig } from './configs/sponsors.config';
+import { seasonsConfig } from './configs/seasons.config';
+import { matchesConfig } from './configs/matches.config';
 import type { EntityConfig } from './engine/entityConfig.types';
 
 /**
@@ -19,6 +21,12 @@ import type { EntityConfig } from './engine/entityConfig.types';
  * rich (image uploads, nested JSON) but still fit the generic engine via
  * the 'media-image', 'nested-object', and 'color' field types — no bespoke
  * page needed.
+ *
+ * Seasons and Matches are registered too, but their tabs remain the
+ * bespoke SeasonsTab / matches block in AdminPage — those own lifecycle
+ * actions (Activer, Clôturer, live score entry) the generic table doesn't
+ * model. Registering them here just lets their configs power the League
+ * Studio guided builders via createEntityHooks, same as every other entity.
  */
 export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   transfers: transfersConfig,
@@ -31,6 +39,8 @@ export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   stadiums: stadiumsConfig,
   equipments: equipmentsConfig,
   sponsors: sponsorsConfig,
+  seasons: seasonsConfig,
+  matches: matchesConfig,
 };
 
 export type EntityRegistryKey = keyof typeof ENTITY_REGISTRY;

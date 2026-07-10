@@ -3,7 +3,7 @@
 // replaces the old pattern of one 200+ line bespoke tab per entity.
 
 export type FieldType =
-  | 'text' | 'textarea' | 'number' | 'select' | 'date' | 'switch'
+  | 'text' | 'textarea' | 'number' | 'select' | 'date' | 'datetime-local' | 'switch'
   | 'media-image' | 'media-video' | 'tags' | 'richtext'
   // ── Added for Clubs/Players ──────────────────────────────────────────────
   // 'nested-object': renders a sub-form for a JSON column (achievements,
@@ -87,4 +87,20 @@ export interface EntityConfig<T extends { id?: string; _id?: string }> {
   /** Optional — presence of this array is what makes "Nouveau X" open the
    *  guided builder (step wizard + live preview) instead of the flat form. */
   builderSteps?: BuilderStepDef<T>[];
+  /**
+   * Runs once, right before create/update is sent to the API (both the flat
+   * form and the guided builder go through this — see useEntityCrud). Use
+   * it for field-format conversions the generic engine can't infer, e.g.
+   * turning a `datetime-local` input's local string into an ISO timestamp.
+   */
+  beforeSave?: (payload: Partial<T>) => Partial<T>;
+  /**
+   * Extra fields merged into the payload specifically when the guided
+   * builder's "Publier" action fires (as opposed to "Enregistrer le
+   * brouillon"). Lets each entity define what "published" means in its own
+   * vocabulary — e.g. { isActive: true, status: 'ACTIVE' } for a Player,
+   * nothing at all for a Season where status is a lifecycle the editor
+   * chooses explicitly.
+   */
+  publishOverrides?: Partial<T>;
 }

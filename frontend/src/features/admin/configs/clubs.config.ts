@@ -135,4 +135,54 @@ export const clubsConfig: EntityConfig<Club> = {
     name: '', city: '', stadium: '', foundedYear: new Date().getFullYear(),
     status: 'ACTIVE', achievements: {}, socialMedia: {},
   }),
+
+  // ── League Studio: Club Builder ─────────────────────────────────────────
+  // Same fields as above, grouped into the journey a club administrator
+  // actually thinks in: who we are → how we look → where we play → our
+  // story → who leads us → our honours → confirm.
+  builderSteps: [
+    {
+      id: 'identity',
+      label: 'Identité',
+      description: 'Le nom et les informations de base du club.',
+      fieldKeys: ['name', 'nickname', 'city', 'region', 'foundedYear', 'websiteUrl'],
+    },
+    {
+      id: 'branding',
+      label: 'Image de marque',
+      description: 'Logo, bannière et couleurs — utilisés partout où le club apparaît sur la plateforme.',
+      fieldKeys: ['logoUrl', 'bannerUrl', 'videoUrl', 'primaryColor', 'secondaryColor'],
+    },
+    {
+      id: 'stadium',
+      label: 'Stade',
+      description: "L'antre du club.",
+      fieldKeys: ['stadium', 'stadiumCapacity', 'stadiumPhotoUrl'],
+    },
+    {
+      id: 'story',
+      label: 'Histoire & Palmarès',
+      description: 'Ce qui rend ce club mémorable.',
+      fieldKeys: ['description', 'history', 'palmares'],
+    },
+    {
+      id: 'leadership',
+      label: 'Direction',
+      description: 'Qui dirige le club.',
+      fieldKeys: ['presidentName', 'presidentPhotoUrl', 'budget'],
+    },
+    {
+      id: 'honours',
+      label: 'Trophées & Réseaux',
+      description: 'Palmarès chiffré et présence sur les réseaux sociaux.',
+      fieldKeys: ['achievements', 'socialMedia'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: "Vérifiez tout avant de publier — l'aperçu à droite est exactement ce que verront les supporters.",
+      fieldKeys: ['status'],
+    },
+  ],
+  publishOverrides: { status: 'ACTIVE' },
 };

@@ -27,13 +27,13 @@ export function createEntityHooks<T extends { id?: string; _id?: string }>(
     const invalidate = () => qc.invalidateQueries({ queryKey: [config.name] });
 
     const createMutation = useMutation({
-      mutationFn: (payload: Partial<T>) => api.create(payload),
+      mutationFn: (payload: Partial<T>) => api.create(config.beforeSave ? config.beforeSave(payload) : payload),
       onSuccess: invalidate,
     });
 
     const updateMutation = useMutation({
       mutationFn: ({ id, payload }: { id: string; payload: Partial<T> }) =>
-        api.update(id, payload),
+        api.update(id, config.beforeSave ? config.beforeSave(payload) : payload),
       onSuccess: invalidate,
     });
 

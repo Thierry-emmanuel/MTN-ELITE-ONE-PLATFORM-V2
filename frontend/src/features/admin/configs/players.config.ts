@@ -152,6 +152,7 @@ export const playersConfig: EntityConfig<Player> = {
     firstName: '', lastName: '', position: 'MID', nationality: 'Camerounais',
     status: 'ACTIVE', isActive: true, socialMedia: {},
   }),
+  publishOverrides: { isActive: true, status: 'ACTIVE' },
 
   // ── League Studio: Player Builder ─────────────────────────────────────
   // Groups the same `fields` above into a guided, six-step journey. No new

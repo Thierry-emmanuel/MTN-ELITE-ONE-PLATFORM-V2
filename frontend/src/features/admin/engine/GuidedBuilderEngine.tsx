@@ -120,9 +120,7 @@ export function GuidedBuilderEngine<T extends { id?: string; _id?: string }>({
       showToast('Complétez toutes les étapes avant de publier.', 'error');
       return;
     }
-    const extra: Partial<T> = {};
-    if ('isActive' in config.emptyRecord()) (extra as any).isActive = true;
-    if ('status' in config.emptyRecord()) (extra as any).status = 'ACTIVE';
+    const extra: Partial<T> = (config.publishOverrides ?? {}) as Partial<T>;
     try {
       await persist(extra);
       showToast(`${config.labelSingular} publié(e) avec succès.`);
