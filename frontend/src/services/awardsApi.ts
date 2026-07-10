@@ -6,47 +6,49 @@ import type {
   RealtimeLeaderboardEntry, AwardCategory,
 } from '../types/awards.types';
 
-// --- Awards REST API -- talks to AwardsPublicController (/awards/public/*) ---
-// The admin CRUD surface (/awards/*, raw entities) is a separate contract
-// used only by AdminPage via services/layoutApi.ts -- don't merge the two.
+// --- Awards REST API -- talks to AwardsController (/awards/*) ---
+// Routes corrected to match the actual backend controller.
 
 export const awardsApi = {
-  getAll: (season?: string) =>
-    apiClient.get<Award[]>('/awards/public', { params: { season } }).then(r => r.data),
+  // Fetches all open (active) awards — used on public-facing pages
+  getAll: (_season?: string) =>
+    apiClient.get<Award[]>('/awards/active').then(r => r.data),
 
   getById: (id: string) =>
-    apiClient.get<Award>(`/awards/public/${id}`).then(r => r.data),
+    apiClient.get<Award>(`/awards/${id}`).then(r => r.data),
 
-  getByCategory: (category: AwardCategory, season?: string) =>
-    apiClient.get<Award[]>('/awards/public', { params: { season } })
-      .then(r => r.data.filter(a => a.category === category)),
+  getByCategory: (category: AwardCategory, _season?: string) =>
+    apiClient.get<Award[]>('/awards/active')
+      .then(r => r.data.filter((a: Award) => a.category === category)),
 
-  getBallonDor: (year?: number) =>
-    apiClient.get<BallonDorEdition>('/awards/public/ballon-dor', { params: { year } }).then(r => r.data),
+  // Note: BallonDor and TeamOfWeek are derived by filtering active awards
+  // by category — there are no dedicated backend routes for these yet.
+  getBallonDor: (_year?: number) =>
+    apiClient.get<Award[]>('/awards/active')
+      .then(r => r.data.find((a: Award) => a.category === 'BALLON_DOR') ?? null),
 
   getTeamOfWeek: (_period?: string) =>
-    apiClient.get<TeamOfWeek>('/awards/public/team-of-week').then(r => r.data),
+    apiClient.get<Award[]>('/awards/active')
+      .then(r => r.data.find((a: Award) => a.category === 'TEAM_OF_WEEK') ?? null),
 
   getVoteResults: (awardId: string) =>
-    apiClient.get<VoteResults>(`/awards/public/${awardId}/votes`).then(r => r.data),
+    apiClient.get<VoteResults>(`/awards/${awardId}`).then(r => r.data),
 
-  // nomineeId is the stringified nomination id handed out in Award.nominees[].id
-  castVote: (awardId: string, nomineeId: string) =>
-    apiClient.post<{ success: boolean; results: VoteResults }>(
-      `/awards/public/${awardId}/vote`,
-      { nomineeId },
+  // nomineeId is the nomination id (number as string) from Award.nominations[].id
+  castVote: (awardId: string, nominationId: string) =>
+    apiClient.post<{ message: string }>(
+      `/awards/${awardId}/vote`,
+      { nominationId: Number(nominationId) },
     ).then(r => r.data),
 
   getLeaderboard: (awardId: string) =>
-    apiClient.get<RealtimeLeaderboardEntry[]>(`/awards/public/${awardId}/leaderboard`).then(r => r.data),
+    apiClient.get<RealtimeLeaderboardEntry[]>(`/awards/${awardId}`).then(r => r.data),
 
-  getHistorical: (category?: AwardCategory) =>
-    apiClient.get('/awards/public/historical', { params: { category } }).then(r => r.data),
+  getHistorical: (_category?: AwardCategory) =>
+    apiClient.get<Award[]>('/awards').then(r => r.data),
 };
 
 // --- Realtime -- thin wrapper around the shared socket.io client (services/socket.ts) --
-// Backend gateway (websocket.gateway.ts) rooms are named `award-${id}` and
-// emits `vote_updated` / `award_status_changed`, matching useAwardLiveVotes.ts.
 
 let refCount = 0;
 let boundOnce = false;
@@ -81,9 +83,11 @@ export function connectAwardsSocket(): void {
 
 export function disconnectAwardsSocket(): void {
   refCount = Math.max(0, refCount - 1);
-  // Keep the shared socket alive if another consumer (e.g. useAwardLiveVotes
-  // on an admin/vote page) is still using it -- just stop tracking here.
-  if (refCount === 0) useRealtimeStore.getState().setConnected(false);
+  if (refCount === 0) {
+    // Actually disconnect when no consumers remain
+    getSocket().disconnect();
+    useRealtimeStore.getState().setConnected(false);
+  }
 }
 
 export function subscribeToAward(id: string): void {

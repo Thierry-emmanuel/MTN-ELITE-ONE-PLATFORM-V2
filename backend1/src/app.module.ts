@@ -49,11 +49,13 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
         type:     'postgres',
+        url:      cfg.get<string>('DATABASE_URL'),
         host:     cfg.get<string>('DB_HOST'),
         port:     cfg.get<number>('DB_PORT'),
         username: cfg.get<string>('DB_USERNAME'),
         password: cfg.get<string>('DB_PASSWORD'),
         database: cfg.get<string>('DB_NAME'),
+        ssl:      cfg.get<string>('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
         autoLoadEntities: true,
         synchronize: cfg.get<string>('DB_SYNCHRONIZE') === 'true',
         logging:     cfg.get<string>('NODE_ENV') === 'development',
@@ -71,15 +73,29 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     CacheModule.registerAsync({
       isGlobal: true,
       inject: [ConfigService],
-      useFactory: async (cfg: ConfigService) => ({
-        store: await redisStore({
-          socket: {
-            host: cfg.get<string>('REDIS_HOST', 'localhost'),
-            port: cfg.get<number>('REDIS_PORT', 6379),
-          },
-          ttl: cfg.get<number>('REDIS_TTL', 300) * 1_000,
-        }),
-      }),
+      useFactory: async (cfg: ConfigService) => {
+        const host = cfg.get<string>('REDIS_HOST', 'localhost');
+        const port = cfg.get<number>('REDIS_PORT', 6379);
+        const ttl  = cfg.get<number>('REDIS_TTL', 300) * 1_000;
+
+        try {
+          // Probe the Redis connection before committing to the store
+          const store = await redisStore({
+            socket: { host, port, connectTimeout: 3_000 },
+            ttl,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any);
+          console.log(`[Cache] Redis connected at ${host}:${port}`);
+          return { store };
+        } catch (err) {
+          console.warn(
+            `[Cache] Redis unavailable at ${host}:${port} — falling back to in-memory cache.`,
+            (err as Error).message,
+          );
+          // Return empty config = @nestjs/cache-manager default (memory store)
+          return {};
+        }
+      },
     }),
 
     AuthModule,

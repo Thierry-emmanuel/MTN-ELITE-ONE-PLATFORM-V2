@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import PageLayout from "@/layout/PageLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // ─── Route-level code splitting ───────────────────────────────────────────────
 // Each page is its own chunk — first-load JS drops significantly.
@@ -68,8 +69,8 @@ const App = () => (
         <Route path="/stats"               element={<PageLayout><StatsPage /></PageLayout>} />
         <Route path="/news"                element={<PageLayout><NewsPage /></PageLayout>} />
         <Route path="/news/:slug"          element={<PageLayout><ArticlePage /></PageLayout>} />
-        <Route path="/editor"              element={<PageLayout><EditorPage /></PageLayout>} />
-        <Route path="/admin"               element={<AdminPage />} />
+        <Route path="/editor" element={<ProtectedRoute roles={['admin','editor']}><PageLayout><EditorPage /></PageLayout></ProtectedRoute>} />
+        <Route path="/admin"  element={<ProtectedRoute roles={['admin']}><AdminPage /></ProtectedRoute>} />
         <Route path="/awards"              element={<PageLayout><AwardsPage /></PageLayout>} />
         <Route path="/awards/ballon-dor"   element={<PageLayout><BallonDorPage /></PageLayout>} />
         <Route path="/awards/team-of-week" element={<PageLayout><TeamOfWeekPage /></PageLayout>} />

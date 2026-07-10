@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiClient } from "../services/api";
 import {
   Eye, EyeOff, Mail, Lock, User, Phone, Building2,
   FileText, ChevronRight, Loader2, AlertCircle, CheckCircle2,
@@ -217,41 +218,67 @@ export const AuthPage = () => {
     e.preventDefault();
     if (!validateLogin()) return;
     setLoading(true); setServerError("");
-    await new Promise(r => setTimeout(r, 900)); // simulate API
-    // Check localStorage for existing user
-    const stored = localStorage.getItem("mtn_user");
-    if (stored) {
-      const u = JSON.parse(stored);
-      if (u.email === loginEmail) {
-        setLoading(false);
-        navigate("/");
-        return;
-      }
+    try {
+      const { data } = await apiClient.post<{ accessToken: string; user: any }>(
+        '/auth/login',
+        { email: loginEmail, password: loginPass },
+      );
+      // Persist token so api.ts interceptor sends it on future requests
+      localStorage.setItem('mtn_token', data.accessToken);
+      // Store minimal user info for UI display
+      localStorage.setItem('mtn_user', JSON.stringify({
+        name: `${data.user.firstName} ${data.user.lastName}`,
+        email: data.user.email,
+        role: data.user.role,
+        createdAt: data.user.createdAt,
+      }));
+      window.dispatchEvent(new Event('storage'));
+      navigate('/');
+    } catch (err: any) {
+      setServerError(err?.message ?? 'Identifiants incorrects. Veuillez réessayer.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    setServerError("Identifiants incorrects. Créez un compte ou réessayez.");
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateRegister()) return;
     setLoading(true); setServerError("");
-    await new Promise(r => setTimeout(r, 1000)); // simulate API
-    const user: StoredUser = {
-      name, email, role, phone: phone || undefined,
-      organization: organization || undefined,
-      jobTitle: jobTitle || undefined,
-      bio: bio || undefined,
-      createdAt: new Date().toISOString(),
-    };
-    saveUser(user);
-    setLoading(false);
-    setSuccess(
-      role === "editor"
-        ? "Compte éditeur créé ! Votre demande est en cours de vérification."
-        : "Compte créé avec succès ! Vous êtes maintenant connecté."
-    );
-    setTimeout(() => navigate("/"), 1800);
+
+    // Split the single "name" field into firstName + lastName
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] ?? name;
+    const lastName  = nameParts.slice(1).join(' ') || firstName; // fallback if single word
+
+    try {
+      const endpoint = role === 'editor' ? '/auth/register/editor' : '/auth/register';
+      const payload: Record<string, any> = {
+        email,
+        password,
+        firstName,
+        lastName,
+        phone: phone || undefined,
+        role: role === 'editor' ? 'editor' : 'user',
+      };
+      if (role === 'editor') {
+        payload.agency        = organization;
+        payload.mediaType     = jobTitle;
+        payload.purpose       = bio || 'Non précisé';
+        payload.cniNumber     = 'PENDING'; // placeholder — real file upload not yet implemented
+      }
+      await apiClient.post(endpoint, payload);
+      setSuccess(
+        role === 'editor'
+          ? 'Compte éditeur créé ! Votre demande est en cours de vérification.'
+          : 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.',
+      );
+      setTimeout(() => navigate('/login'), 1800);
+    } catch (err: any) {
+      setServerError(err?.message ?? 'Une erreur est survenue. Veuillez réessayer.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Success screen ──

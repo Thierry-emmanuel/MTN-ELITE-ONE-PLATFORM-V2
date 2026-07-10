@@ -37,6 +37,9 @@ export class AuthService {
       role:  user.role,
     };
 
+    // Update lastLoginAt (fire-and-forget — don't block the response)
+    this.usersService.updateLastLogin(user.id).catch(() => { /* non-critical */ });
+
     return {
       accessToken: this.jwtService.sign(payload),
       user: this.usersService.sanitize(user),

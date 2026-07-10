@@ -1,11 +1,11 @@
 import {
   Controller, Get, Post, Patch, Delete,
   Param, Body, Query, ParseIntPipe,
-  HttpCode, HttpStatus,
+  HttpCode, HttpStatus, UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags, ApiOperation, ApiBearerAuth,
-  ApiQuery, ApiParam, ApiResponse,
+  ApiQuery, ApiParam,
 } from '@nestjs/swagger';
 import {
   MatchesService, MatchFilters, MatchDay, PaginatedMatches,
@@ -18,6 +18,10 @@ import { PaginationDto }  from '../common/dto/pagination.dto';
 import { Match, MatchStatus } from './match.entity';
 import { IsInt, IsOptional, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard }   from '../common/guards/roles.guard';
+import { Roles }        from '../common/guards/roles.decorator';
+import { UserRole }     from '../users/user.entity';
 
 class ScoreDto {
   @IsInt() @Min(0) @Type(() => Number) homeScore: number;
@@ -32,7 +36,9 @@ export class MatchesController {
   // ── POST /matches ─────────────────────────────────────────────────────────
   @Post()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Schedule a new match' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Schedule a new match (admin)' })
   create(@Body() dto: CreateMatchDto): Promise<Match> {
     return this.matchesService.create(dto);
   }
@@ -44,8 +50,8 @@ export class MatchesController {
   @ApiQuery({ name: 'round',    type: Number,       required: false })
   @ApiQuery({ name: 'seasonId', type: String,       required: false })
   @ApiQuery({ name: 'clubId',   type: String,       required: false })
-  @ApiQuery({ name: 'dateFrom', type: String,       required: false, description: 'ISO date e.g. 2025-01-01' })
-  @ApiQuery({ name: 'dateTo',   type: String,       required: false, description: 'ISO date e.g. 2025-06-30' })
+  @ApiQuery({ name: 'dateFrom', type: String,       required: false })
+  @ApiQuery({ name: 'dateTo',   type: String,       required: false })
   @ApiQuery({ name: 'page',     type: Number,       required: false })
   @ApiQuery({ name: 'limit',    type: Number,       required: false })
   findAll(
@@ -67,12 +73,10 @@ export class MatchesController {
   }
 
   // ── GET /matches/fixtures/:seasonId ───────────────────────────────────────
-  // WHY: dedicated endpoint so the frontend doesn't need to know status filters.
-  // Returns matches grouped by date — ready to render directly.
   @Get('fixtures/:seasonId')
   @ApiOperation({ summary: 'Get upcoming & live matches for a season, grouped by date' })
-  @ApiParam({ name: 'seasonId', description: 'Season UUID' })
-  @ApiQuery({ name: 'limit', type: Number, required: false, description: 'Max number of matches (default 30)' })
+  @ApiParam({ name: 'seasonId' })
+  @ApiQuery({ name: 'limit', type: Number, required: false })
   findFixtures(
     @Param('seasonId', ParseIntPipe) seasonId: number,
     @Query('limit') limit?: number,
@@ -83,7 +87,7 @@ export class MatchesController {
   // ── GET /matches/results/:seasonId ────────────────────────────────────────
   @Get('results/:seasonId')
   @ApiOperation({ summary: 'Get finished matches for a season, paginated and grouped by date' })
-  @ApiParam({ name: 'seasonId', description: 'Season UUID' })
+  @ApiParam({ name: 'seasonId' })
   @ApiQuery({ name: 'page',  type: Number, required: false })
   @ApiQuery({ name: 'limit', type: Number, required: false })
   findResults(
@@ -117,6 +121,8 @@ export class MatchesController {
   // ── PATCH /matches/:id/lineups ────────────────────────────────────────────
   @Patch(':id/lineups')
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Set/replace lineups for a match (admin)' })
   setLineups(
     @Param('id', ParseIntPipe) id: number,
@@ -139,7 +145,9 @@ export class MatchesController {
   // ── PATCH /matches/:id ────────────────────────────────────────────────────
   @Patch(':id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update match info' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update match info (admin)' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateMatchDto,
@@ -150,7 +158,9 @@ export class MatchesController {
   // ── PATCH /matches/:id/score ──────────────────────────────────────────────
   @Patch(':id/score')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update live match score' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update live match score (admin)' })
   updateScore(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: ScoreDto,
@@ -159,10 +169,11 @@ export class MatchesController {
   }
 
   // ── PATCH /matches/:id/finish ─────────────────────────────────────────────
-  // WHY: dedicated endpoint for finishing — triggers standings recalc automatically.
   @Patch(':id/finish')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Mark match as finished — triggers standings update' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Mark match as finished — triggers standings update (admin)' })
   finishMatch(@Param('id', ParseIntPipe) id: number): Promise<Match> {
     return this.matchesService.finishMatch(id);
   }
@@ -171,7 +182,9 @@ export class MatchesController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a match (not allowed if LIVE)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete a match (not allowed if LIVE) (admin)' })
   remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
     return this.matchesService.remove(id);
   }

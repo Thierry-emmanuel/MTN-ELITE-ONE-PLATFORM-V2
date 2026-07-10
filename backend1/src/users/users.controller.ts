@@ -1,13 +1,21 @@
 import {
   Controller, Get, Post, Patch, Delete,
   Param, Body, Query, ParseIntPipe, HttpCode, HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UserRole } from './user.entity';
+import { JwtAuthGuard }  from '../common/guards/jwt-auth.guard';
+import { RolesGuard }    from '../common/guards/roles.guard';
+import { Roles }         from '../common/guards/roles.decorator';
 
+// All user-management endpoints are admin-only.
+// Public registration is handled by /auth/register.
 @ApiTags('users')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

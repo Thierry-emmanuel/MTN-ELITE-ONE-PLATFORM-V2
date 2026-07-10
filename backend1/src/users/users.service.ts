@@ -56,15 +56,18 @@ export class UsersService {
     const where: any = {};
     if (opts.role) where.role = opts.role;
     if (opts.search) {
-      // Search by email or name
+      // Run three un-paginated queries then merge+deduplicate in memory,
+      // THEN apply pagination — this gives a correct `total` count.
       const [byEmail, byFirst, byLast] = await Promise.all([
-        this.usersRepo.findAndCount({ where: { email:     ILike(`%${opts.search}%`) }, skip: (page - 1) * limit, take: limit }),
-        this.usersRepo.findAndCount({ where: { firstName: ILike(`%${opts.search}%`) }, skip: (page - 1) * limit, take: limit }),
-        this.usersRepo.findAndCount({ where: { lastName:  ILike(`%${opts.search}%`) }, skip: (page - 1) * limit, take: limit }),
+        this.usersRepo.find({ where: { email:     ILike(`%${opts.search}%`) } }),
+        this.usersRepo.find({ where: { firstName: ILike(`%${opts.search}%`) } }),
+        this.usersRepo.find({ where: { lastName:  ILike(`%${opts.search}%`) } }),
       ]);
-      const combined = [...byEmail[0], ...byFirst[0], ...byLast[0]];
+      const combined = [...byEmail, ...byFirst, ...byLast];
       const unique   = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-      return { data: unique.map(u => this.sanitize(u)), total: unique.length, page, limit };
+      const total    = unique.length;
+      const slice    = unique.slice((page - 1) * limit, page * limit);
+      return { data: slice.map(u => this.sanitize(u)), total, page, limit };
     }
     const [data, total] = await this.usersRepo.findAndCount({
       where,
@@ -173,6 +176,11 @@ export class UsersService {
   }
 
   // ── Helpers ──────────────────────────────────────────────────
+  /** Non-critical — called fire-and-forget on every successful login. */
+  async updateLastLogin(id: number): Promise<void> {
+    await this.usersRepo.update(id, { lastLoginAt: new Date() });
+  }
+
   // ── Internal ─────────────────────────────────────────────────
   private async assertEmailFree(email: string) {
     const existing = await this.findByEmail(email);

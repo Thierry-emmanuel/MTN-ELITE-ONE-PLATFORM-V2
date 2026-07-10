@@ -253,12 +253,28 @@ export class StatsService {
 
     const data = await this.dataSource.query<Record<string, unknown>[]>(sql, params);
 
+    // ── Separate COUNT query for accurate total (data only contains the current page) ──
+    const countSql = `
+      SELECT COUNT(DISTINCT c.id)::int AS total
+      FROM clubs c
+      INNER JOIN matches m
+        ON (m."home_club_id"=c.id OR m."away_club_id"=c.id)
+        AND m.status = 'FINISHED'
+        ${seasonClause}
+    `;
+    const countParams: (string | number)[] = input.seasonId ? [input.seasonId] : [];
+    const [{ total: totalCount }] = await this.dataSource.query<{ total: number }[]>(
+      countSql,
+      countParams,
+    );
+    const total = Number(totalCount) || 0;
+
     return {
       data,
-      total:      data.length,
+      total,
       page:       input.page,
       limit:      input.limit,
-      totalPages: Math.ceil(data.length / input.limit),
+      totalPages: Math.ceil(total / input.limit),
     };
   }
 

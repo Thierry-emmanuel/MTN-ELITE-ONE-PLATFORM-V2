@@ -154,17 +154,23 @@ export class AwardsService {
 
     const ipHash = crypto.createHash('sha256').update(ipAddress).digest('hex');
 
-    // Anti-fraud: Check if already voted
-    const existingVote = await this.voteRepo.findOne({
-      where: [{ ipHash, awardId }, ...(userId ? [{ userId, awardId }] : [])],
-    });
-
-    if (existingVote) {
-      throw new BadRequestException('You have already voted for this award');
-    }
-
-    // Transaction to save vote and update count safely
+    // ── Duplicate check AND vote insert are inside ONE transaction ──────────
+    // This prevents the race condition where two concurrent requests both pass
+    // the check before either write completes.
     await this.dataSource.transaction(async (manager) => {
+      // Re-check for duplicate INSIDE the transaction (serializable check)
+      const existingVote = await manager.findOne(Vote, {
+        where: [
+          { ipHash, awardId },
+          ...(userId ? [{ userId, awardId }] : []),
+        ] as any,
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (existingVote) {
+        throw new BadRequestException('You have already voted for this award');
+      }
+
       const vote = manager.create(Vote, {
         awardId,
         nominationId: dto.nominationId,
@@ -172,16 +178,12 @@ export class AwardsService {
         ipHash,
       });
       await manager.save(vote);
-
       await manager.increment(AwardNomination, { id: dto.nominationId }, 'voteCount', 1);
     });
 
-    // Fetch updated nomination for WS
+    // Fetch updated nomination for WS (outside transaction — read-only)
     const updatedNomination = await this.nominationRepo.findOne({ where: { id: dto.nominationId } });
 
-    // Emit realtime update — scoped to this award's room only, so the admin
-    // nominations panel and public VotingPanel don't receive tallies for
-    // awards they haven't opened (BF-06.3).
     this.wsGateway.server.to(`award-${awardId}`).emit('vote_updated', {
       awardId,
       nominationId: dto.nominationId,

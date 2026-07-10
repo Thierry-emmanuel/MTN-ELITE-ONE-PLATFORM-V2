@@ -194,7 +194,11 @@ export class StandingsService {
       const gdDiff = (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst);
       if (gdDiff !== 0) return gdDiff;
 
-      return b.goalsFor - a.goalsFor;
+      const gfDiff = b.goalsFor - a.goalsFor;
+      if (gfDiff !== 0) return gfDiff;
+
+      // Final tiebreaker: club id (stable and deterministic across recalculations)
+      return a.clubId - b.clubId;
     });
   }
 
