@@ -6,6 +6,7 @@ import { usePlayers, useClubs } from '@/hooks/useFootball';
 import { PageHero } from '@/components/elite/FootballPrimitives';
 import { ClubBadge } from '@/components/elite/ClubBadge';
 import { PlayerAvatar } from '@/components/elite/PlayerAvatar';
+import { PlayerCardPhoto } from '@/components/elite/PlayerCardPhoto';
 import { RatingBadge } from '@/components/elite/stats/RatingBadge';
 import { clubs as CLUB_DIRECTORY } from '@/components/elite/data';
 import { computeRating } from '@/lib/statsRating';
@@ -208,40 +209,42 @@ export default function PlayersPage() {
                         background: `linear-gradient(150deg, ${shade(baseColor, -0.55)} 0%, ${shade(baseColor, -0.15)} 55%, ${shade(baseColor, -0.6)} 100%)`,
                       }}
                     >
-                      {/* dot-grid texture */}
+                      {/* dot-grid texture (only visible where the photo doesn't cover) */}
                       <div className="absolute inset-0 opacity-[0.08] bg-[radial-gradient(circle,white_1px,transparent_1px)] [background-size:14px_14px]" />
-                      {/* giant faint jersey number */}
-                      <div className="absolute -right-3 -top-3 font-display italic font-black text-[92px] sm:text-[110px] leading-none text-white/[0.10] select-none pointer-events-none">
-                        {jerseyNumber}
-                      </div>
 
-                      {/* Top row: position + flag */}
+                      {/* Full-bleed portrait */}
+                      <PlayerCardPhoto
+                        name={displayName}
+                        photoUrl={player.photoUrl}
+                        className="grayscale-[0.15] group-hover:scale-[1.04] transition-transform duration-500 ease-out"
+                      />
+
+                      {/* Top scrim — keeps badges legible over any photo */}
+                      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 via-black/15 to-transparent pointer-events-none" />
+                      {/* Bottom scrim — keeps text legible over any photo */}
+                      <div className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />
+
+                      {/* Top row: position + jersey number + flag */}
                       <div className="relative z-10 flex items-start justify-between p-3.5">
-                        <span
-                          className="text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-widest backdrop-blur-sm"
-                          style={{ background: `${posColor}30`, color: posColor }}
-                        >
-                          {player.position}
-                        </span>
-                        <span className="h-7 w-7 rounded-full bg-black/25 backdrop-blur-sm grid place-items-center text-sm border border-white/10">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-widest backdrop-blur-sm"
+                            style={{ background: `${posColor}35`, color: posColor, border: `1px solid ${posColor}55` }}
+                          >
+                            {player.position}
+                          </span>
+                          <span className="h-5 min-w-5 px-1 rounded-md bg-black/40 backdrop-blur-sm grid place-items-center text-[10px] font-black text-white/90 border border-white/10">
+                            {jerseyNumber}
+                          </span>
+                        </div>
+                        <span className="h-7 w-7 rounded-full bg-black/40 backdrop-blur-sm grid place-items-center text-sm border border-white/10">
                           {flagFor(player.nationality)}
                         </span>
                       </div>
 
-                      {/* Portrait */}
-                      <div className="relative z-10 flex-1 flex items-center justify-center">
-                        <PlayerAvatar
-                          name={displayName}
-                          photoUrl={player.photoUrl}
-                          size={84}
-                          ring="#FFFFFF"
-                          className="text-2xl shadow-[0_8px_24px_rgba(0,0,0,0.4)] group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-
                       {/* Bottom info block */}
-                      <div className="relative z-10 p-3.5 pt-2 bg-gradient-to-t from-black/55 via-black/20 to-transparent">
-                        <h3 className="font-display text-[15px] sm:text-base font-black text-white leading-[1.05] truncate">
+                      <div className="relative z-10 p-3.5 pt-2 mt-auto">
+                        <h3 className="font-display text-[15px] sm:text-base font-black text-white leading-[1.05] truncate [text-shadow:0_1px_6px_rgba(0,0,0,0.6)]">
                           {displayName}
                         </h3>
                         <div className="flex items-center gap-1.5 mt-1 mb-2.5 min-w-0">
