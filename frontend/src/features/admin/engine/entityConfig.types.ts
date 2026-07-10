@@ -57,6 +57,22 @@ export interface LookupSource {
   fetch: () => Promise<SelectOption[]>;
 }
 
+/**
+ * Groups a subset of an entity's `fields` into one guided step for the
+ * GuidedBuilderEngine (League Studio's "builder instead of a form" pattern).
+ * A config becomes wizard-capable simply by adding `builderSteps` — no
+ * change to `fields`, `columns`, or the flat EntityCrudEngine required, so
+ * both the classic table+form view and the guided builder stay in sync
+ * off a single source of truth.
+ */
+export interface BuilderStepDef<T> {
+  id: string;               // 'identity'
+  label: string;            // 'Identité'
+  description?: string;     // shown under the step title
+  icon?: string;             // lucide-react icon name, resolved by the engine
+  fieldKeys: (keyof T)[];   // which fields (in order) render in this step
+}
+
 export interface EntityConfig<T extends { id?: string; _id?: string }> {
   name: string;            // 'transfers'
   labelSingular: string;   // 'Transfert'
@@ -68,4 +84,7 @@ export interface EntityConfig<T extends { id?: string; _id?: string }> {
   lookups?: LookupSource[];
   emptyRecord: () => Partial<T>;
   searchableKeys?: (keyof T)[];
+  /** Optional — presence of this array is what makes "Nouveau X" open the
+   *  guided builder (step wizard + live preview) instead of the flat form. */
+  builderSteps?: BuilderStepDef<T>[];
 }

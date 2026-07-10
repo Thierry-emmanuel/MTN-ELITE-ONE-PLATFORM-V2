@@ -152,4 +152,48 @@ export const playersConfig: EntityConfig<Player> = {
     firstName: '', lastName: '', position: 'MID', nationality: 'Camerounais',
     status: 'ACTIVE', isActive: true, socialMedia: {},
   }),
+
+  // ── League Studio: Player Builder ─────────────────────────────────────
+  // Groups the same `fields` above into a guided, six-step journey. No new
+  // fields, no new validation rules — this is purely a presentation layer
+  // on top of the flat config, so the CRUD table/form and the wizard never
+  // drift apart.
+  builderSteps: [
+    {
+      id: 'identity',
+      label: 'Identité',
+      description: 'Qui est ce joueur ?',
+      fieldKeys: ['firstName', 'lastName', 'nickname', 'position', 'nationality', 'secondNationality', 'birthDate', 'birthPlace'],
+    },
+    {
+      id: 'club',
+      label: 'Club & Poste',
+      description: 'Où évolue-t-il actuellement ?',
+      fieldKeys: ['clubId', 'jerseyNumber', 'preferredFoot', 'height', 'weight'],
+    },
+    {
+      id: 'media',
+      label: 'Médias',
+      description: 'Photo et vidéo qui apparaîtront sur son profil public.',
+      fieldKeys: ['photoUrl', 'secondaryPhotoUrl', 'videoUrl'],
+    },
+    {
+      id: 'career',
+      label: 'Carrière & Contrat',
+      description: 'Statistiques, contrat et anciens clubs.',
+      fieldKeys: ['biography', 'formerClubs', 'marketValue', 'contractExpiry', 'agentName', 'appearances', 'goals', 'assists', 'internationalCaps', 'internationalGoals'],
+    },
+    {
+      id: 'status',
+      label: 'Statut & Réseaux',
+      description: 'Visibilité sur la plateforme et réseaux sociaux.',
+      fieldKeys: ['status', 'isActive', 'socialMedia'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: "Vérifiez tout avant de publier — l'aperçu à droite est exactement ce que verront les supporters.",
+      fieldKeys: [],
+    },
+  ],
 };

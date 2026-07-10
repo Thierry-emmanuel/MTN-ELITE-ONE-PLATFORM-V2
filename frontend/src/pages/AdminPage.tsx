@@ -17,8 +17,13 @@ import { layoutApi, HomepageLayout, HeroBanner, Award as AwardType, Match, Artic
 import { apiClient } from '@/services/api';
 import { SeasonsTab, ClubsTab, PlayersTab, CoachesTab, UsersTab } from './AdminEntityTabs';
 import { EntityCrudEngine } from '@/features/admin/engine/EntityCrudEngine';
+import { GuidedBuilderEngine } from '@/features/admin/engine/GuidedBuilderEngine';
 import { ENTITY_REGISTRY } from '@/features/admin/entityRegistry';
+import { playersConfig, type Player } from '@/features/admin/configs/players.config';
+import { PlayerPreviewCard } from '@/features/admin/components/PlayerPreviewCard';
+import { CommandPalette } from '@/features/admin/components/CommandPalette';
 import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
+import { Sparkles } from 'lucide-react';
 
 // BF-06.1 — the three MVP award categories. Kept as plain strings (matches
 // the existing `category: string` column, no migration needed) but
@@ -48,6 +53,22 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [toast, setToast] = useState<ToastState | null>(null);
   const [loading, setLoading] = useState(false);
+
+  /* League Studio — Player Builder overlay + Command Palette */
+  const [playerBuilderRecord, setPlayerBuilderRecord] = useState<Partial<Player> | null>(null);
+  const [playersRefreshKey, setPlayersRefreshKey] = useState(0);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   /* Metadata */
   const [seasons, setSeasons] = useState<any[]>([]);
@@ -505,7 +526,8 @@ export default function AdminPage() {
 
   /* ─── Render ──────────────────────────────────────────────────────────────── */
   return (
-    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+    <>
+    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab} onOpenPalette={() => setPaletteOpen(true)}>
       <Toast message={toast?.msg || ''} type={toast?.type || 'success'} visible={!!toast} />
 
       {/* ── DASHBOARD ──────────────────────────────────────────────────────── */}
@@ -1364,7 +1386,14 @@ export default function AdminPage() {
 
       {/* ── PLAYERS ────────────────────────────────────────────────────────── */}
       {activeTab === 'players' && (
-        <PlayersTab clubs={clubs} showToast={showToast} />
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <AdminButton onClick={() => setPlayerBuilderRecord(playersConfig.emptyRecord())}>
+              <Sparkles className="h-3.5 w-3.5" /> Nouveau joueur — Builder guidé
+            </AdminButton>
+          </div>
+          <PlayersTab key={playersRefreshKey} clubs={clubs} showToast={showToast} />
+        </div>
       )}
 
       {/* ── COACHES ────────────────────────────────────────────────────────── */}
@@ -1819,6 +1848,35 @@ export default function AdminPage() {
         </div>
       )}
     </AdminLayout>
+
+    {/* ── League Studio: Player Builder overlay ─────────────────────────── */}
+    {playerBuilderRecord && (
+      <GuidedBuilderEngine
+        config={playersConfig}
+        record={playerBuilderRecord}
+        lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+        showToast={showToast}
+        renderPreview={(data) => (
+          <PlayerPreviewCard
+            data={data}
+            clubOptions={clubs.map((c: any) => ({ value: c.id, label: c.name }))}
+          />
+        )}
+        onClose={() => {
+          setPlayerBuilderRecord(null);
+          setPlayersRefreshKey((k) => k + 1);
+        }}
+      />
+    )}
+
+    {/* ── League Studio: global Command Palette (⌘K) ────────────────────── */}
+    <CommandPalette
+      open={paletteOpen}
+      onOpenChange={setPaletteOpen}
+      onNavigate={(tab) => setActiveTab(tab)}
+      onCreatePlayer={() => setPlayerBuilderRecord(playersConfig.emptyRecord())}
+    />
+    </>
   );
 }
 
