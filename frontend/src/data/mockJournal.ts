@@ -113,7 +113,8 @@ export const MOCK_STORIES: Story[] = [
         { date: "94'", label: 'Winning goal', detail: 'Contested for offside — the goal that decided the title race.' },
       ] },
       { id: 'b3', type: 'video', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: 'Match highlights and the disputed sequence, broken down.' },
-      { id: 'b4', type: 'paragraph', text: 'What made the day unforgettable wasn\'t the controversy alone — it was how quickly the title race\'s entire narrative rewrote itself in real time.' },
+      { id: 'b4', type: 'player_connection', player: { id: 'p-104', name: 'Junior Ebanga', position: 'Attacking Midfielder', club: 'Union Douala', photoUrl: 'https://i.pravatar.cc/200?img=51' }, note: 'The player behind the disputed winning goal.' },
+      { id: 'b5', type: 'paragraph', text: 'What made the day unforgettable wasn\'t the controversy alone — it was how quickly the title race\'s entire narrative rewrote itself in real time.' },
     ],
   },
   {
@@ -329,6 +330,7 @@ export const MOCK_STORIES: Story[] = [
     tags: ['Ownership', 'Governance'],
     blocks: [
       { id: 'b1', type: 'paragraph', dropCap: true, text: 'The vote passed by a single share. Nobody in the room celebrated — they were too busy checking the paperwork twice.' },
+      { id: 'b1b', type: 'club_connection', club: { id: 'c-07', name: 'Racing Club de Bafoussam', shortName: 'RC Bafoussam' }, note: 'The club whose badge survived the vote.' },
       { id: 'b2', type: 'timeline', title: 'The 48 hours that mattered', events: [
         { date: 'Fri', label: 'Merger proposal filed' },
         { date: 'Sat', label: 'Emergency shareholder meeting called' },

@@ -1,29 +1,92 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Share2, User } from 'lucide-react';
-import { MOCK_STORIES } from '@/data/mockJournal';
+import { MOCK_STORIES, toSummary } from '@/data/mockJournal';
 import { STORY_TYPE_META } from '@/types/journal.types';
+import type { Story, StorySummary } from '@/types/journal.types';
 import { StoryBlockRenderer } from '@/components/elite/journal/StoryBlocks';
-import { StandardStoryCard } from '@/components/elite/journal/JournalCards';
+import { StandardStoryCard, ArchiveCallout, SeriesChapterStrip } from '@/components/elite/journal/JournalCards';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Every player/club/award a story touches, gathered from its narrative blocks
+// (not just the top-level connection arrays) — this is what lets "related"
+// stories surface because they share a person or institution, not just a tag.
+function extractConnectionIds(story: Story) {
+  const players = new Set<string>();
+  const clubs = new Set<string>();
+  const awards = new Set<string>();
+  for (const b of story.blocks) {
+    if (b.type === 'player_connection' && b.player.id) players.add(b.player.id);
+    if (b.type === 'club_connection' && b.club.id) clubs.add(b.club.id);
+    if (b.type === 'award_connection' && b.award.id) awards.add(b.award.id);
+  }
+  story.playerConnections?.forEach((p) => p.id && players.add(p.id));
+  story.clubConnections?.forEach((c) => c.id && clubs.add(c.id));
+  story.awardConnections?.forEach((a) => a.id && awards.add(a.id));
+  return { players, clubs, awards };
+}
+
+function countShared<T>(a: Set<T>, b: Set<T>) {
+  let n = 0;
+  for (const item of a) if (b.has(item)) n++;
+  return n;
+}
+
+// Ranks every other story by narrative kinship: shared people/clubs/awards
+// score highest (this is the same institution or person's story continuing),
+// then shared series, then shared tags, then simply being in the same section.
+function rankRelated(current: Story, pool: Story[]): StorySummary[] {
+  const currentIds = extractConnectionIds(current);
+  const currentTags = new Set(current.tags);
+
+  const scored = pool
+    .filter((s) => s.id !== current.id)
+    .map((s) => {
+      const ids = extractConnectionIds(s);
+      const sharedConnections =
+        countShared(currentIds.players, ids.players) +
+        countShared(currentIds.clubs, ids.clubs) +
+        countShared(currentIds.awards, ids.awards);
+      const sharedTags = s.tags.filter((t) => currentTags.has(t)).length;
+      const sameType = s.type === current.type ? 1 : 0;
+      const sameSeries = current.seriesLabel && s.seriesLabel === current.seriesLabel ? 1 : 0;
+      const score = sharedConnections * 4 + sameSeries * 3 + sharedTags * 1.5 + sameType * 0.5;
+      return { story: s, score };
+    })
+    .sort((a, b) => b.score - a.score || +new Date(b.story.publishedAt) - +new Date(a.story.publishedAt));
+
+  return scored.slice(0, 3).map(({ story }) => toSummary(story));
 }
 
 export default function JournalStoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const story = useMemo(() => MOCK_STORIES.find((s) => s.slug === slug), [slug]);
 
-  const related = useMemo(() => {
-    if (!story) return [];
-    return MOCK_STORIES
-      .filter((s) => s.id !== story.id && s.type === story.type)
-      .concat(MOCK_STORIES.filter((s) => s.id !== story.id && s.type !== story.type))
-      .slice(0, 3)
-      .map(({ id, slug, type, headline, standfirst, heroImage, author, publishedAt, readingTime, tags, seriesLabel, featured }) =>
-        ({ id, slug, type, headline, standfirst, heroImage, author, publishedAt, readingTime, tags, seriesLabel, featured }));
+  const related = useMemo(() => (story ? rankRelated(story, MOCK_STORIES) : []), [story]);
+
+  const seriesChapters = useMemo(() => {
+    if (!story?.seriesLabel) return [];
+    return MOCK_STORIES.filter((s) => s.seriesLabel === story.seriesLabel).map(toSummary);
   }, [story]);
+
+  // A single "From the Archives" pick — heritage/historical connective tissue,
+  // dropped roughly mid-article. Never points a heritage/historical piece at
+  // itself; falls back to nothing if there's no suitable archive story.
+  const archivePick = useMemo(() => {
+    if (!story) return null;
+    if (story.type === 'HERITAGE' || story.type === 'HISTORICAL') return null;
+    const currentTags = new Set(story.tags);
+    const candidates = MOCK_STORIES.filter((s) => (s.type === 'HERITAGE' || s.type === 'HISTORICAL') && s.id !== story.id);
+    if (candidates.length === 0) return null;
+    const withTagOverlap = candidates.find((s) => s.tags.some((t) => currentTags.has(t)));
+    return toSummary(withTagOverlap ?? candidates[0]);
+  }, [story]);
+
+  const midpoint = story ? Math.max(1, Math.floor(story.blocks.length / 2) - 1) : 0;
 
   if (!story) {
     return (
@@ -81,9 +144,21 @@ export default function JournalStoryPage() {
         </div>
       </div>
 
+      {/* ── Series navigator (only when this story belongs to a series) ─ */}
+      {story.seriesLabel && (
+        <div className="pt-10">
+          <SeriesChapterStrip seriesLabel={story.seriesLabel} chapters={seriesChapters} currentId={story.id} />
+        </div>
+      )}
+
       {/* ── Story body ───────────────────────────────────────────────── */}
-      <article className="max-w-2xl mx-auto px-6 py-14">
-        {story.blocks.map((b) => <StoryBlockRenderer key={b.id} block={b} />)}
+      <article className="max-w-2xl mx-auto px-6 py-6">
+        {story.blocks.map((b, i) => (
+          <Fragment key={b.id}>
+            <StoryBlockRenderer block={b} />
+            {i === midpoint && archivePick && <ArchiveCallout story={archivePick} />}
+          </Fragment>
+        ))}
 
         {story.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-16 pt-8 border-t border-white/5">
@@ -97,7 +172,10 @@ export default function JournalStoryPage() {
       {/* ── Related stories ──────────────────────────────────────────── */}
       {related.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 md:px-10 py-16 border-t border-white/5">
-          <h2 className="font-display font-black text-2xl text-stone-50 mb-8">Continue Reading</h2>
+          <h2 className="font-display font-black text-2xl text-stone-50 mb-1">Continue Reading</h2>
+          <p className="font-serif italic text-stone-500 mb-8">
+            {related.some((r) => r.type === story.type) ? 'More from this thread of the story' : 'Where this story leads next'}
+          </p>
           <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-none">
             {related.map((s) => <StandardStoryCard key={s.id} story={s} />)}
           </div>

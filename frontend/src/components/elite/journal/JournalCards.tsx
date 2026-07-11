@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock } from 'lucide-react';
+import { Clock, Archive } from 'lucide-react';
 import { STORY_TYPE_META } from '@/types/journal.types';
 import type { StorySummary } from '@/types/journal.types';
 
@@ -93,7 +93,51 @@ export function StandardStoryCard({ story, size = 'md' }: { story: StorySummary;
   );
 }
 
-// ─── Compact story — dense editorial list rows ─────────────────────────────
+// ─── Archive callout — a mid-article rhythm break linking to the archives ──
+export function ArchiveCallout({ story }: { story: StorySummary }) {
+  return (
+    <Link
+      to={`/journal/${story.slug}`}
+      className="group my-14 flex gap-5 items-center rounded-sm border border-orange-500/20 bg-gradient-to-r from-orange-500/[0.06] to-transparent p-6 hover:border-orange-500/40 transition-colors"
+    >
+      <div className="h-20 w-20 rounded-sm overflow-hidden shrink-0 bg-stone-900">
+        <img src={story.heroImage} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-orange-400 mb-1.5">
+          <Archive className="h-3 w-3" /> From the Archives
+        </div>
+        <h4 className="font-display font-bold text-[17px] leading-snug text-stone-100 group-hover:text-orange-300 transition-colors">{story.headline}</h4>
+        <p className="font-serif text-[13px] italic text-stone-500 mt-1 line-clamp-1">{story.standfirst}</p>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Series chapter strip — sits near the top of a story in an active series ─
+export function SeriesChapterStrip({
+  seriesLabel, chapters, currentId,
+}: { seriesLabel: string; chapters: StorySummary[]; currentId: string }) {
+  if (chapters.length === 0) return null;
+  return (
+    <div className="max-w-2xl mx-auto px-6 mb-10">
+      <div className="rounded-sm border border-white/10 bg-white/[0.02] p-5">
+        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-yellow-400 mb-3">{seriesLabel} &middot; More Chapters</div>
+        <div className="flex flex-col gap-2.5">
+          {chapters.map((c) => (
+            <Link
+              key={c.id}
+              to={`/journal/${c.slug}`}
+              className={`text-[14px] font-sans leading-snug transition-colors ${c.id === currentId ? 'text-stone-100 font-semibold' : 'text-stone-500 hover:text-stone-300'}`}
+            >
+              {c.id === currentId ? '● ' : '○ '}{c.headline}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 export function CompactStoryRow({ story, index }: { story: StorySummary; index?: number }) {
   return (
     <Link to={`/journal/${story.slug}`} className="group flex items-start gap-5 py-6 border-b border-white/5 last:border-b-0">
