@@ -20,6 +20,17 @@ import { EntityCrudEngine } from '@/features/admin/engine/EntityCrudEngine';
 import { GuidedBuilderEngine } from '@/features/admin/engine/GuidedBuilderEngine';
 import { ENTITY_REGISTRY } from '@/features/admin/entityRegistry';
 import { playersConfig, type Player } from '@/features/admin/configs/players.config';
+import { clubsConfig, type Club } from '@/features/admin/configs/clubs.config';
+import { coachesConfig, type Coach } from '@/features/admin/configs/coaches.config';
+import { matchesConfig } from '@/features/admin/configs/matches.config';
+import { awardsConfig } from '@/features/admin/configs/awards.config';
+import { transfersConfig, type Transfer } from '@/features/admin/configs/transfers.config';
+import { injuriesConfig, type Injury } from '@/features/admin/configs/injuries.config';
+import { selectionsConfig, type Selection } from '@/features/admin/configs/selections.config';
+import { bigMomentsConfig, type BigMoment } from '@/features/admin/configs/bigMoments.config';
+import { stadiumsConfig, type Stadium } from '@/features/admin/configs/stadiums.config';
+import { equipmentsConfig, type Equipment } from '@/features/admin/configs/equipments.config';
+import { sponsorsConfig, type Sponsor } from '@/features/admin/configs/sponsors.config';
 import { PlayerPreviewCard } from '@/features/admin/components/PlayerPreviewCard';
 import { CommandPalette } from '@/features/admin/components/CommandPalette';
 import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
@@ -214,9 +225,21 @@ export default function AdminPage() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [loading, setLoading] = useState(false);
 
-  /* League Studio — Player Builder overlay + Command Palette */
+  /* League Studio — Builder overlays for all entities */
   const [playerBuilderRecord, setPlayerBuilderRecord] = useState<Partial<Player> | null>(null);
   const [playersRefreshKey, setPlayersRefreshKey] = useState(0);
+  const [clubBuilderRecord, setClubBuilderRecord] = useState<Partial<Club> | null>(null);
+  const [clubsBuilderRefreshKey, setClubsBuilderRefreshKey] = useState(0);
+  const [coachBuilderRecord, setCoachBuilderRecord] = useState<Partial<Coach> | null>(null);
+  const [coachesBuilderRefreshKey, setCoachesBuilderRefreshKey] = useState(0);
+  const [stadiumBuilderRecord, setStadiumBuilderRecord] = useState<Partial<Stadium> | null>(null);
+  const [equipmentBuilderRecord, setEquipmentBuilderRecord] = useState<Partial<Equipment> | null>(null);
+  const [sponsorBuilderRecord, setSponsorBuilderRecord] = useState<Partial<Sponsor> | null>(null);
+  const [actionBuilderRecord, setActionBuilderRecord] = useState<Partial<BigMoment> | null>(null);
+  const [transferBuilderRecord, setTransferBuilderRecord] = useState<Partial<Transfer> | null>(null);
+  const [injuryBuilderRecord, setInjuryBuilderRecord] = useState<Partial<Injury> | null>(null);
+  const [selectionBuilderRecord, setSelectionBuilderRecord] = useState<Partial<Selection> | null>(null);
+  const [bigMomentBuilderRecord, setBigMomentBuilderRecord] = useState<Partial<BigMoment> | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
@@ -1541,7 +1564,12 @@ export default function AdminPage() {
 
       {/* ── CLUBS ──────────────────────────────────────────────────────────── */}
       {activeTab === 'clubs' && (
-        <ClubsTab showToast={showToast} />
+        <EntityCrudEngine
+          key={clubsBuilderRefreshKey}
+          config={ENTITY_REGISTRY.clubs}
+          showToast={showToast}
+          onOpenBuilder={(r) => setClubBuilderRecord(r)}
+        />
       )}
 
       {/* ── PLAYERS ────────────────────────────────────────────────────────── */}
@@ -1558,7 +1586,13 @@ export default function AdminPage() {
 
       {/* ── COACHES ────────────────────────────────────────────────────────── */}
       {activeTab === 'coaches' && (
-        <CoachesTab clubs={clubs} showToast={showToast} />
+        <EntityCrudEngine
+          key={coachesBuilderRefreshKey}
+          config={ENTITY_REGISTRY.coaches}
+          showToast={showToast}
+          lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+          onOpenBuilder={(r) => setCoachBuilderRecord(r)}
+        />
       )}
 
       {/* ── USERS ──────────────────────────────────────────────────────────── */}
@@ -1568,22 +1602,90 @@ export default function AdminPage() {
 
       {/* ── STADIUMS ───────────────────────────────────────────────────────── */}
       {activeTab === 'stadiums' && (
-        <EntityCrudEngine config={ENTITY_REGISTRY.stadiums} showToast={showToast} lookupOptions={{ clubs }} />
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.stadiums}
+          showToast={showToast}
+          lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+          onOpenBuilder={(r) => setStadiumBuilderRecord(r)}
+        />
       )}
 
       {/* ── EQUIPMENTS ─────────────────────────────────────────────────────── */}
       {activeTab === 'equipments' && (
-        <EntityCrudEngine config={ENTITY_REGISTRY.equipments} showToast={showToast} lookupOptions={{ clubs }} />
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.equipments}
+          showToast={showToast}
+          lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+          onOpenBuilder={(r) => setEquipmentBuilderRecord(r)}
+        />
       )}
 
       {/* ── SPONSORS ───────────────────────────────────────────────────────── */}
       {activeTab === 'sponsors' && (
-        <EntityCrudEngine config={ENTITY_REGISTRY.sponsors} showToast={showToast} />
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.sponsors}
+          showToast={showToast}
+          onOpenBuilder={(r) => setSponsorBuilderRecord(r)}
+        />
       )}
 
       {/* ── ACTIONS ────────────────────────────────────────────────────────── */}
       {activeTab === 'actions' && (
-        <EntityCrudEngine config={ENTITY_REGISTRY.actions} showToast={showToast} lookupOptions={{ clubs, players }} />
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.actions}
+          showToast={showToast}
+          lookupOptions={{
+            clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })),
+            players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+          }}
+          onOpenBuilder={(r) => setActionBuilderRecord(r)}
+        />
+      )}
+
+      {/* ── TRANSFERS ──────────────────────────────────────────────────────── */}
+      {activeTab === 'transfers' && (
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.transfers}
+          showToast={showToast}
+          lookupOptions={{
+            clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })),
+            players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+          }}
+          onOpenBuilder={(r) => setTransferBuilderRecord(r)}
+        />
+      )}
+
+      {/* ── INJURIES ───────────────────────────────────────────────────────── */}
+      {activeTab === 'injuries' && (
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.injuries}
+          showToast={showToast}
+          lookupOptions={{
+            players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+          }}
+          onOpenBuilder={(r) => setInjuryBuilderRecord(r)}
+        />
+      )}
+
+      {/* ── SELECTIONS ─────────────────────────────────────────────────────── */}
+      {activeTab === 'selections' && (
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.selections}
+          showToast={showToast}
+          lookupOptions={{
+            players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+          }}
+          onOpenBuilder={(r) => setSelectionBuilderRecord(r)}
+        />
+      )}
+
+      {/* ── BIG MOMENTS ────────────────────────────────────────────────────── */}
+      {activeTab === 'big-moments' && (
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY['big-moments']}
+          showToast={showToast}
+          onOpenBuilder={(r) => setBigMomentBuilderRecord(r)}
+        />
       )}
 
       {/* ── SCOUTING (Young Talent Watch) ───────────────────────────────────── */}
@@ -2036,6 +2138,129 @@ export default function AdminPage() {
           setPlayerBuilderRecord(null);
           setPlayersRefreshKey((k) => k + 1);
         }}
+      />
+    )}
+
+    {/* ── League Studio: Club Builder overlay ───────────────────────────── */}
+    {clubBuilderRecord && (
+      <GuidedBuilderEngine
+        config={clubsConfig}
+        record={clubBuilderRecord}
+        showToast={showToast}
+        onClose={() => {
+          setClubBuilderRecord(null);
+          setClubsBuilderRefreshKey((k) => k + 1);
+        }}
+      />
+    )}
+
+    {/* ── League Studio: Coach Builder overlay ──────────────────────────── */}
+    {coachBuilderRecord && (
+      <GuidedBuilderEngine
+        config={coachesConfig}
+        record={coachBuilderRecord}
+        lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+        showToast={showToast}
+        onClose={() => {
+          setCoachBuilderRecord(null);
+          setCoachesBuilderRefreshKey((k) => k + 1);
+        }}
+      />
+    )}
+
+    {/* ── League Studio: Stadium Builder overlay ────────────────────────── */}
+    {stadiumBuilderRecord && (
+      <GuidedBuilderEngine
+        config={stadiumsConfig}
+        record={stadiumBuilderRecord}
+        lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+        showToast={showToast}
+        onClose={() => setStadiumBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Equipment Builder overlay ──────────────────────── */}
+    {equipmentBuilderRecord && (
+      <GuidedBuilderEngine
+        config={equipmentsConfig}
+        record={equipmentBuilderRecord}
+        lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+        showToast={showToast}
+        onClose={() => setEquipmentBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Sponsor Builder overlay ────────────────────────── */}
+    {sponsorBuilderRecord && (
+      <GuidedBuilderEngine
+        config={sponsorsConfig}
+        record={sponsorBuilderRecord}
+        showToast={showToast}
+        onClose={() => setSponsorBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Action (Big Moment) Builder overlay ────────────── */}
+    {actionBuilderRecord && (
+      <GuidedBuilderEngine
+        config={ENTITY_REGISTRY.actions}
+        record={actionBuilderRecord}
+        lookupOptions={{
+          clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })),
+          players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+        }}
+        showToast={showToast}
+        onClose={() => setActionBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Transfer Builder overlay ───────────────────────── */}
+    {transferBuilderRecord && (
+      <GuidedBuilderEngine
+        config={transfersConfig}
+        record={transferBuilderRecord}
+        lookupOptions={{
+          clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })),
+          players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+        }}
+        showToast={showToast}
+        onClose={() => setTransferBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Injury Builder overlay ─────────────────────────── */}
+    {injuryBuilderRecord && (
+      <GuidedBuilderEngine
+        config={injuriesConfig}
+        record={injuryBuilderRecord}
+        lookupOptions={{
+          players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+        }}
+        showToast={showToast}
+        onClose={() => setInjuryBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Selection Builder overlay ──────────────────────── */}
+    {selectionBuilderRecord && (
+      <GuidedBuilderEngine
+        config={selectionsConfig}
+        record={selectionBuilderRecord}
+        lookupOptions={{
+          players: players.map((p: any) => ({ value: p.id, label: `${p.firstName ?? ''} ${p.lastName ?? p.name ?? ''}`.trim() })),
+        }}
+        showToast={showToast}
+        onClose={() => setSelectionBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Big Moment Builder overlay ─────────────────────── */}
+    {bigMomentBuilderRecord && (
+      <GuidedBuilderEngine
+        config={bigMomentsConfig}
+        record={bigMomentBuilderRecord}
+        showToast={showToast}
+        onClose={() => setBigMomentBuilderRecord(null)}
       />
     )}
 

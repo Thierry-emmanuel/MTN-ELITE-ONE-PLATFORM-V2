@@ -5,7 +5,7 @@ import {
   Trophy, FileText, Star, BarChart2, ExternalLink,
   ChevronRight, MapPin, Shirt, Handshake, Zap,
   Eye, Flag, Archive, Users, Search, UserCog, Sparkles,
-  MessageCircle, Settings,
+  MessageCircle, Settings, ArrowLeftRight, Activity, ListChecks, Clapperboard,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -24,9 +24,10 @@ const NAV_GROUPS = [
   {
     group: 'Compétition',
     items: [
-      { id: 'seasons',    label: 'Saisons',                icon: Calendar },
-      { id: 'matches',    label: 'Matchs & Résultats',      icon: Calendar },
-      { id: 'stats',      label: 'Statistiques',            icon: BarChart2 },
+      { id: 'seasons',     label: 'Saisons',                icon: Calendar },
+      { id: 'matches',     label: 'Matchs & Résultats',     icon: Calendar },
+      { id: 'stats',       label: 'Statistiques',           icon: BarChart2 },
+      { id: 'transfers',   label: 'Transferts',             icon: ArrowLeftRight },
     ],
   },
   {
@@ -43,11 +44,19 @@ const NAV_GROUPS = [
   {
     group: 'Héritage',
     items: [
-      { id: 'awards',     label: "Awards & Ballon d'Or",    icon: Trophy },
-      { id: 'halloffame', label: 'Hall of Fame',            icon: Users },
-      { id: 'scouting',   label: 'Young Talent Watch',      icon: Eye },
-      { id: 'lions',      label: 'Centre des Lions',        icon: Flag },
-      { id: 'museum',     label: 'Musée & Archives',        icon: Archive },
+      { id: 'awards',      label: "Awards & Ballon d'Or",   icon: Trophy },
+      { id: 'halloffame',  label: 'Hall of Fame',           icon: Users },
+      { id: 'scouting',   label: 'Young Talent Watch',     icon: Eye },
+      { id: 'lions',      label: 'Centre des Lions',       icon: Flag },
+      { id: 'museum',     label: 'Musée & Archives',       icon: Archive },
+      { id: 'big-moments',label: 'Grands Moments',         icon: Clapperboard },
+    ],
+  },
+  {
+    group: 'Suivi',
+    items: [
+      { id: 'injuries',    label: 'Infirmerie',             icon: Activity },
+      { id: 'selections',  label: 'Sélections Lions',       icon: ListChecks },
     ],
   },
   {

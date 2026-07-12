@@ -146,8 +146,8 @@ export default function FixturesPage() {
         {/* ── Apple Music Style 3-column Layout ────────────────────────────────── */}
         <div className="grid lg:grid-cols-[240px_1fr] gap-8 items-start">
           
-          {/* LEFT: Apple Music style "Playlists" round selector sidebar */}
-          <aside className="bg-white/[0.02] border border-white/5 rounded-3xl p-4 space-y-4 backdrop-blur-md sticky top-28">
+          {/* LEFT: Apple Music style "Playlists" round selector sidebar — Hidden on mobile/tablet */}
+          <aside className="hidden lg:block bg-white/[0.02] border border-white/5 rounded-3xl p-4 space-y-4 backdrop-blur-md sticky top-28">
             <div className="flex items-center gap-2 px-2 pb-2 border-b border-white/5">
               <Trophy className="h-4 w-4 text-[#FCD116]" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Toutes les journées</span>
@@ -187,13 +187,43 @@ export default function FixturesPage() {
           {/* RIGHT: Main Schedule Panel */}
           <div className="space-y-6">
 
+            {/* Mobile/Tablet Horizontal Rounds Picker */}
+            <div className="lg:hidden bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md space-y-3">
+              <div className="flex items-center gap-2 text-white/45 text-[10px] font-bold uppercase tracking-widest">
+                <Trophy className="h-3.5 w-3.5 text-[#FCD116]" />
+                Choisir la Journée
+              </div>
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x">
+                {rounds.map((r) => {
+                  const isActive = activeRound === r;
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => {
+                        setActiveRound(r);
+                        setSearch('');
+                        setClubFilter(null);
+                      }}
+                      className={`px-4 py-2 rounded-2xl text-xs font-bold shrink-0 transition-all ${
+                        isActive
+                          ? 'bg-[#008751] text-white shadow-glow'
+                          : 'bg-white/[0.04] border border-white/8 text-white/60 hover:text-white'
+                      }`}
+                    >
+                      J{r}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Apple Music search & filter toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md">
               
               {/* Segmented Status Tabs */}
               <SegmentedTabs
                 tabs={[
-                  { id: 'all',      label: 'Tous les matchs',   count: totalMatches },
+                  { id: 'all',      label: 'Tous',   count: totalMatches },
                   { id: 'live',     label: 'En Direct', count: liveCount, live: liveCount > 0 },
                   { id: 'upcoming', label: 'À Venir',  count: upcomingCount },
                 ]}
@@ -214,18 +244,27 @@ export default function FixturesPage() {
               </div>
             </div>
 
-            {/* Club Quick Filters */}
+            {/* Club Dropdown Filter */}
             {clubs.length > 0 && !search && (
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 snap-x">
-                <FilterPill label="Tous les clubs" active={clubFilter === null} onClick={() => setClubFilter(null)} />
-                {clubs.map(c => (
-                  <FilterPill
-                    key={c.id}
-                    label={c.name}
-                    active={clubFilter === c.id}
-                    onClick={() => setClubFilter(clubFilter === c.id ? null : c.id)}
-                  />
-                ))}
+              <div className="flex items-center gap-3 bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 shrink-0">Filtrer par Club :</span>
+                <div className="relative flex-1 max-w-xs">
+                  <select
+                    value={clubFilter ?? ''}
+                    onChange={(e) => setClubFilter(e.target.value || null)}
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-2xl text-xs py-2.5 pl-4 pr-10 outline-none cursor-pointer text-white/80 focus:border-[#008751] transition-colors appearance-none"
+                  >
+                    <option value="" className="bg-[#050D08] text-white">Tous les clubs</option>
+                    {clubs.map(c => (
+                      <option key={c.id} value={c.id} className="bg-[#050D08] text-white">
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">
+                    ▼
+                  </div>
+                </div>
               </div>
             )}
 
