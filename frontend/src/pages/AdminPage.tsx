@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Users, Star, CalendarDays, BarChart2, Award, FileText, Plus, Edit3,
-  Trash2, GripVertical, Save, TrendingUp, CheckCircle2, AlertCircle,
-  Target, Flame, ShieldCheck, Medal, Clock, Flag, Trophy,
-  Download, Upload, RefreshCw, Eye, EyeOff, Play, StopCircle,
+  Users, Star, CalendarDays, BarChart2, FileText, Plus, Edit3,
+  Trash2, GripVertical, Save, TrendingUp, CheckCircle2,
+  Target, Flame, ShieldCheck, Medal, Flag, Trophy,
+  RefreshCw, Eye, Play, StopCircle,
 } from 'lucide-react';
 import AdminLayout from '@/layout/AdminLayout';
 import {
@@ -15,15 +15,13 @@ import {
 } from '@/components/ui/AdminUI';
 import { layoutApi, HomepageLayout, HeroBanner, Award as AwardType, Match, Article, HallOfFameLegend, TalentProfile } from '@/services/layoutApi';
 import { apiClient } from '@/services/api';
-import { SeasonsTab, ClubsTab, PlayersTab, CoachesTab, UsersTab } from './AdminEntityTabs';
+import { SeasonsTab, PlayersTab, UsersTab } from './AdminEntityTabs';
 import { EntityCrudEngine } from '@/features/admin/engine/EntityCrudEngine';
 import { GuidedBuilderEngine } from '@/features/admin/engine/GuidedBuilderEngine';
 import { ENTITY_REGISTRY } from '@/features/admin/entityRegistry';
 import { playersConfig, type Player } from '@/features/admin/configs/players.config';
 import { clubsConfig, type Club } from '@/features/admin/configs/clubs.config';
 import { coachesConfig, type Coach } from '@/features/admin/configs/coaches.config';
-import { matchesConfig } from '@/features/admin/configs/matches.config';
-import { awardsConfig } from '@/features/admin/configs/awards.config';
 import { transfersConfig, type Transfer } from '@/features/admin/configs/transfers.config';
 import { injuriesConfig, type Injury } from '@/features/admin/configs/injuries.config';
 import { selectionsConfig, type Selection } from '@/features/admin/configs/selections.config';
@@ -175,38 +173,33 @@ function SettingsPanel({ showToast }: { showToast: (msg: string, type?: 'success
       <SectionHeader title="Paramètres système" subtitle="Logo, email et téléphone affichés sur le site public" />
       <AdminCard>
         <div className="space-y-4">
-          <FormField label="URL du logo" hint="URL Cloudinary ou autre URL publique de l'image du logo">
-            <input
-              value={settings.logo_url}
-              onChange={(e) => setSettings((s) => ({ ...s, logo_url: e.target.value }))}
-              placeholder="https://res.cloudinary.com/…/logo.png"
-              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-all"
-            />
-          </FormField>
+          <FormField
+            label="URL du logo"
+            hint="URL Cloudinary ou autre URL publique de l'image du logo"
+            value={settings.logo_url}
+            onChange={(v) => setSettings((s) => ({ ...s, logo_url: v }))}
+            placeholder="https://res.cloudinary.com/…/logo.png"
+          />
           {settings.logo_url && (
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-white/30 uppercase tracking-widest">Aperçu :</span>
               <img src={settings.logo_url} alt="Logo preview" className="h-10 w-10 object-contain rounded-lg border border-white/10 bg-white/5 p-1" />
             </div>
           )}
-          <FormField label="Email de contact">
-            <input
-              type="email"
-              value={settings.contact_email}
-              onChange={(e) => setSettings((s) => ({ ...s, contact_email: e.target.value }))}
-              placeholder="contact@mtneliteone.cm"
-              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-all"
-            />
-          </FormField>
-          <FormField label="Téléphone de contact">
-            <input
-              type="tel"
-              value={settings.contact_phone}
-              onChange={(e) => setSettings((s) => ({ ...s, contact_phone: e.target.value }))}
-              placeholder="+237 6XX XXX XXX"
-              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-all"
-            />
-          </FormField>
+          <FormField
+            label="Email de contact"
+            type="email"
+            value={settings.contact_email}
+            onChange={(v) => setSettings((s) => ({ ...s, contact_email: v }))}
+            placeholder="contact@mtneliteone.cm"
+          />
+          <FormField
+            label="Téléphone de contact"
+            type="text"
+            value={settings.contact_phone}
+            onChange={(v) => setSettings((s) => ({ ...s, contact_phone: v }))}
+            placeholder="+237 6XX XXX XXX"
+          />
           <div className="flex justify-end pt-2">
             <AdminButton onClick={handleSave} disabled={saving}>
               <Save className="h-3.5 w-3.5" />

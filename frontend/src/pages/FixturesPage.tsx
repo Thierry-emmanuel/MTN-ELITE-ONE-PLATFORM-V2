@@ -187,86 +187,99 @@ export default function FixturesPage() {
           {/* RIGHT: Main Schedule Panel */}
           <div className="space-y-6">
 
-            {/* Mobile/Tablet Horizontal Rounds Picker */}
-            <div className="lg:hidden bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md space-y-3">
-              <div className="flex items-center gap-2 text-white/45 text-[10px] font-bold uppercase tracking-widest">
-                <Trophy className="h-3.5 w-3.5 text-[#FCD116]" />
-                Choisir la Journée
-              </div>
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x">
-                {rounds.map((r) => {
-                  const isActive = activeRound === r;
-                  return (
-                    <button
-                      key={r}
-                      onClick={() => {
-                        setActiveRound(r);
+            {/* Responsive Filters Toolbar (Apple Music inspired Glassmorphism) */}
+            <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-center justify-between">
+                
+                {/* 1. Selector for Journée (Visible on mobile/tablet as dropdown, synced with sidebar) */}
+                <div className="lg:hidden flex flex-col gap-1.5 w-full">
+                  <label className="text-white/45 text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+                    <Trophy className="h-3 w-3 text-[#FCD116]" />
+                    Journée de championnat
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={activeRound}
+                      onChange={(e) => {
+                        setActiveRound(Number(e.target.value));
                         setSearch('');
                         setClubFilter(null);
                       }}
-                      className={`px-4 py-2 rounded-2xl text-xs font-bold shrink-0 transition-all ${
-                        isActive
-                          ? 'bg-[#008751] text-white shadow-glow'
-                          : 'bg-white/[0.04] border border-white/8 text-white/60 hover:text-white'
-                      }`}
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-2xl text-xs py-2.5 pl-4 pr-10 outline-none cursor-pointer text-white font-bold focus:border-[#008751] transition-colors appearance-none"
                     >
-                      J{r}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Apple Music search & filter toolbar */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md">
-              
-              {/* Segmented Status Tabs */}
-              <SegmentedTabs
-                tabs={[
-                  { id: 'all',      label: 'Tous',   count: totalMatches },
-                  { id: 'live',     label: 'En Direct', count: liveCount, live: liveCount > 0 },
-                  { id: 'upcoming', label: 'À Venir',  count: upcomingCount },
-                ]}
-                active={statusFilter}
-                onChange={id => setStatusFilter(id as StatusFilter)}
-              />
-
-              {/* Live search bar */}
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25 pointer-events-none" />
-                <input
-                  type="search"
-                  value={search}
-                  onChange={handleSearch}
-                  placeholder="Rechercher un club…"
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-2xl text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-[#008751] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Club Dropdown Filter */}
-            {clubs.length > 0 && !search && (
-              <div className="flex items-center gap-3 bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 shrink-0">Filtrer par Club :</span>
-                <div className="relative flex-1 max-w-xs">
-                  <select
-                    value={clubFilter ?? ''}
-                    onChange={(e) => setClubFilter(e.target.value || null)}
-                    className="w-full bg-white/[0.04] border border-white/10 rounded-2xl text-xs py-2.5 pl-4 pr-10 outline-none cursor-pointer text-white/80 focus:border-[#008751] transition-colors appearance-none"
-                  >
-                    <option value="" className="bg-[#050D08] text-white">Tous les clubs</option>
-                    {clubs.map(c => (
-                      <option key={c.id} value={c.id} className="bg-[#050D08] text-white">
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">
-                    ▼
+                      {rounds.map(r => (
+                        <option key={r} value={r} className="bg-[#050D08] text-white">
+                          Journée {r}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/40 text-[10px]">
+                      ▼
+                    </div>
                   </div>
                 </div>
+
+                {/* 2. Selector for Club (Dropdown button for all screens) */}
+                {clubs.length > 0 && !search && (
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <label className="text-white/45 text-[9px] font-bold uppercase tracking-widest">
+                      Filtrer par Club
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={clubFilter ?? ''}
+                        onChange={(e) => setClubFilter(e.target.value || null)}
+                        className="w-full bg-white/[0.04] border border-white/10 rounded-2xl text-xs py-2.5 pl-4 pr-10 outline-none cursor-pointer text-white font-bold focus:border-[#008751] transition-colors appearance-none"
+                      >
+                        <option value="" className="bg-[#050D08] text-white">Tous les clubs (MTN Elite One)</option>
+                        {clubs.map(c => (
+                          <option key={c.id} value={c.id} className="bg-[#050D08] text-white">
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/40 text-[10px]">
+                        ▼
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Segmented Status Tabs (Apple Music style Pill view) */}
+                <div className="flex flex-col gap-1.5 w-full">
+                  <label className="text-white/45 text-[9px] font-bold uppercase tracking-widest">
+                    Statut des rencontres
+                  </label>
+                  <SegmentedTabs
+                    tabs={[
+                      { id: 'all',      label: 'Tous',   count: totalMatches },
+                      { id: 'live',     label: 'En Direct', count: liveCount, live: liveCount > 0 },
+                      { id: 'upcoming', label: 'À Venir',  count: upcomingCount },
+                    ]}
+                    active={statusFilter}
+                    onChange={id => setStatusFilter(id as StatusFilter)}
+                  />
+                </div>
+
+                {/* 4. Live Search Input */}
+                <div className="flex flex-col gap-1.5 w-full">
+                  <label className="text-white/45 text-[9px] font-bold uppercase tracking-widest">
+                    Recherche par nom
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25 pointer-events-none" />
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={handleSearch}
+                      placeholder="Rechercher un club…"
+                      className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-2xl text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-[#008751] transition-all"
+                    />
+                  </div>
+                </div>
+
               </div>
-            )}
+            </div>
 
             {/* ── Main Schedule Content ──────────────────────────────────────── */}
             <AnimatePresence mode="wait">
