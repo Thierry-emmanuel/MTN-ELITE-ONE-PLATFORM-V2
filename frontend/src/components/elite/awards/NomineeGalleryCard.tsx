@@ -1,7 +1,80 @@
 import { memo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { CheckCircle2, TrendingUp, TrendingDown, Minus, Zap, X } from 'lucide-react';
+import { CheckCircle2, TrendingUp, TrendingDown, Minus, Zap, X, Play, User, Shield, ExternalLink } from 'lucide-react';
 import type { Nominee, PlayerNominee, TeamNominee, VoteResult } from '@/types/awards.types';
+
+// ─── Goal Video Modal ─────────────────────────────────────────────────────────
+const GoalVideoModal = memo(({ nominee, onClose }: { nominee: PlayerNominee; onClose: () => void }) => {
+  const ctx = nominee.goalContext!;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.88, y: 30, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.92, y: 16, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+        className="relative w-full max-w-2xl rounded-3xl overflow-hidden border border-[#FB923C]/30 bg-[#050505] shadow-[0_0_80px_rgba(251,146,60,0.2)]"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="h-px bg-gradient-to-r from-transparent via-[#FB923C]/70 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_0%,rgba(251,146,60,0.07)_0%,transparent_60%)] pointer-events-none" />
+
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 h-8 w-8 rounded-full bg-white/[0.07] border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/12 transition-all"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Video / placeholder */}
+        <div className="relative w-full aspect-video bg-black">
+          {ctx.videoUrl ? (
+            <iframe
+              src={ctx.videoUrl}
+              title={`But de ${nominee.name}`}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+              <motion.div
+                animate={{ scale: [1, 1.12, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="h-16 w-16 rounded-full bg-[#FB923C]/15 border border-[#FB923C]/30 flex items-center justify-center"
+              >
+                <Play className="h-7 w-7 text-[#FB923C]" fill="currentColor" />
+              </motion.div>
+              <p className="text-white/30 text-xs">Vidéo disponible prochainement</p>
+            </div>
+          )}
+        </div>
+
+        {/* Context strip */}
+        <div className="p-5">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-xl bg-[#FB923C]/10 border border-[#FB923C]/20 flex items-center justify-center shrink-0 text-base">⚽</div>
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-sm font-black text-white/90 truncate">{nominee.name}</p>
+              <p className="text-[10px] text-[#FB923C]/70 mt-0.5">
+                vs {ctx.opponent} · {ctx.minute}'
+              </p>
+              <p className="text-xs text-white/50 mt-1.5 leading-relaxed">{ctx.description}</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+});
+GoalVideoModal.displayName = 'GoalVideoModal';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const getInitials = (name: string) =>
@@ -29,7 +102,7 @@ const FormBubble = ({ result }: { result: string }) => {
 
 // ─── Expanded player detail modal ─────────────────────────────────────────────
 const NomineeDetailModal = memo(({
-  nominee, result, rank, isVoted, canVote, isVoting, onVote, onClose,
+  nominee, result, rank, isVoted, canVote, isVoting, onVote, onClose, awardCategory,
 }: {
   nominee: Nominee;
   result?: VoteResult;
@@ -39,11 +112,15 @@ const NomineeDetailModal = memo(({
   isVoting: boolean;
   onVote: (id: string) => void;
   onClose: () => void;
+  awardCategory?: string;
 }) => {
+  const [videoOpen, setVideoOpen] = useState(false);
   const player = nominee as PlayerNominee;
   const team   = nominee as TeamNominee;
   const isPlayer = nominee.type === 'PLAYER';
   const isTeam   = nominee.type === 'TEAM';
+  const isGoalCategory = awardCategory?.startsWith('GOAL_');
+  const hasGoalCtx = isGoalCategory && isPlayer && !!player.goalContext;
 
   const statItems = isPlayer
     ? [
@@ -264,7 +341,75 @@ const NomineeDetailModal = memo(({
             </motion.div>
           )}
 
-          {/* Vote result bar */}
+          {/* ─── Action buttons ─────────────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="flex flex-wrap gap-2 mb-5"
+          >
+            {/* Goal video button */}
+            {hasGoalCtx && (
+              <button
+                onClick={() => setVideoOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FB923C]/10 border border-[#FB923C]/25 text-[#FB923C] text-[11px] font-bold hover:bg-[#FB923C]/20 transition-colors"
+              >
+                <Play className="h-3 w-3" fill="currentColor" />
+                Voir le but
+              </button>
+            )}
+            {/* Player profile link */}
+            {isPlayer && (
+              <Link
+                to={`/players/${player.clubId}`}
+                onClick={onClose}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-white/50 text-[11px] font-bold hover:bg-white/10 hover:text-white/80 transition-colors"
+              >
+                <User className="h-3 w-3" />
+                Profil joueur
+                <ExternalLink className="h-2.5 w-2.5 opacity-50" />
+              </Link>
+            )}
+            {/* Club link */}
+            {isPlayer && player.clubId && (
+              <Link
+                to={`/clubs/${player.clubId}`}
+                onClick={onClose}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-white/50 text-[11px] font-bold hover:bg-white/10 hover:text-white/80 transition-colors"
+              >
+                <Shield className="h-3 w-3" />
+                {player.clubName}
+              </Link>
+            )}
+            {/* Team club link */}
+            {isTeam && (
+              <Link
+                to={`/clubs/${team.id}`}
+                onClick={onClose}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-white/50 text-[11px] font-bold hover:bg-white/10 hover:text-white/80 transition-colors"
+              >
+                <Shield className="h-3 w-3" />
+                Voir le club
+                <ExternalLink className="h-2.5 w-2.5 opacity-50" />
+              </Link>
+            )}
+          </motion.div>
+
+          {/* Goal context card — only in goal categories */}
+          {hasGoalCtx && player.goalContext && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.37 }}
+              className="mb-5 rounded-2xl bg-[#FB923C]/[0.06] border border-[#FB923C]/15 p-4 space-y-1.5"
+            >
+              <h4 className="text-[10px] font-bold text-[#FB923C]/60 uppercase tracking-wider">Contexte du but</h4>
+              <p className="text-[10px] text-[#FB923C]/80 font-bold">
+                vs {player.goalContext.opponent} · {player.goalContext.minute}'
+              </p>
+              <p className="text-xs text-white/55 leading-relaxed">{player.goalContext.description}</p>
+            </motion.div>
+          )}
           {result && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -324,25 +469,33 @@ const NomineeDetailModal = memo(({
         </div>
       </motion.div>
     </motion.div>
-  );
+
+    {/* Goal video modal — stacks on top */}
+    <AnimatePresence>
+      {videoOpen && hasGoalCtx && (
+        <GoalVideoModal nominee={player} onClose={() => setVideoOpen(false)} />
+      )}
+    </AnimatePresence>
+  </>);
 });
 NomineeDetailModal.displayName = 'NomineeDetailModal';
 
 // ─── NomineeGalleryCard ───────────────────────────────────────────────────────
 interface NomineeGalleryCardProps {
-  nominee:     Nominee;
-  result?:     VoteResult;
-  rank:        number;
-  isVoted:     boolean;
-  canVote:     boolean;
-  isVoting:    boolean;
-  onVote:      (id: string) => void;
-  index:       number;
-  showResult:  boolean;
+  nominee:        Nominee;
+  result?:        VoteResult;
+  rank:           number;
+  isVoted:        boolean;
+  canVote:        boolean;
+  isVoting:       boolean;
+  onVote:         (id: string) => void;
+  index:          number;
+  showResult:     boolean;
+  awardCategory?: string;
 }
 
 export const NomineeGalleryCard = memo(({
-  nominee, result, rank, isVoted, canVote, isVoting, onVote, index, showResult,
+  nominee, result, rank, isVoted, canVote, isVoting, onVote, index, showResult, awardCategory,
 }: NomineeGalleryCardProps) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -362,6 +515,8 @@ export const NomineeGalleryCard = memo(({
   const isPlayer = nominee.type === 'PLAYER';
   const photoUrl = (nominee as PlayerNominee).photoUrl ?? (nominee as TeamNominee).logoUrl;
   const clubInfo = getClubInfo(nominee);
+  const isGoalCategory = awardCategory?.startsWith('GOAL_');
+  const hasGoalCtx = isGoalCategory && isPlayer && !!(nominee as PlayerNominee).goalContext;
 
   const trendIcon =
     result?.trending === 'UP'   ? <TrendingUp   className="h-3 w-3 text-[#10B981]" /> :
@@ -410,6 +565,15 @@ export const NomineeGalleryCard = memo(({
           {/* Scrims */}
           <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
+
+          {/* Goal pill on hover */}
+          {hasGoalCtx && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FB923C] text-black text-[10px] font-black shadow-[0_0_20px_rgba(251,146,60,0.6)] backdrop-blur-sm">
+                <Play className="h-3 w-3" fill="currentColor" /> Voir le but
+              </div>
+            </div>
+          )}
 
           {/* Top row: position badge + rank/medal */}
           <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
@@ -516,6 +680,7 @@ export const NomineeGalleryCard = memo(({
             isVoting={isVoting}
             onVote={onVote}
             onClose={() => setExpanded(false)}
+            awardCategory={awardCategory}
           />
         )}
       </AnimatePresence>

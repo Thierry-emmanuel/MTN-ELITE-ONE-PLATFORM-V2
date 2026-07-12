@@ -317,9 +317,9 @@ export const MOCK_AWARDS: Award[] = [
     period: 'J18 — 21 Avril', season: 'season-2025-26',
     votingStatus: 'OPEN', votingDeadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     nominees: [
-      { ...MAROU,    id: 'g1', highlightStat: { label: 'Minute', value: 87 }, goalContext: { opponent: 'Canon Yaoundé', minute: 87, description: 'Frappe enroulée du gauche à 25 mètres, en pleine lucarne. Marou se retourne en pleine surface, ajuste et loge le cuir dans l\'angle impossible.' } },
-      { ...BASSOGOG, id: 'g2', highlightStat: { label: 'Minute', value: 63 }, goalContext: { opponent: 'Union Douala',  minute: 63, description: 'Slalom sur 40 mètres, élimine quatre défenseurs et conclut du droit dans la surface. Pur talent à l\'état brut.' } },
-      { ...NGONDO,   id: 'g3', highlightStat: { label: 'Minute', value: 12 }, goalContext: { opponent: 'PWD Bamenda',   minute: 12, description: 'Retourné acrobatique sur corner, hors de portée du gardien. Candidat naturel au but de la semaine.' } },
+      { ...MAROU,    id: 'g1', highlightStat: { label: 'Minute', value: 87 }, goalContext: { opponent: 'Canon Yaoundé', minute: 87, description: 'Frappe enroulée du gauche à 25 mètres, en pleine lucarne. Marou se retourne en pleine surface, ajuste et loge le cuir dans l\'angle impossible.', videoUrl: 'https://www.youtube.com/embed/LXb3EKWsInQ' } },
+      { ...BASSOGOG, id: 'g2', highlightStat: { label: 'Minute', value: 63 }, goalContext: { opponent: 'Union Douala',  minute: 63, description: 'Slalom sur 40 mètres, élimine quatre défenseurs et conclut du droit dans la surface. Pur talent à l\'état brut.', videoUrl: 'https://www.youtube.com/embed/ZZ5LpwO-An4' } },
+      { ...NGONDO,   id: 'g3', highlightStat: { label: 'Minute', value: 12 }, goalContext: { opponent: 'PWD Bamenda',   minute: 12, description: 'Retourné acrobatique sur corner, hors de portée du gardien. Candidat naturel au but de la semaine.', videoUrl: 'https://www.youtube.com/embed/LXb3EKWsInQ' } },
     ],
     fanVotingEnabled: true, fanVoteWeight: 100, juryVoteWeight: 0, trophyColor: 'SILVER',
     voteResults: { awardId: 'aw-7', totalVotes: 6180, results: [
@@ -337,9 +337,9 @@ export const MOCK_AWARDS: Award[] = [
     period: 'Avril 2025', season: 'season-2025-26',
     votingStatus: 'OPEN', votingDeadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     nominees: [
-      { ...ETAME,  id: 'g4', highlightStat: { label: 'Minute', value: 90 }, goalContext: { opponent: 'Coton Sport', minute: 90, description: 'Coup franc direct sous la barre à la dernière minute pour arracher le point du match nul. Le Stade de la Réunification en délire.' } },
-      { ...DAURA,  id: 'g5', highlightStat: { label: 'Minute', value: 34 }, goalContext: { opponent: 'Victoria United', minute: 34, description: 'Une-deux rapide suivi d\'un piqué délicat au-dessus du gardien. Geste d\'une maturité rare pour un joueur de 20 ans.' } },
-      { ...NGONDO, id: 'g6', highlightStat: { label: 'Minute', value: 12 }, goalContext: { opponent: 'PWD Bamenda', minute: 12, description: 'Retourné acrobatique sur corner, but du mois désigné par le jury FECAFOOT pour son esthétique incomparable.' } },
+      { ...ETAME,  id: 'g4', highlightStat: { label: 'Minute', value: 90 }, goalContext: { opponent: 'Coton Sport', minute: 90, description: 'Coup franc direct sous la barre à la dernière minute pour arracher le point du match nul. Le Stade de la Réunification en délire.', videoUrl: 'https://www.youtube.com/embed/ZZ5LpwO-An4' } },
+      { ...DAURA,  id: 'g5', highlightStat: { label: 'Minute', value: 34 }, goalContext: { opponent: 'Victoria United', minute: 34, description: 'Une-deux rapide suivi d\'un piqué délicat au-dessus du gardien. Geste d\'une maturité rare pour un joueur de 20 ans.', videoUrl: 'https://www.youtube.com/embed/LXb3EKWsInQ' } },
+      { ...NGONDO, id: 'g6', highlightStat: { label: 'Minute', value: 12 }, goalContext: { opponent: 'PWD Bamenda', minute: 12, description: 'Retourné acrobatique sur corner, but du mois désigné par le jury FECAFOOT pour son esthétique incomparable.', videoUrl: 'https://www.youtube.com/embed/LXb3EKWsInQ' } },
     ],
     fanVotingEnabled: true, fanVoteWeight: 50, juryVoteWeight: 50, trophyColor: 'GOLD',
     voteResults: { awardId: 'aw-8', totalVotes: 15420, results: [
@@ -357,9 +357,9 @@ export const MOCK_AWARDS: Award[] = [
     period: 'Saison 2025–26', season: 'season-2025-26',
     votingStatus: 'OPEN', votingDeadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
     nominees: [
-      { ...NGONDO,   id: 'g7', highlightStat: { label: 'Vues', value: '48K' }, goalContext: { opponent: 'PWD Bamenda',   minute: 12, description: 'Retourné acrobatique sur corner — candidat naturel au trophée annuel. Ce geste a fait le tour des réseaux sociaux africains.' } },
-      { ...BASSOGOG, id: 'g8', highlightStat: { label: 'Vues', value: '31K' }, goalContext: { opponent: 'Union Douala',  minute: 63, description: 'Slalom sur 40 mètres, l\'un des buts les plus spectaculaires de la saison. La vitesse et la technique au service du spectacle.' } },
-      { ...MAROU,    id: 'g9', highlightStat: { label: 'Vues', value: '22K' }, goalContext: { opponent: 'Canon Yaoundé', minute: 87, description: 'Frappe enroulée en pleine lucarne à 25 mètres. Sang-froid et technique dans le money time.' } },
+      { ...NGONDO,   id: 'g7', highlightStat: { label: 'Vues', value: '48K' }, goalContext: { opponent: 'PWD Bamenda',   minute: 12, description: 'Retourné acrobatique sur corner — candidat naturel au trophée annuel. Ce geste a fait le tour des réseaux sociaux africains.', videoUrl: 'https://www.youtube.com/embed/LXb3EKWsInQ' } },
+      { ...BASSOGOG, id: 'g8', highlightStat: { label: 'Vues', value: '31K' }, goalContext: { opponent: 'Union Douala',  minute: 63, description: 'Slalom sur 40 mètres, l\'un des buts les plus spectaculaires de la saison. La vitesse et la technique au service du spectacle.', videoUrl: 'https://www.youtube.com/embed/ZZ5LpwO-An4' } },
+      { ...MAROU,    id: 'g9', highlightStat: { label: 'Vues', value: '22K' }, goalContext: { opponent: 'Canon Yaoundé', minute: 87, description: 'Frappe enroulée en pleine lucarne à 25 mètres. Sang-froid et technique dans le money time.', videoUrl: 'https://www.youtube.com/embed/LXb3EKWsInQ' } },
     ],
     fanVotingEnabled: true, fanVoteWeight: 60, juryVoteWeight: 40, trophyColor: 'GOLD',
     voteResults: { awardId: 'aw-9', totalVotes: 22300, results: [
@@ -430,4 +430,40 @@ export const MOCK_HISTORICAL: HistoricalWinner[] = [
     winner: { ...NGONDO, description: 'Révélation de la saison : à 21 ans, il devient le plus jeune lauréat de la distinction, salué pour son impact offensif à Victoria United.' } as any },
   { year: 2021, period: 'Saison 2021–22', season: 'season-2021-22', category: 'PLAYER_OF_SEASON',
     winner: { id: 'hof4', type: 'PLAYER' as const, name: 'Thomas Nkono', photoUrl: IMG.thomasNkono, clubName: 'Canon Yaoundé', clubShort: 'CNK', position: 'GK', nationality: 'CMR', age: 34, stats: { cleanSheets: 11, saves: 61 }, highlightStat: { label: 'Clean sheets', value: 11 }, description: 'Le portier le plus décisif du championnat cette saison-là, désigné meilleur joueur pour sa maîtrise totale de sa surface.' } as any },
+];
+
+// ─── Fan Team Builder — full player pool (all active championship players) ────
+export const MOCK_PLAYER_POOL = [
+  // GK
+  { id: 'pool-gk1', name: 'Richard Njoh',      position: 'GK' as const, clubName: 'Coton Sport',    clubId: 'cot', nationality: 'CMR', age: 26, photoUrl: IMG.richardNjoh,    rating: 8.0, highlightStat: { label: 'Clean sheets', value: 8 },  stats: { cleanSheets: 8,  saves: 52 } },
+  { id: 'pool-gk2', name: 'Joël Matip',         position: 'GK' as const, clubName: 'Canon Yaoundé', clubId: 'cnk', nationality: 'CMR', age: 30, photoUrl: undefined,           rating: 7.5, highlightStat: { label: 'Arrêts', value: 46 },       stats: { cleanSheets: 5,  saves: 46 } },
+  { id: 'pool-gk3', name: 'Pierre Tchouameni',  position: 'GK' as const, clubName: 'Union Douala',  clubId: 'uds', nationality: 'CMR', age: 28, photoUrl: undefined,           rating: 7.2, highlightStat: { label: 'Arrêts', value: 41 },       stats: { cleanSheets: 4,  saves: 41 } },
+  { id: 'pool-gk4', name: 'Arnaud Ondoa',       position: 'GK' as const, clubName: 'Fovu Baham',    clubId: 'fov', nationality: 'CMR', age: 31, photoUrl: undefined,           rating: 7.6, highlightStat: { label: 'Clean sheets', value: 6 },  stats: { cleanSheets: 6,  saves: 38 } },
+  // DEF
+  { id: 'pool-def1', name: 'Rostand Mbaï',      position: 'DEF' as const, clubName: 'PWD Bamenda',   clubId: 'pwd', nationality: 'CMR', age: 28, photoUrl: IMG.rostandardMbai, rating: 7.4, highlightStat: { label: 'Duels gagnés', value: '74%' }, stats: { goals: 1, assists: 1, appearances: 17 } },
+  { id: 'pool-def2', name: 'Marc Ekanga',        position: 'DEF' as const, clubName: 'Canon Yaoundé', clubId: 'cnk', nationality: 'CMR', age: 25, photoUrl: IMG.edouardSombang, rating: 7.8, highlightStat: { label: 'Duels', value: 7 },          stats: { goals: 0, assists: 2, appearances: 16 } },
+  { id: 'pool-def3', name: 'Adamou Sarki',       position: 'DEF' as const, clubName: 'Coton Sport',   clubId: 'cot', nationality: 'CMR', age: 24, photoUrl: undefined,           rating: 7.6, highlightStat: { label: 'Dégag.', value: 5 },         stats: { goals: 0, assists: 1, appearances: 18 } },
+  { id: 'pool-def4', name: 'Parfait Ndoumbe',    position: 'DEF' as const, clubName: 'Union Douala',  clubId: 'uds', nationality: 'CMR', age: 26, photoUrl: undefined,           rating: 7.5, highlightStat: { label: 'Duels', value: 6 },          stats: { goals: 1, assists: 0, appearances: 15 } },
+  { id: 'pool-def5', name: 'Ibrahim Hamidou',    position: 'DEF' as const, clubName: 'Fovu Baham',    clubId: 'fov', nationality: 'CMR', age: 27, photoUrl: undefined,           rating: 7.4, highlightStat: { label: 'Passes', value: 42 },         stats: { goals: 0, assists: 1, appearances: 16 } },
+  { id: 'pool-def6', name: 'Samuel Eto\'o Jr',   position: 'DEF' as const, clubName: 'Coton Sport',   clubId: 'cot', nationality: 'CMR', age: 23, photoUrl: undefined,           rating: 7.3, highlightStat: { label: 'Duels', value: 5 },          stats: { goals: 0, assists: 0, appearances: 14 } },
+  { id: 'pool-def7', name: 'André Bikey',         position: 'DEF' as const, clubName: 'Victoria United',clubId: 'vict',nationality: 'CMR', age: 29, photoUrl: undefined,           rating: 7.2, highlightStat: { label: 'Interceptions', value: 28 },  stats: { goals: 1, assists: 0, appearances: 15 } },
+  { id: 'pool-def8', name: 'Cédric Kenfack',     position: 'DEF' as const, clubName: 'APEJES Mfou',   clubId: 'apb', nationality: 'CMR', age: 24, photoUrl: undefined,           rating: 7.1, highlightStat: { label: 'Duels', value: 4 },          stats: { goals: 0, assists: 0, appearances: 13 } },
+  // MID
+  { id: 'pool-mid1', name: 'Roger Etame',        position: 'MID' as const, clubName: 'Union Douala',  clubId: 'uds', nationality: 'CMR', age: 27, photoUrl: IMG.sergeDaura2,    rating: 8.2, highlightStat: { label: 'Passes D.', value: 11 },    stats: { goals: 8, assists: 11, appearances: 17 } },
+  { id: 'pool-mid2', name: 'Édouard Sombang',    position: 'MID' as const, clubName: 'Fovu Baham',    clubId: 'fov', nationality: 'CMR', age: 25, photoUrl: IMG.edouardSombang, rating: 7.6, highlightStat: { label: 'Récupérations', value: 48 }, stats: { goals: 2, assists: 4, appearances: 16 } },
+  { id: 'pool-mid3', name: 'Serge Daura',        position: 'MID' as const, clubName: 'APEJES Mfou',   clubId: 'apb', nationality: 'CMR', age: 20, photoUrl: IMG.sergeDaura,     rating: 7.7, highlightStat: { label: 'Buts+PD', value: 9 },       stats: { goals: 3, assists: 6, appearances: 14 } },
+  { id: 'pool-mid4', name: 'Bello Yacouba',      position: 'MID' as const, clubName: 'Coton Sport',   clubId: 'cot', nationality: 'CMR', age: 28, photoUrl: undefined,           rating: 8.1, highlightStat: { label: 'Passes clés', value: 6 },   stats: { goals: 4, assists: 7, appearances: 17 } },
+  { id: 'pool-mid5', name: 'Souaibou Marou',     position: 'MID' as const, clubName: 'PWD Bamenda',   clubId: 'pwd', nationality: 'CMR', age: 26, photoUrl: IMG.sergeDaura,     rating: 7.7, highlightStat: { label: 'Récup.', value: 9 },        stats: { goals: 1, assists: 3, appearances: 16 } },
+  { id: 'pool-mid6', name: 'Gaël Ondoa',         position: 'MID' as const, clubName: 'Canon Yaoundé', clubId: 'cnk', nationality: 'CMR', age: 24, photoUrl: undefined,           rating: 7.5, highlightStat: { label: 'Passes D.', value: 5 },     stats: { goals: 2, assists: 5, appearances: 15 } },
+  { id: 'pool-mid7', name: 'Léandre Tawamba',    position: 'MID' as const, clubName: 'Coton Sport',   clubId: 'cot', nationality: 'CMR', age: 31, photoUrl: undefined,           rating: 7.3, highlightStat: { label: 'Matchs', value: 18 },        stats: { goals: 3, assists: 4, appearances: 18 } },
+  { id: 'pool-mid8', name: 'François Kamano',    position: 'MID' as const, clubName: 'Union Douala',  clubId: 'uds', nationality: 'CMR', age: 28, photoUrl: undefined,           rating: 7.4, highlightStat: { label: 'Passes clés', value: 4 },   stats: { goals: 3, assists: 4, appearances: 14 } },
+  // FWD
+  { id: 'pool-fwd1', name: 'Christian Bassogog', position: 'FWD' as const, clubName: 'Canon Yaoundé', clubId: 'cnk', nationality: 'CMR', age: 29, photoUrl: IMG.rostandardMbai, rating: 8.4, highlightStat: { label: 'Buts', value: 14 },        stats: { goals: 14, assists: 5, appearances: 16 } },
+  { id: 'pool-fwd2', name: 'Ibrahim Marou',       position: 'FWD' as const, clubName: 'Coton Sport',   clubId: 'cot', nationality: 'CMR', age: 24, photoUrl: IMG.davidNgondo,    rating: 8.1, highlightStat: { label: 'Buts', value: 12 },        stats: { goals: 12, assists: 4, appearances: 18 } },
+  { id: 'pool-fwd3', name: 'David Ngondo',        position: 'FWD' as const, clubName: 'Victoria United',clubId: 'vict',nationality: 'CMR', age: 21, photoUrl: IMG.davidNgondo,    rating: 7.8, highlightStat: { label: 'Buts', value: 10 },        stats: { goals: 10, assists: 3, appearances: 17 } },
+  { id: 'pool-fwd4', name: 'Nathan Douala',       position: 'FWD' as const, clubName: 'Union Douala',  clubId: 'uds', nationality: 'CMR', age: 19, photoUrl: IMG.nathanDouala,   rating: 7.5, highlightStat: { label: 'Buts', value: 5 },         stats: { goals: 5, assists: 2, appearances: 12 } },
+  { id: 'pool-fwd5', name: 'Guy Fai',             position: 'FWD' as const, clubName: 'Fovu Baham',    clubId: 'fov', nationality: 'CMR', age: 25, photoUrl: undefined,           rating: 7.3, highlightStat: { label: 'Buts', value: 7 },         stats: { goals: 7, assists: 2, appearances: 16 } },
+  { id: 'pool-fwd6', name: 'Eric Zebaze',         position: 'FWD' as const, clubName: 'PWD Bamenda',   clubId: 'pwd', nationality: 'CMR', age: 27, photoUrl: undefined,           rating: 7.1, highlightStat: { label: 'Buts', value: 6 },         stats: { goals: 6, assists: 1, appearances: 15 } },
+  { id: 'pool-fwd7', name: 'Aristide Zogning',    position: 'FWD' as const, clubName: 'Canon Yaoundé', clubId: 'cnk', nationality: 'CMR', age: 22, photoUrl: undefined,           rating: 7.2, highlightStat: { label: 'Buts', value: 5 },         stats: { goals: 5, assists: 3, appearances: 14 } },
+  { id: 'pool-fwd8', name: 'Blaise Matuidi Jr',   position: 'FWD' as const, clubName: 'APEJES Mfou',   clubId: 'apb', nationality: 'CMR', age: 20, photoUrl: undefined,           rating: 7.0, highlightStat: { label: 'Buts', value: 4 },         stats: { goals: 4, assists: 2, appearances: 13 } },
 ];
