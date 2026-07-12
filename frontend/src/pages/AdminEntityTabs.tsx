@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import {
   Plus, Edit3, Trash2, Play, StopCircle, RefreshCw,
   UserCheck, UserX, Shield, Users, Zap, Globe, X,
+  AlertTriangle, Trophy, Star, MapPin, Calendar, Handshake, Rocket,
 } from 'lucide-react';
 
 const Instagram = (props: React.SVGProps<SVGSVGElement>) => (
@@ -363,9 +364,6 @@ function TagInput({ label, value, onChange, placeholder, hint }: { label: string
 /*  SEASON WIZARD — multi-step season + all-entity configuration              */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-import {
-  Trophy, Shield, UserCheck, Star, MapPin, Calendar, Handshake, Rocket
-} from 'lucide-react';
 
 const WIZARD_STEPS = [
   { id: 'saison',    label: 'Saison',     icon: Trophy, desc: 'Informations de base' },
@@ -693,24 +691,27 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
               </div>
 
               {/* Logo upload */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Logo de la Saison</label>
+              <div className="space-y-2">
                 <div className="flex items-center gap-4">
+                  {/* Live thumbnail */}
                   <div className="h-16 w-16 rounded-2xl bg-white/[0.04] border border-white/8 flex items-center justify-center overflow-hidden shrink-0">
                     {seasonData.logoUrl
                       ? <img src={seasonData.logoUrl} alt="Logo" className="w-full h-full object-contain p-1.5" />
                       : <Trophy className="h-7 w-7 text-white/15" />}
                   </div>
                   <div className="flex-1">
-                    <FormField
-                      label="URL du logo"
+                    <MediaUploader
+                      label="Logo de la Saison"
                       value={seasonData.logoUrl || ''}
                       onChange={v => setSeasonData((p: any) => ({ ...p, logoUrl: v }))}
-                      hint="Lien direct vers le logo officiel de la saison (PNG/SVG recommandé)"
+                      acceptType="image"
+                      uploadUrl="/uploads/seasons/logo"
+                      hint="PNG, SVG ou WEBP recommandé — fond transparent de préférence"
                     />
                   </div>
                 </div>
               </div>
+
 
               <div className="grid grid-cols-1 gap-4">
                 <FormField label="Nom officiel de la saison *" value={seasonData.name || ''} onChange={v => setSeasonData((p: any) => ({ ...p, name: v }))} required hint="Ex: MTN Elite One — Saison 2025/2026" />

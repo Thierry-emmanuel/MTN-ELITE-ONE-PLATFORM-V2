@@ -48,6 +48,7 @@ export interface PlayerNominee {
   position: string;
   nationality: string;
   age?: number;
+  description?: string;
   stats: {
     goals?: number;
     assists?: number;
@@ -77,6 +78,7 @@ export interface TeamNominee {
   logoUrl?: string;
   city: string;
   coach: string;
+  description?: string;
   stats: {
     wins: number;
     draws: number;
@@ -98,6 +100,7 @@ export interface CoachNominee {
   clubName: string;
   clubLogoUrl?: string;
   nationality: string;
+  description?: string;
   stats: {
     wins: number;
     winRate: number;

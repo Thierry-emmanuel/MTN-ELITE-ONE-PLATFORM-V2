@@ -8,6 +8,7 @@ import { extname } from 'path';
 import { CloudinaryService } from './cloudinary.service';
 
 const ALLOWED_SCOPES: Record<string, string[]> = {
+  'seasons/logo': ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
   'clubs/logo': ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
   'clubs/banner': ['image/jpeg', 'image/png', 'image/webp'],
   'clubs/stadium': ['image/jpeg', 'image/png', 'image/webp'],

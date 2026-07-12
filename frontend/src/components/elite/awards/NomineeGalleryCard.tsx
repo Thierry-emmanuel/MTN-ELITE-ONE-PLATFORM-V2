@@ -249,6 +249,21 @@ const NomineeDetailModal = memo(({
             </motion.div>
           )}
 
+          {/* Biography / Description */}
+          {nominee.description && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.38 }}
+              className="mb-5 space-y-1.5"
+            >
+              <h4 className="text-[10px] font-bold text-white/30 uppercase tracking-wider">Biographie & Contexte</h4>
+              <p className="text-xs text-white/60 leading-relaxed bg-white/[0.02] border border-white/[0.04] p-3 rounded-2xl">
+                {nominee.description}
+              </p>
+            </motion.div>
+          )}
+
           {/* Vote result bar */}
           {result && (
             <motion.div
@@ -336,8 +351,6 @@ export const NomineeGalleryCard = memo(({
   const my = useMotionValue(0);
   const rx = useTransform(useSpring(my, { stiffness: 350, damping: 35 }), [-0.5, 0.5], [5, -5]);
   const ry = useTransform(useSpring(mx, { stiffness: 350, damping: 35 }), [-0.5, 0.5], [-5, 5]);
-  const glowX = useTransform(mx, [-0.5, 0.5], ['0%', '100%']);
-  const glowY = useTransform(my, [-0.5, 0.5], ['0%', '100%']);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -369,133 +382,122 @@ export const NomineeGalleryCard = memo(({
       >
         <motion.div
           style={{ rotateX: rx, rotateY: ry }}
-          className={`relative rounded-2xl border overflow-hidden transition-all duration-300 ${
+          className={`relative rounded-3xl border overflow-hidden aspect-[3/4] transition-all duration-300 ${
             isVoted
-              ? 'border-[#FCD116]/45 bg-gradient-to-b from-[#FCD116]/[0.08] to-black shadow-[0_0_30px_rgba(252,209,22,0.12)]'
+              ? 'border-[#FCD116]/45 bg-[#0e1520] shadow-[0_0_30px_rgba(252,209,22,0.18)]'
               : rank === 1
-              ? 'border-white/15 bg-white/[0.03] hover:border-white/25 hover:shadow-[0_8px_40px_rgba(0,0,0,0.6)]'
-              : 'border-border/20 bg-white/[0.02] hover:border-border/50 hover:shadow-[0_8px_40px_rgba(0,0,0,0.5)]'
+              ? 'border-white/15 bg-white/[0.03] hover:border-[#FCD116]/30 hover:shadow-[0_8px_40px_rgba(0,0,0,0.6)]'
+              : 'border-border/10 bg-white/[0.02] hover:border-border/30 hover:shadow-[0_8px_40px_rgba(0,0,0,0.5)]'
           }`}
         >
-          {/* Top accent line */}
-          {isVoted && <div className="h-px bg-gradient-to-r from-transparent via-[#FCD116]/60 to-transparent" />}
+          {/* dot-grid texture */}
+          <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle,white_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
 
-          {/* Hover shimmer */}
-          <motion.div
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style={{
-              background: `radial-gradient(circle at ${glowX} ${glowY}, rgba(255,255,255,0.04) 0%, transparent 60%)`,
-            }}
-          />
+          {/* Full-bleed portrait/logo image */}
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={nominee.name}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover object-top grayscale-[0.1] group-hover:scale-[1.04] transition-transform duration-500 ease-out"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-white/5 flex items-center justify-center font-black text-white/20 text-4xl">
+              {getInitials(nominee.name)}
+            </div>
+          )}
 
-          {/* Click hint */}
-          <div className="absolute top-3 right-3 h-5 px-1.5 rounded-md bg-white/[0.06] border border-white/[0.08] flex items-center text-[9px] text-white/25 font-bold uppercase tracking-wide opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-            Voir
-          </div>
+          {/* Scrims */}
+          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
 
-          <div className="p-4">
-            {/* Player / team visual */}
-            <div className="relative flex items-start gap-3 mb-4">
-              {/* Rank */}
-              <div className="shrink-0 w-6 text-center pt-0.5">
-                {medal
-                  ? <span className="text-xl">{medal}</span>
-                  : <span className="font-display text-lg font-black text-white/15 tabular-nums">{rank}</span>
-                }
-              </div>
-
-              {/* Photo */}
-              <div className={`relative h-14 w-14 rounded-xl overflow-hidden border shrink-0 ${isVoted ? 'border-[#FCD116]/50 shadow-[0_0_16px_rgba(252,209,22,0.3)]' : 'border-white/10'}`}>
-                {photoUrl
-                  ? <img src={photoUrl} alt={nominee.name} className="w-full h-full object-cover object-top" loading="lazy" />
-                  : <div className="w-full h-full bg-white/10 flex items-center justify-center font-black text-white/60 text-lg">
-                      {getInitials(nominee.name)}
-                    </div>
-                }
-                {isVoted && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute inset-0 bg-[#FCD116]/15 flex items-center justify-center"
-                  >
-                    <CheckCircle2 className="h-5 w-5 text-[#FCD116]" />
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Name + club */}
-              <div className="flex-1 min-w-0 pt-0.5">
-                <p className={`text-sm font-bold leading-tight truncate ${isVoted ? 'text-[#FCD116]' : 'text-white/90 group-hover:text-white'} transition-colors`}>
-                  {nominee.name}
-                </p>
-                <p className="text-[10px] text-white/35 truncate mt-0.5">{clubInfo}</p>
-                {isPlayer && (
-                  <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/[0.07] text-white/40 uppercase tracking-wide">
-                    {(nominee as PlayerNominee).position}
-                  </span>
-                )}
-              </div>
-
-              {/* Highlight stat */}
-              <div className="shrink-0 text-right">
-                <p className={`font-display text-xl font-black tabular-nums ${isVoted ? 'text-[#FCD116]' : 'text-white/80'}`}>
-                  {nominee.highlightStat.value}
-                </p>
-                <p className="text-[9px] text-white/25 uppercase leading-tight">
-                  {nominee.highlightStat.label}
-                </p>
-              </div>
+          {/* Top row: position badge + rank/medal */}
+          <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
+            <div className="flex items-center gap-1.5">
+              {isPlayer && (
+                <span className="text-[9px] font-black px-2 py-0.5 rounded bg-white/15 border border-white/20 text-white uppercase tracking-wider backdrop-blur-sm">
+                  {(nominee as PlayerNominee).position}
+                </span>
+              )}
+              {isVoted && (
+                <span className="text-[9px] font-black px-2 py-0.5 rounded bg-[#FCD116]/20 border border-[#FCD116]/30 text-[#FCD116] uppercase tracking-wider backdrop-blur-sm">
+                  Voté
+                </span>
+              )}
             </div>
 
-            {/* Form */}
-            {(nominee as any).form && (nominee as any).form.length > 0 && (
-              <div className="flex items-center gap-1.5 mb-3 pl-9">
-                {(nominee as any).form.slice(-5).map((r: string, i: number) => (
-                  <FormBubble key={i} result={r} />
-                ))}
-              </div>
-            )}
+            <div className="h-6 w-6 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center">
+              {medal ? (
+                <span className="text-xs">{medal}</span>
+              ) : (
+                <span className="font-display text-[10px] font-bold text-white/50">{rank}</span>
+              )}
+            </div>
+          </div>
 
-            {/* Vote bar */}
+          {/* Bottom info overlay */}
+          <div className="absolute inset-x-0 bottom-0 z-10 p-4 pt-0 flex flex-col justify-end pointer-events-auto">
+            <h3 className="font-display text-base font-black text-white leading-tight truncate [text-shadow:0_1px_4px_rgba(0,0,0,0.8)]">
+              {nominee.name}
+            </h3>
+            <p className="text-[10px] text-white/50 truncate mt-0.5 mb-2 [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">
+              {clubInfo}
+            </p>
+
+            {/* Highlight stat */}
+            <div className="flex items-center justify-between text-[10px] text-white/60 mb-2">
+              <span>{nominee.highlightStat.label}</span>
+              <span className="font-display font-black text-[#FCD116] text-xs">{nominee.highlightStat.value}</span>
+            </div>
+
+            {/* Vote progress / result bar */}
             {showResult && result && (
-              <div className="space-y-1 pl-9">
-                <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+              <div className="space-y-1 mt-1">
+                <div className="h-1 rounded-full bg-white/[0.08] overflow-hidden">
                   <motion.div
-                    className={`h-full rounded-full ${isVoted ? 'bg-gradient-to-r from-[#FCD116] to-[#FFE566]' : 'bg-white/20'}`}
+                    className={`h-full rounded-full ${isVoted ? 'bg-[#FCD116]' : 'bg-white/40'}`}
                     initial={{ width: 0 }}
                     animate={{ width: `${result.percentage}%` }}
-                    transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: index * 0.1 + 0.3 }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
                   />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1 text-[9px] text-white/25">
+                <div className="flex items-center justify-between text-[9px]">
+                  <span className="text-white/40 flex items-center gap-1">
                     {trendIcon}
-                    {result.votes.toLocaleString('fr-FR')}
+                    {result.votes.toLocaleString('fr-FR')} votes
                   </span>
-                  <span className={`text-[10px] font-bold ${isVoted ? 'text-[#FCD116]' : 'text-white/40'}`}>
+                  <span className={`font-bold ${isVoted ? 'text-[#FCD116]' : 'text-white/70'}`}>
                     {result.percentage.toFixed(1)}%
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Vote button (when canVote) */}
+            {/* Vote CTA */}
             {canVote && (
               <motion.button
-                onClick={e => { e.stopPropagation(); onVote(nominee.id); }}
+                onClick={e => {
+                  e.stopPropagation();
+                  onVote(nominee.id);
+                }}
                 disabled={isVoting}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
-                className={`mt-3 w-full py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+                className={`mt-2.5 w-full py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 transition-all ${
                   isVoted
-                    ? 'bg-[#FCD116]/15 border border-[#FCD116]/30 text-[#FCD116]'
-                    : 'bg-white/[0.05] border border-white/[0.08] text-white/50 hover:bg-[#FCD116]/10 hover:border-[#FCD116]/25 hover:text-[#FCD116]'
+                    ? 'bg-[#FCD116] text-black'
+                    : 'bg-white/10 hover:bg-[#FCD116] hover:text-black border border-white/5 text-white/80'
                 }`}
               >
-                {isVoted
-                  ? <><CheckCircle2 className="h-3.5 w-3.5" /> Voté</>
-                  : <><Zap className="h-3.5 w-3.5" /> Voter</>
-                }
+                {isVoted ? (
+                  <>
+                    <CheckCircle2 className="h-3 w-3" /> Voté
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-3 w-3" /> Voter
+                  </>
+                )}
               </motion.button>
             )}
           </div>

@@ -71,7 +71,7 @@ export function useVoting(awardId: string) {
       await qc.cancelQueries({ queryKey: AWARD_QK.votes(awardId) });
       return { snapshot: qc.getQueryData(AWARD_QK.votes(awardId)) };
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       updateAwardVotes(awardId, data.results);
       setSuccess(awardId);
       qc.setQueryData<any[]>(AWARD_QK.all(SEASON_ID), (prev) =>
@@ -162,11 +162,11 @@ export function useTeamOfWeek() {
   const { setTeamOfWeek } = useAwardsStore();
   const query = useQuery({
     queryKey: AWARD_QK.teamOfWeek(),
-    queryFn:  async () => { try { return await awardsApi.getTeamOfWeek(); } catch { return MOCK_TEAM_OF_WEEK; } },
+    queryFn:  async () => { try { return await awardsApi.getTeamOfWeek() as any; } catch { return MOCK_TEAM_OF_WEEK; } },
     staleTime: 300_000,
   });
-  useEffect(() => { if (query.data) setTeamOfWeek(query.data); }, [query.data]);
-  return { ...query, data: query.data ?? MOCK_TEAM_OF_WEEK };
+  useEffect(() => { if (query.data) setTeamOfWeek(query.data as any); }, [query.data]);
+  return { ...query, data: query.data as any };
 }
 
 // ─── useAwardCountdown ────────────────────────────────────────────────────────

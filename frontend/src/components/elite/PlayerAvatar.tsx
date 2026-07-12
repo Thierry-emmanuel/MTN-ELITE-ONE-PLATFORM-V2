@@ -24,7 +24,7 @@ export const PlayerAvatar = memo(({ name, photoUrl, size = 40, ring, className =
     return (
       <img
         src={photoUrl}
-        alt={name}
+        alt={name || undefined}
         width={size}
         height={size}
         onError={() => setFailed(true)}
@@ -42,7 +42,7 @@ export const PlayerAvatar = memo(({ name, photoUrl, size = 40, ring, className =
         fontSize: Math.round(size * 0.34),
         border: ring ? `1.5px solid ${ring}66` : '1.5px solid hsl(var(--border))',
       }}
-      aria-label={name}
+      aria-label={name || undefined}
     >
       {initials(name)}
     </div>

@@ -159,7 +159,8 @@ const TeamOfWeekHero = ({ period, formation, totalVotes }: { period: string; for
 
 // ─── TeamOfWeekPage ───────────────────────────────────────────────────────────
 export default function TeamOfWeekPage() {
-  const { data: tow, isLoading } = useTeamOfWeek();
+  const { data: towData, isLoading } = useTeamOfWeek();
+  const tow = towData as any;
 
   if (isLoading || !tow) {
     return (
@@ -188,8 +189,8 @@ export default function TeamOfWeekPage() {
     );
   }
 
-  const groupedByPos: Record<string, typeof tow.players> = {};
-  tow.players.forEach(p => {
+  const groupedByPos: Record<string, any[]> = {};
+  tow.players.forEach((p: any) => {
     if (!groupedByPos[p.position]) groupedByPos[p.position] = [];
     groupedByPos[p.position].push(p);
   });
@@ -248,7 +249,7 @@ export default function TeamOfWeekPage() {
                   <span className={`text-[9px] font-black uppercase tracking-wider ${col.text}`}>{col.label}</span>
                   <div className="flex-1 h-px bg-white/[0.05]" />
                 </div>
-                {players.map(p => {
+                {players.map((p: any) => {
                   const ri = rowIndex++;
                   return <PlayerListRow key={p.id} player={p} index={ri} />;
                 })}
