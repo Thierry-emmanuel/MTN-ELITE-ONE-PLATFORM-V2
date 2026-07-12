@@ -20,7 +20,11 @@ export class ContactsService {
   }
 
   async updateStatus(id: string, status: string): Promise<ContactMessage> {
-    return this.contactModel.findByIdAndUpdate(id, { status }, { new: true }).exec();
+    const updated = await this.contactModel.findByIdAndUpdate(id, { status }, { new: true }).exec();
+    if (!updated) {
+      throw new import('@nestjs/common').NotFoundException(`Contact message with ID ${id} not found`);
+    }
+    return updated;
   }
 
   async remove(id: string): Promise<any> {
