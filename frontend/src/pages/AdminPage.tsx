@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Users, Star, CalendarDays, BarChart2, FileText, Plus, Edit3,
+  Users, Star, CalendarDays, FileText, Plus, Edit3,
   Trash2, GripVertical, Save, TrendingUp, CheckCircle2,
   Target, Flame, ShieldCheck, Medal, Flag, Trophy,
   RefreshCw, Eye, Play, StopCircle,
@@ -444,15 +444,15 @@ export default function AdminPage() {
   /* ─── Match Handlers ──────────────────────────────────────────────────────── */
   const saveMatch = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
     const p = {
-      homeClubId: Number(editingMatch!.homeClubId!),
-      awayClubId: Number(editingMatch!.awayClubId!),
-      homeScore:  (editingMatch!.homeScore !== undefined && editingMatch!.homeScore !== '') ? Number(editingMatch!.homeScore) : undefined,
-      awayScore:  (editingMatch!.awayScore !== undefined && editingMatch!.awayScore !== '') ? Number(editingMatch!.awayScore) : undefined,
+      homeClubId: String(editingMatch!.homeClubId!),
+      awayClubId: String(editingMatch!.awayClubId!),
+      homeScore:  (editingMatch!.homeScore !== undefined && String(editingMatch!.homeScore) !== '') ? Number(editingMatch!.homeScore) : undefined,
+      awayScore:  (editingMatch!.awayScore !== undefined && String(editingMatch!.awayScore) !== '') ? Number(editingMatch!.awayScore) : undefined,
       status:     editingMatch!.status || 'SCHEDULED',
       round:      Number(editingMatch!.round || 1),
-      scheduledAt: editingMatch!.kickoff || (editingMatch as any).scheduledAt || new Date().toISOString(),
+      kickoff:    editingMatch!.kickoff || (editingMatch as any).scheduledAt || new Date().toISOString(),
       venue:      editingMatch!.venue || '',
-      seasonId:   Number(editingMatch!.seasonId || currentSeasonId),
+      seasonId:   String(editingMatch!.seasonId || currentSeasonId),
     };
     if (editingMatch!.id) {
       const r = await layoutApi.updateMatch(editingMatch!.id, p);
@@ -498,14 +498,14 @@ export default function AdminPage() {
       periodStart: editingAward!.periodStart || new Date().toISOString(),
       periodEnd:   editingAward!.periodEnd   || new Date().toISOString(),
       status:      editingAward!.status      || 'CLOSED',
-      seasonId:    Number(editingAward!.seasonId || currentSeasonId),
-      winnerId:    editingAward!.winnerId ? Number(editingAward!.winnerId) : null,
+      seasonId:    String(editingAward!.seasonId || currentSeasonId),
+      winnerId:    editingAward!.winnerId ? String(editingAward!.winnerId) : null,
     };
     if (editingAward!.id) {
-      const r = await layoutApi.updateAward(editingAward!.id, p);
+      const r = await layoutApi.updateAward(editingAward!.id, p as any);
       setAwards(prev => prev.map(a => a.id === r.id ? r : a));
     } else {
-      const r = await layoutApi.createAward(p);
+      const r = await layoutApi.createAward(p as any);
       setAwards(prev => [...prev, r]);
     }
     setEditingAward(null);
@@ -545,8 +545,8 @@ export default function AdminPage() {
       }));
     },
     ({ status, winnerId }) => {
-      setSelectedAward(prev => prev && ({ ...prev, status, winnerId }));
-      setAwards(prev => prev.map(a => a.id === selectedAward?.id ? { ...a, status, winnerId } as AwardType : a));
+      setSelectedAward(prev => prev && ({ ...prev, status: status as any, winnerId: winnerId ? String(winnerId) : null }));
+      setAwards(prev => prev.map(a => a.id === selectedAward?.id ? { ...a, status: status as any, winnerId: winnerId ? String(winnerId) : null } as AwardType : a));
     },
   );
 
@@ -587,7 +587,6 @@ export default function AdminPage() {
 
   /* ─── Article Handlers ────────────────────────────────────────────────────── */
   const [articleTab, setArticleTab] = useState('Contenu');
-  const ARTICLE_TABS = ['Contenu', 'Médias', 'SEO & Meta', 'Relations', 'Publication'];
 
   const emptyArticle = (): Partial<Article> => ({
     articleType: 'STANDARD', category: 'CLUB_NEWS',
@@ -1417,7 +1416,7 @@ export default function AdminPage() {
               columns={[
                 { key: 'type', label: 'Type', render: r => {
                   const icons: Record<string, string> = { BREAKING: '🔴', VIDEO: '🎥', PHOTO_GALLERY: '📸', OPINION: '💬', LIVE_BLOG: '📡', STANDARD: '📰' };
-                  return <span className="text-[11px]">{icons[r.articleType] || '📰'}</span>;
+                  return <span className="text-[11px]">{icons[r.articleType || 'STANDARD'] || '📰'}</span>;
                 }},
                 { key: 'title', label: 'Titre', render: r => <span className="font-semibold text-white/85">{r.title?.fr || r.title || '—'}</span> },
                 { key: 'author', label: 'Auteur', render: r => <span className="text-white/40 text-[10px]">{r.author || '—'}</span> },
@@ -2263,18 +2262,38 @@ export default function AdminPage() {
       onOpenChange={setPaletteOpen}
       onNavigate={(tab) => setActiveTab(tab)}
       onCreatePlayer={() => setPlayerBuilderRecord(playersConfig.emptyRecord())}
+      onCreateClub={() => setClubBuilderRecord(clubsConfig.emptyRecord())}
+      onCreateSeason={() => {
+        // Triggers the custom wizard in SeasonsTab
+        setActiveTab('seasons');
+        setPaletteOpen(false);
+      }}
+      onCreateMatch={() => setEditingMatch({ homeClubId: '', awayClubId: '', status: 'SCHEDULED', round: 1, kickoff: new Date().toISOString(), venue: '', seasonId: currentSeasonId })}
+      onCreateCoach={() => setCoachBuilderRecord(coachesConfig.emptyRecord())}
+      onCreateStadium={() => setStadiumBuilderRecord(stadiumsConfig.emptyRecord())}
+      onCreateAward={() => setEditingAward({ category: 'Joueur de la Semaine', periodStart: new Date().toISOString(), periodEnd: new Date().toISOString(), status: 'CLOSED', seasonId: Number(currentSeasonId) as any })}
     />
     </>
   );
 }
 
 /* ─── Stub icon aliases (avoid import duplication for layoutId motion) ─────── */
-const LayoutDashboard_  = ({ className }: { className?: string }) => <BarChart2 className={className} />;
-const Layers_           = ({ className }: { className?: string }) => <BarChart2 className={className} />;
-const Image_            = ({ className }: { className?: string }) => <BarChart2 className={className} />;
-const Calendar_         = ({ className }: { className?: string }) => <CalendarDays className={className} />;
-const Trophy_           = ({ className }: { className?: string }) => <Trophy className={className} />;
-const BarChart2_        = ({ className }: { className?: string }) => <BarChart2 className={className} />;
-const FileText_         = ({ className }: { className?: string }) => <FileText className={className} />;
-const Star_             = ({ className }: { className?: string }) => <Star className={className} />;
-const TrendingUp_       = ({ className }: { className?: string }) => <TrendingUp className={className} />;
+import { ForwardRefExoticComponent, RefAttributes } from 'react';
+import type { LucideProps } from 'lucide-react';
+type LucideIconType = ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+
+import {
+  LayoutDashboard, Layers, Image, Calendar, Trophy as TrophyIcon,
+  BarChart2 as BarChart2Icon, FileText as FileTextIcon, Star as StarIcon,
+  TrendingUp as TrendingUpIcon
+} from 'lucide-react';
+
+const LayoutDashboard_: LucideIconType = LayoutDashboard;
+const Layers_: LucideIconType          = Layers;
+const Image_: LucideIconType           = Image;
+const Calendar_: LucideIconType        = Calendar;
+const Trophy_: LucideIconType          = TrophyIcon;
+const BarChart2_: LucideIconType       = BarChart2Icon;
+const FileText_: LucideIconType        = FileTextIcon;
+const Star_: LucideIconType            = StarIcon;
+const TrendingUp_: LucideIconType      = TrendingUpIcon;

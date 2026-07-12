@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus, Edit3, Trash2, Play, StopCircle, RefreshCw,
-  UserCheck, UserX, Shield, Users, Zap, Globe, Flag,
+  UserCheck, UserX, Shield, Users, Zap, Globe,
 } from 'lucide-react';
 
 const Instagram = (props: React.SVGProps<SVGSVGElement>) => (
@@ -456,7 +456,7 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
   // Sponsors
   const [allSponsors, setAllSponsors] = useState<any[]>([]);
   const [newSponsor, setNewSponsor] = useState<any>({ name: '', tier: 'SILVER', logoUrl: '', websiteUrl: '' });
-  const [addingsponsor, setAddingSponsors] = useState(false);
+  const [addingSponsors, setAddingSponsors] = useState(false);
 
   const run = async (fn: () => Promise<void>) => {
     setLoading(true);
@@ -564,7 +564,7 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
 
   /* ── Step: Add match inline ── */
   const handleAddMatch = () => run(async () => {
-    if (!createdSeasonId) { showToast('Créez d'abord la saison.', 'error'); return; }
+    if (!createdSeasonId) { showToast("Créez d'abord la saison.", 'error'); return; }
     const r = await layoutApi.createMatch({
       homeClubId: Number(newMatch.homeClubId), awayClubId: Number(newMatch.awayClubId),
       status: 'SCHEDULED', round: Number(newMatch.round || 1),
@@ -596,13 +596,6 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
     onClose();
   });
 
-  const selectedClubs = allClubs.filter(c => selectedClubIds.has(String(c.id)));
-  const currentIdx = WIZARD_STEPS.findIndex(s => s.id === step);
-  const canGoPrev = currentIdx > 0;
-  const goTo = (s: string) => {
-    const targetIdx = WIZARD_STEPS.findIndex(ws => ws.id === s);
-    if (targetIdx === 0 || completedSteps.has(WIZARD_STEPS[targetIdx - 1].id)) setStep(s);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-8 px-4">
