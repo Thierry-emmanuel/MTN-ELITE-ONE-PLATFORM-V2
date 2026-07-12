@@ -349,4 +349,32 @@ export const layoutApi = {
     const res = await apiClient.delete(`/users/${id}`);
     return res.data;
   },
+
+  // ── System Settings ─────────────────────────────────────────────────────────
+  getSystemSettings: async (): Promise<{ logo_url: string; contact_email: string; contact_phone: string }> => {
+    const res = await apiClient.get('/system-settings');
+    return res.data;
+  },
+  updateSystemSettings: async (dto: { logo_url?: string; contact_email?: string; contact_phone?: string }): Promise<any> => {
+    const res = await apiClient.patch('/system-settings', dto);
+    return res.data;
+  },
+
+  // ── Contacts ─────────────────────────────────────────────────────────────────
+  submitContact: async (dto: { name: string; email: string; subject: string; message: string }): Promise<any> => {
+    const res = await apiClient.post('/contacts', dto);
+    return res.data;
+  },
+  getContacts: async (): Promise<any[]> => {
+    const res = await apiClient.get('/contacts');
+    return res.data;
+  },
+  updateContactStatus: async (id: string, status: string): Promise<any> => {
+    const res = await apiClient.patch(`/contacts/${id}/status`, { status });
+    return res.data;
+  },
+  deleteContact: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/contacts/${id}`);
+    return res.data;
+  },
 };

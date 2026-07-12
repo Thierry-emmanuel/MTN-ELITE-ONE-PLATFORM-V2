@@ -48,6 +48,166 @@ const SECTION_LABELS: Record<string, string> = {
   roadtolions: 'Road to Lions',
 };
 
+/* ─── ContactsPanel ─────────────────────────────────────────────────────────── */
+function ContactsPanel({ showToast }: { showToast: (msg: string, type?: 'success'|'error'|'info') => void }) {
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
+
+  const fetchContacts = useCallback(async () => {
+    try {
+      setLoadingContacts(true);
+      const data = await layoutApi.getContacts();
+      setContacts(data);
+    } catch {
+      showToast('Erreur lors du chargement des messages.', 'error');
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => { fetchContacts(); }, [fetchContacts]);
+
+  const handleStatus = async (id: string, status: string) => {
+    try {
+      await layoutApi.updateContactStatus(id, status);
+      await fetchContacts();
+      showToast(`Statut mis à jour : ${status}`, 'success');
+    } catch { showToast('Erreur', 'error'); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Supprimer ce message ?')) return;
+    try {
+      await layoutApi.deleteContact(id);
+      await fetchContacts();
+      showToast('Message supprimé.', 'success');
+    } catch { showToast('Erreur', 'error'); }
+  };
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending:  'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
+    read:     'bg-blue-500/15 text-blue-400 border-blue-500/20',
+    resolved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+  };
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Messages reçus" subtitle={`${contacts.length} message(s) dans la boîte de réception`} />
+      {loadingContacts ? (
+        <div className="text-center py-16 text-white/30 text-sm">Chargement…</div>
+      ) : contacts.length === 0 ? (
+        <div className="text-center py-16 text-white/30 text-sm">Aucun message reçu.</div>
+      ) : (
+        <div className="space-y-3">
+          {contacts.map((c) => (
+            <AdminCard key={c.id}>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="text-sm font-semibold text-white">{c.name}</span>
+                    <span className="text-xs text-white/30">&lt;{c.email}&gt;</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider ${STATUS_COLORS[c.status] ?? STATUS_COLORS.pending}`}>
+                      {c.status ?? 'pending'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-accent/80 mb-1">{c.subject}</p>
+                  <p className="text-xs text-white/50 leading-relaxed">{c.message}</p>
+                  <p className="text-[10px] text-white/25 mt-2">{new Date(c.createdAt ?? c.created_at).toLocaleString('fr-FR')}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  {c.status !== 'read' && (
+                    <AdminButton variant="secondary" onClick={() => handleStatus(c.id, 'read')}>
+                      <Eye className="h-3.5 w-3.5" /> Lu
+                    </AdminButton>
+                  )}
+                  {c.status !== 'resolved' && (
+                    <AdminButton onClick={() => handleStatus(c.id, 'resolved')}>
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Résolu
+                    </AdminButton>
+                  )}
+                  <AdminButton variant="danger" onClick={() => handleDelete(c.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </AdminButton>
+                </div>
+              </div>
+            </AdminCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── SettingsPanel ─────────────────────────────────────────────────────────── */
+function SettingsPanel({ showToast }: { showToast: (msg: string, type?: 'success'|'error'|'info') => void }) {
+  const [settings, setSettings] = useState({ logo_url: '', contact_email: '', contact_phone: '' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    layoutApi.getSystemSettings().then(setSettings).catch(() => null);
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await layoutApi.updateSystemSettings(settings);
+      showToast('Paramètres sauvegardés avec succès !', 'success');
+    } catch {
+      showToast('Erreur lors de la sauvegarde.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      <SectionHeader title="Paramètres système" subtitle="Logo, email et téléphone affichés sur le site public" />
+      <AdminCard>
+        <div className="space-y-4">
+          <FormField label="URL du logo" hint="URL Cloudinary ou autre URL publique de l'image du logo">
+            <input
+              value={settings.logo_url}
+              onChange={(e) => setSettings((s) => ({ ...s, logo_url: e.target.value }))}
+              placeholder="https://res.cloudinary.com/…/logo.png"
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-all"
+            />
+          </FormField>
+          {settings.logo_url && (
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] text-white/30 uppercase tracking-widest">Aperçu :</span>
+              <img src={settings.logo_url} alt="Logo preview" className="h-10 w-10 object-contain rounded-lg border border-white/10 bg-white/5 p-1" />
+            </div>
+          )}
+          <FormField label="Email de contact">
+            <input
+              type="email"
+              value={settings.contact_email}
+              onChange={(e) => setSettings((s) => ({ ...s, contact_email: e.target.value }))}
+              placeholder="contact@mtneliteone.cm"
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-all"
+            />
+          </FormField>
+          <FormField label="Téléphone de contact">
+            <input
+              type="tel"
+              value={settings.contact_phone}
+              onChange={(e) => setSettings((s) => ({ ...s, contact_phone: e.target.value }))}
+              placeholder="+237 6XX XXX XXX"
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-all"
+            />
+          </FormField>
+          <div className="flex justify-end pt-2">
+            <AdminButton onClick={handleSave} disabled={saving}>
+              <Save className="h-3.5 w-3.5" />
+              {saving ? 'Sauvegarde…' : 'Sauvegarder'}
+            </AdminButton>
+          </div>
+        </div>
+      </AdminCard>
+    </div>
+  );
+}
+
 /* ─── Main AdminPage ─────────────────────────────────────────────────────────── */
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1846,6 +2006,16 @@ export default function AdminPage() {
             </div>
           </AdminCard>
         </div>
+      )}
+
+      {/* ── Contacts panel ────────────────────────────────────────────────────── */}
+      {activeTab === 'contacts' && (
+        <ContactsPanel showToast={showToast} />
+      )}
+
+      {/* ── System Settings panel ────────────────────────────────────────────── */}
+      {activeTab === 'settings' && (
+        <SettingsPanel showToast={showToast} />
       )}
     </AdminLayout>
 

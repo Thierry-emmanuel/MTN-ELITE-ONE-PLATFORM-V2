@@ -28,6 +28,8 @@ import { CultureStoriesModule } from './culture-stories/culture-stories.module';
 import { HomepageLayoutModule } from './homepage-layout/homepage-layout.module';
 import { CoachesModule }        from './coaches/coaches.module';
 import { UploadsModule }        from './uploads/uploads.module';
+import { SystemSettingsModule } from './system-settings/system-settings.module';
+import { ContactsModule }       from './contacts/contacts.module';
 // ── New domains added by this refactor ──────────────────────────────────────
 import { TransfersModule }   from './transfers/transfers.module';
 import { InjuriesModule }    from './injuries/injuries.module';
@@ -117,6 +119,8 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     HomepageLayoutModule,
     CoachesModule,
     UploadsModule,
+    SystemSettingsModule,
+    ContactsModule,
     TransfersModule,
     InjuriesModule,
     SelectionsModule,

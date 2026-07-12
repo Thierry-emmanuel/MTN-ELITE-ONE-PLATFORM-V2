@@ -5,6 +5,7 @@ import {
   Trophy, FileText, Star, BarChart2, ExternalLink,
   ChevronRight, MapPin, Shirt, Handshake, Zap,
   Eye, Flag, Archive, Users, Search, UserCog, Sparkles,
+  MessageCircle, Settings,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -68,6 +69,8 @@ const NAV_GROUPS = [
       { id: 'dashboard',  label: 'Tableau de bord',         icon: LayoutDashboard },
       { id: 'layout',     label: 'Mise en page',            icon: Layers },
       { id: 'users',      label: 'Utilisateurs',            icon: UserCog },
+      { id: 'contacts',   label: 'Messages reçus',          icon: MessageCircle },
+      { id: 'settings',   label: 'Paramètres système',      icon: Settings },
     ],
   },
 ];

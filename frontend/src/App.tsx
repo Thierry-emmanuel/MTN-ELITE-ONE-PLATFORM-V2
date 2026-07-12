@@ -36,6 +36,7 @@ const HistoryPage     = lazy(() => import("./pages/HistoryPage"));
 const JournalHomePage  = lazy(() => import("./pages/JournalHomePage"));
 const JournalStoryPage = lazy(() => import("./pages/JournalStoryPage"));
 const StoryBuilderPage = lazy(() => import("./features/admin/journal/StoryBuilderPage"));
+const ContactPage      = lazy(() => import("./pages/ContactPage"));
 
 // ─── Route-level loading skeleton ─────────────────────────────────────────────
 const PageFallback = () => (
@@ -91,6 +92,7 @@ const App = () => (
         <Route path="/lions"               element={<PageLayout><LionsPage /></PageLayout>} />
         <Route path="/history"             element={<PageLayout><HistoryPage /></PageLayout>} />
         <Route path="/halloffame"          element={<HallOfFamePage />} />
+        <Route path="/contact"             element={<PageLayout><ContactPage /></PageLayout>} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

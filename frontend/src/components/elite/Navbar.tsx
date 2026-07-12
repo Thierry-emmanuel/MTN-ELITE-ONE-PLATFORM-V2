@@ -8,7 +8,20 @@ import {
 } from "lucide-react";
 import { tickerItems } from "./data";
 import { Link, useLocation } from "react-router-dom";
-import logo from "@/assets/images/logo/logo.png";
+import fallbackLogo from "@/assets/images/logo/logo.png";
+import { layoutApi } from "@/services/layoutApi";
+
+// ─── Fetch logo URL from backend system-settings ───────────────────────────────
+function useDynamicLogo(): string {
+  const [logoSrc, setLogoSrc] = useState(fallbackLogo);
+  useEffect(() => {
+    layoutApi
+      .getSystemSettings()
+      .then((s) => { if (s?.logo_url) setLogoSrc(s.logo_url); })
+      .catch(() => {});
+  }, []);
+  return logoSrc;
+}
 
 // ─── Season progress ──────────────────────────────────────────────────────────
 const CURRENT_MATCHDAY = 19;
@@ -273,7 +286,7 @@ const MobileNavItem = ({
 };
 
 // ─── Mobile drawer ────────────────────────────────────────────────────────────
-const MobileMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) => (
+const MobileMenu = ({ open, onClose, logo }: { open: boolean; onClose: () => void; logo: string }) => (
   <AnimatePresence>
     {open && (
       <>
@@ -291,7 +304,7 @@ const MobileMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" />
+              <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallbackLogo; }} />
               <div>
                 <div className="font-display text-xs tracking-widest leading-none">MTN ELITE ONE</div>
                 <div className="text-[9px] text-muted-foreground/50 mt-0.5 uppercase tracking-wider">Saison 25/26</div>
@@ -358,6 +371,7 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
   const [scrolled, setScrolled]     = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const logo = useDynamicLogo();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -508,7 +522,7 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
       {/* Spacer — accounts for 2-row header on desktop, 1-row on mobile */}
       <div className="h-[62px] lg:h-[90px]" />
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} logo={logo} />
     </>
   );
 };
