@@ -1,27 +1,25 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Filter, Radio, RefreshCw, CalendarDays, CalendarClock, ListChecks,
+  Search, Radio, RefreshCw, CalendarDays, Trophy
 } from 'lucide-react';
 import { MOCK_FIXTURES } from '../services/mockData';
-import { filterMatchDays, extractRounds, extractClubs } from '../utils/football.utils';
+import { extractRounds, extractClubs } from '../utils/football.utils';
 import type { MatchDay } from '../types/football.types';
 import {
-  FilterPill, PageHero, FixtureCardSkeleton, EmptyState, ErrorState,
+  FilterPill, FixtureCardSkeleton, EmptyState, ErrorState,
 } from '@/components/ui/football';
 import { MatchdayCard } from '@/components/elite/matches/MatchdayCard';
-import { MatchStatCard } from '@/components/elite/matches/MatchStatCard';
 import { SegmentedTabs } from '@/components/elite/matches/SegmentedTabs';
 import { useFixtures } from '@/hooks/useFootball';
 
 type StatusFilter = 'all' | 'live' | 'upcoming';
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function FixturesPage() {
   const { data: daysData, isLoading: loading, error, refetch } = useFixtures();
   const days = daysData ?? MOCK_FIXTURES;
 
-  const [roundFilter,  setRoundFilter]  = useState<number | null>(null);
+  const [activeRound, setActiveRound]   = useState<number>(19); // Default to current round
   const [clubFilter,   setClubFilter]   = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search,       setSearch]       = useState('');
@@ -29,24 +27,53 @@ export default function FixturesPage() {
   const rounds = useMemo(() => extractRounds(days, 'asc'), [days]);
   const clubs  = useMemo(() => extractClubs(days), [days]);
 
-  const baseFiltered = useMemo(
-    () => filterMatchDays(days as any, { round: roundFilter, clubId: clubFilter, search }),
-    [days, roundFilter, clubFilter, search],
-  ) as MatchDay[];
+  // Adjust activeRound if it falls out of range on data load
+  useMemo(() => {
+    if (rounds.length > 0 && !rounds.includes(activeRound)) {
+      setActiveRound(rounds[0]);
+    }
+  }, [rounds, activeRound]);
 
-  const filtered = useMemo(() => {
-    if (statusFilter === 'all') return baseFiltered;
-    return baseFiltered
-      .map(day => ({
-        ...day,
-        matches: day.matches.filter(m =>
-          statusFilter === 'live'
-            ? m.status === 'LIVE' || m.status === 'HT'
-            : m.status !== 'LIVE' && m.status !== 'HT',
-        ),
-      }))
-      .filter(day => day.matches.length > 0);
-  }, [baseFiltered, statusFilter]);
+  const filteredDays = useMemo(() => {
+    // Filter days/matches based on selected round, club search, and status
+    return days
+      .map(day => {
+        // If searching or filtering by club, ignore the round filter to search the entire season
+        const matchesRoundMatch = (search || clubFilter) ? true : day.round === activeRound;
+
+        if (!matchesRoundMatch) return null;
+
+        const filteredMatches = day.matches.filter(m => {
+          // Status filter
+          const matchesStatus =
+            statusFilter === 'all'
+              ? true
+              : statusFilter === 'live'
+              ? m.status === 'LIVE' || m.status === 'HT'
+              : m.status !== 'LIVE' && m.status !== 'HT';
+
+          // Club / Search filter
+          const matchesClub = clubFilter
+            ? m.homeClub.id === clubFilter || m.awayClub.id === clubFilter
+            : true;
+
+          const matchesSearch = search
+            ? m.homeClub.name.toLowerCase().includes(search.toLowerCase()) ||
+              m.awayClub.name.toLowerCase().includes(search.toLowerCase())
+            : true;
+
+          return matchesStatus && matchesClub && matchesSearch;
+        });
+
+        if (filteredMatches.length === 0) return null;
+
+        return {
+          ...day,
+          matches: filteredMatches,
+        };
+      })
+      .filter((d): d is MatchDay => d !== null);
+  }, [days, activeRound, clubFilter, statusFilter, search]);
 
   const liveCount = useMemo(
     () => days.flatMap(d => d.matches).filter(m => m.status === 'LIVE' || m.status === 'HT').length,
@@ -57,162 +84,194 @@ export default function FixturesPage() {
     [days],
   );
   const totalMatches = liveCount + upcomingCount;
-  const roundsInScope = [...new Set(days.map(d => d.round))];
-  const nextDate = days[0]?.date
-    ? new Date(days[0].date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
-    : '—';
-  const roundRange = roundsInScope.length > 1
-    ? `J${Math.min(...roundsInScope)}–J${Math.max(...roundsInScope)}`
-    : `J${roundsInScope[0] ?? '—'}`;
+
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-    setRoundFilter(null);
     setClubFilter(null);
   }, []);
 
   const resetFilters = useCallback(() => {
-    setRoundFilter(null); setClubFilter(null); setSearch(''); setStatusFilter('all');
+    setClubFilter(null); setSearch(''); setStatusFilter('all');
   }, []);
 
   const load = () => refetch();
 
   return (
-    <>
-      <PageHero
-        eyebrow="MTN Elite One · Saison 2025–26"
-        title="Calendrier"
-        subtitle="Prochains matchs · Saison 2025–2026"
-        accentColor="green"
-        badge={liveCount > 0 ? (
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-live/15 border border-live/30 text-live text-xs font-bold uppercase tracking-wider animate-pulse">
-            <Radio className="h-3 w-3" />
-            {liveCount} en direct
-          </span>
-        ) : undefined}
-      />
+    <div className="min-h-screen bg-[#050D08] text-white">
+      {/* ── Rich Apple Music Glassmorphic Hero ───────────────────────────────── */}
+      <div className="relative overflow-hidden pt-24 pb-12">
+        {/* Apple Music style vibrant radial glow behind */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]" />
+          <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#008751]/10 blur-[120px] mix-blend-screen" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#FCD116]/5 blur-[120px] mix-blend-screen" />
+        </div>
 
-      <div className="container py-6 lg:py-8 space-y-8">
-
-        {/* ── Vue d'ensemble ─────────────────────────────────────────────── */}
-        <section aria-label="Vue d'ensemble du calendrier">
-          <div className="mb-5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-0.5">
-              Vue d'ensemble
-            </p>
-            <h2 className="text-lg font-display font-bold text-foreground">Le calendrier en un coup d'œil</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <MatchStatCard icon={CalendarDays}  label="Matchs à venir" value={totalMatches} delay={0} />
-            <MatchStatCard icon={CalendarClock} label="Prochaine date" value={nextDate}       delay={0.06} />
-            <MatchStatCard icon={ListChecks}    label="Journées"       value={roundRange}     delay={0.12} />
-            <MatchStatCard
-              icon={Radio} label="En direct" value={liveCount}
-              color={liveCount > 0 ? 'text-live' : 'text-foreground'}
-              delay={0.18}
-              badge={liveCount > 0 && (
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
-                  <span className="text-[9px] text-live font-bold uppercase">en cours</span>
-                </div>
-              )}
-            />
-          </div>
-        </section>
-
-        {/* ── Filters ────────────────────────────────────────────────────── */}
-        <motion.section
-          aria-label="Filtres"
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }} className="space-y-4"
-        >
-          <SegmentedTabs
-            tabs={[
-              { id: 'all',      label: 'Toutes',   count: totalMatches },
-              { id: 'live',     label: 'En direct', count: liveCount, live: liveCount > 0 },
-              { id: 'upcoming', label: 'À venir',  count: upcomingCount },
-            ]}
-            active={statusFilter}
-            onChange={id => setStatusFilter(id as StatusFilter)}
-          />
-
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none" />
-            <input
-              type="search" value={search} onChange={handleSearch}
-              placeholder="Rechercher un club…"
-              className="w-full pl-9 pr-4 py-2 bg-surface-elevated border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-accent/50 transition-colors"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x">
-              <FilterPill label="Toutes les journées" active={roundFilter === null} onClick={() => setRoundFilter(null)} />
-              {rounds.map(r => (
-                <FilterPill
-                  key={r} label={`J${r}`} active={roundFilter === r}
-                  onClick={() => setRoundFilter(roundFilter === r ? null : r)}
-                  count={days.find(d => d.round === r)?.matches.length}
-                />
-              ))}
-            </div>
-          </div>
-
-          {clubs.length > 0 && !search && (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x">
-              <FilterPill label="Tous les clubs" active={clubFilter === null} onClick={() => setClubFilter(null)} />
-              {clubs.map(c => (
-                <FilterPill
-                  key={c.id} label={c.name} active={clubFilter === c.id}
-                  onClick={() => setClubFilter(clubFilter === c.id ? null : c.id)}
-                />
-              ))}
-            </div>
-          )}
-        </motion.section>
-
-        {/* ── Content ────────────────────────────────────────────────────── */}
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-              {[0, 1].map(g => (
-                <div key={g} className="space-y-3">
-                  <div className="h-4 w-40 rounded bg-white/6 animate-pulse" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {[0, 1, 2].map(i => <FixtureCardSkeleton key={i} />)}
-                  </div>
-                </div>
-              ))}
+        <div className="relative container mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-[10px] font-bold uppercase tracking-widest text-[#008751] mb-4">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Saison 2025/2026
+              </div>
+              <h1 className="font-display text-4xl lg:text-6xl font-black tracking-tight leading-none mb-3">
+                Calendrier
+              </h1>
+              <p className="text-white/45 text-sm max-w-lg font-medium">
+                Découvrez toutes les journées de championnat, suivez les rencontres en direct et planifiez vos prochains chocs.
+              </p>
             </motion.div>
-          ) : error ? (
-            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ErrorState message={(error as Error).message ?? 'Une erreur est survenue.'} onRetry={load} />
-            </motion.div>
-          ) : filtered.length === 0 ? (
-            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <EmptyState
-                message="Aucun match trouvé pour ces critères."
-                action={<button onClick={resetFilters} className="text-xs text-accent hover:underline">Réinitialiser les filtres</button>}
-              />
-            </motion.div>
-          ) : (
-            <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-              {filtered.map((day, i) => (
-                <MatchdayCard key={`${day.date}-${i}`} day={day} globalIndex={i} />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        {!loading && (
-          <div className="flex justify-center pt-2">
-            <button onClick={load} className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors">
-              <RefreshCw className="h-3.5 w-3.5" /> Actualiser
-            </button>
+            {/* Live Count Badge */}
+            {liveCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#CE1126]/10 border border-[#CE1126]/30 text-[#CE1126] font-bold text-xs uppercase tracking-wider animate-pulse self-start md:self-end"
+              >
+                <Radio className="h-4 w-4" />
+                {liveCount} match{liveCount > 1 ? 's' : ''} en direct
+              </motion.div>
+            )}
           </div>
-        )}
+        </div>
       </div>
-    </>
+
+      <div className="container mx-auto px-4 pb-24">
+        {/* ── Apple Music Style 3-column Layout ────────────────────────────────── */}
+        <div className="grid lg:grid-cols-[240px_1fr] gap-8 items-start">
+          
+          {/* LEFT: Apple Music style "Playlists" round selector sidebar */}
+          <aside className="bg-white/[0.02] border border-white/5 rounded-3xl p-4 space-y-4 backdrop-blur-md sticky top-28">
+            <div className="flex items-center gap-2 px-2 pb-2 border-b border-white/5">
+              <Trophy className="h-4 w-4 text-[#FCD116]" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Toutes les journées</span>
+            </div>
+            
+            {/* Rounds list */}
+            <div className="space-y-1 max-h-[480px] overflow-y-auto scrollbar-hide pr-1">
+              {rounds.map((r) => {
+                const isActive = activeRound === r;
+                const matchesCount = days.find(d => d.round === r)?.matches.length ?? 0;
+                return (
+                  <button
+                    key={r}
+                    onClick={() => {
+                      setActiveRound(r);
+                      setSearch('');
+                      setClubFilter(null);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#008751] to-[#008751]/80 text-white shadow-[0_4px_16px_rgba(0,135,81,0.25)]'
+                        : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <span>Journée {r}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-white/5 text-white/30'
+                    }`}>
+                      {matchesCount} M
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* RIGHT: Main Schedule Panel */}
+          <div className="space-y-6">
+
+            {/* Apple Music search & filter toolbar */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white/[0.02] border border-white/5 rounded-3xl p-4 backdrop-blur-md">
+              
+              {/* Segmented Status Tabs */}
+              <SegmentedTabs
+                tabs={[
+                  { id: 'all',      label: 'Tous les matchs',   count: totalMatches },
+                  { id: 'live',     label: 'En Direct', count: liveCount, live: liveCount > 0 },
+                  { id: 'upcoming', label: 'À Venir',  count: upcomingCount },
+                ]}
+                active={statusFilter}
+                onChange={id => setStatusFilter(id as StatusFilter)}
+              />
+
+              {/* Live search bar */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25 pointer-events-none" />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={handleSearch}
+                  placeholder="Rechercher un club…"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-2xl text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-[#008751] transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Club Quick Filters */}
+            {clubs.length > 0 && !search && (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 snap-x">
+                <FilterPill label="Tous les clubs" active={clubFilter === null} onClick={() => setClubFilter(null)} />
+                {clubs.map(c => (
+                  <FilterPill
+                    key={c.id}
+                    label={c.name}
+                    active={clubFilter === c.id}
+                    onClick={() => setClubFilter(clubFilter === c.id ? null : c.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* ── Main Schedule Content ──────────────────────────────────────── */}
+            <AnimatePresence mode="wait">
+              {loading ? (
+                <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                  {[0, 1].map(g => (
+                    <div key={g} className="space-y-3">
+                      <div className="h-5 w-40 rounded-xl bg-white/6 animate-pulse" />
+                      <div className="grid grid-cols-1 gap-3">
+                        {[0, 1, 2].map(i => <FixtureCardSkeleton key={i} />)}
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+              ) : error ? (
+                <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <ErrorState message={(error as Error).message ?? 'Une erreur est survenue.'} onRetry={load} />
+                </motion.div>
+              ) : filteredDays.length === 0 ? (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <EmptyState
+                    message="Aucun match trouvé pour cette journée ou ces critères de filtres."
+                    action={<button onClick={resetFilters} className="text-xs text-accent hover:underline">Réinitialiser les filtres</button>}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                  {filteredDays.map((day, i) => (
+                    <MatchdayCard key={`${day.date}-${i}`} day={day} globalIndex={i} />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!loading && (
+              <div className="flex justify-center pt-4">
+                <button onClick={load} className="flex items-center gap-2 text-[10px] text-white/30 hover:text-white uppercase tracking-widest transition-colors">
+                  <RefreshCw className="h-3.5 w-3.5" /> Actualiser le calendrier
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
