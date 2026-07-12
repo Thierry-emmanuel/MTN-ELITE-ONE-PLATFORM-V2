@@ -317,7 +317,13 @@ export default function StandingsPage() {
         {/* Summary cards */}
         {!loading && rows.length > 0 && (
           <div className="grid grid-cols-3 gap-3 mb-6">
-            <SummaryCard label="Leader"        value={leader?.club.short ?? '—'} sub={`${leader?.points ?? 0} pts`} delay={0} />
+            <SummaryCard
+              label="Leader"
+              value={leader?.club.short ?? leader?.club.name ?? '—'}
+              sub={`${leader?.points ?? 0} pts`}
+              badge={leader?.club ? <div className="flex justify-center mt-2"><ClubLogo club={leader.club} size={32} /></div> : undefined}
+              delay={0}
+            />
             <SummaryCard label="Buts marqués"  value={totalGoals} sub="cette saison" delay={0.06} />
             <SummaryCard label="Matchs joués"  value={totalGames} sub={`J${currentRound} en cours`} delay={0.12} />
           </div>
