@@ -1,12 +1,11 @@
 import {
   Controller, Post, Delete, UseInterceptors, UploadedFile,
-  BadRequestException, Param, NotFoundException,
+  BadRequestException, Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname, normalize, join } from 'path';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { extname } from 'path';
+import { CloudinaryService } from './cloudinary.service';
 
 const ALLOWED_SCOPES: Record<string, string[]> = {
   'clubs/logo': ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
@@ -36,6 +35,8 @@ const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
 @ApiTags('uploads')
 @Controller('uploads')
 export class UploadsController {
+  constructor(private readonly cloudinaryService: CloudinaryService) {}
+
   // ── Legacy flat endpoint, kept for backward compatibility (Evaluated first to avoid matching :entity/:field) ──
   @Post('file')
   @ApiOperation({ summary: '[Legacy] Upload an unscoped file (max 50MB)' })
@@ -45,17 +46,6 @@ export class UploadsController {
   })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (_req, _file, cb) => {
-          const uploadPath = './uploads/generic';
-          if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
-          cb(null, uploadPath);
-        },
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
       limits: { fileSize: MAX_SIZE_BYTES },
       fileFilter: (_req, file, cb) => {
         const allowed = ALLOWED_SCOPES.generic;
@@ -64,11 +54,16 @@ export class UploadsController {
       },
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
+
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const publicId = `${uniqueSuffix}`;
+    const uploadResult = await this.cloudinaryService.uploadFile(file, 'generic', publicId);
+
     return {
-      url: `/uploads/generic/${file.filename}`,
-      filename: file.filename,
+      url: uploadResult.secure_url,
+      filename: `${publicId}${extname(file.originalname)}`,
       mimetype: file.mimetype,
       size: file.size,
       scope: 'generic',
@@ -86,18 +81,6 @@ export class UploadsController {
   })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (req, _file, cb) => {
-          const { entity, field } = req.params as { entity: string; field: string };
-          const uploadPath = `./uploads/${entity}/${field}`;
-          if (!existsSync(uploadPath)) mkdirSync(uploadPath, { recursive: true });
-          cb(null, uploadPath);
-        },
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-        },
-      }),
       limits: { fileSize: MAX_SIZE_BYTES },
       fileFilter: (req, file, cb) => {
         const { entity, field } = req.params as { entity: string; field: string };
@@ -116,39 +99,41 @@ export class UploadsController {
       },
     }),
   )
-  uploadScopedFile(
+  async uploadScopedFile(
     @UploadedFile() file: Express.Multer.File,
     @Param('entity') entity: string,
     @Param('field') field: string,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
-    const fileUrl = `/uploads/${entity}/${field}/${file.filename}`;
+
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const publicId = `${uniqueSuffix}`;
+    const folder = `${entity}/${field}`;
+    const uploadResult = await this.cloudinaryService.uploadFile(file, folder, publicId);
+
     return {
-      url: fileUrl,
-      filename: file.filename,
+      url: uploadResult.secure_url,
+      filename: `${publicId}${extname(file.originalname)}`,
       mimetype: file.mimetype,
       size: file.size,
-      scope: `${entity}/${field}`,
+      scope: folder,
     };
   }
 
   @Delete(':entity/:field/:filename')
   @ApiOperation({ summary: 'Delete a previously uploaded file' })
-  deleteScopedFile(
+  async deleteScopedFile(
     @Param('entity') entity: string,
     @Param('field') field: string,
     @Param('filename') filename: string,
   ) {
-    const uploadsRoot = normalize(join(process.cwd(), 'uploads'));
-    const target = normalize(join(uploadsRoot, entity, field, filename));
-
-    if (!target.startsWith(uploadsRoot)) {
-      throw new BadRequestException('Invalid file path');
+    const folder = `${entity}/${field}`;
+    const publicId = `${folder}/${filename}`;
+    try {
+      await this.cloudinaryService.deleteFile(publicId);
+      return { message: 'File deleted' };
+    } catch (error) {
+      throw new BadRequestException(`Failed to delete file from Cloudinary: ${error.message}`);
     }
-    if (!existsSync(target)) {
-      throw new NotFoundException('File not found');
-    }
-    unlinkSync(target);
-    return { message: 'File deleted' };
   }
 }

@@ -143,13 +143,13 @@ const StandingRow = memo(({
         <span className="text-[10px] text-muted-foreground/50 hidden sm:block">{row.club.city}</span>
       </div>
 
-      <div className="hidden md:flex text-xs tabular-nums">
+      <div className="hidden md:flex text-xs tabular-nums shrink-0">
         {cols.map((c, i) => (
           <span key={i} className={`w-8 text-center ${c.cls}`}>{c.val}</span>
         ))}
       </div>
 
-      <div className="hidden lg:flex items-center gap-0.5">
+      <div className="hidden lg:flex items-center justify-center gap-0.5 w-[116px] shrink-0">
         {row.formGuide.slice(-5).map((r, i) => <FormIndicator key={i} result={r} />)}
       </div>
 
@@ -171,17 +171,17 @@ const DesktopTable = memo(({ rows }: { rows: RowData[] }) => {
   return (
     <div className="hidden md:block rounded-xl border border-border overflow-hidden bg-gradient-to-b from-white/[0.03] to-transparent">
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2.5 border-b border-border/60 bg-[hsl(168,45%,9%)] backdrop-blur-sm">
-        <div className="w-10 text-[10px] text-muted-foreground uppercase tracking-wider">#</div>
+      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-2.5 border-b border-border/60 bg-[hsl(168,45%,9%)] backdrop-blur-sm border-l-2 border-l-transparent">
+        <div className="w-10 text-[10px] text-muted-foreground uppercase tracking-wider shrink-0">#</div>
         <div className="w-7 shrink-0" />
         <div className="flex-1 text-[10px] text-muted-foreground uppercase tracking-wider">Club</div>
-        <div className="hidden md:flex text-[10px] text-muted-foreground uppercase tracking-wider">
+        <div className="hidden md:flex text-[10px] text-muted-foreground uppercase tracking-wider shrink-0">
           {COL_HEADERS.map((h, i) => (
             <span key={h} className="w-8 text-center" title={COL_TITLES[i]}>{h}</span>
           ))}
         </div>
-        <div className="hidden lg:block text-[10px] text-muted-foreground uppercase tracking-wider w-[116px] text-center">Forme</div>
-        <div className="w-10 text-right text-[10px] text-muted-foreground uppercase tracking-wider">Pts</div>
+        <div className="hidden lg:block text-[10px] text-muted-foreground uppercase tracking-wider w-[116px] text-center shrink-0">Forme</div>
+        <div className="w-10 text-right text-[10px] text-muted-foreground uppercase tracking-wider shrink-0">Pts</div>
       </div>
 
       {rows.map((row, idx) => (
