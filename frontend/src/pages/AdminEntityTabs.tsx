@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus, Edit3, Trash2, Play, StopCircle, RefreshCw,
-  UserCheck, UserX, Shield, Users, Zap, Globe,
+  UserCheck, UserX, Shield, Users, Zap, Globe, X,
 } from 'lucide-react';
 
 const Instagram = (props: React.SVGProps<SVGSVGElement>) => (
@@ -363,15 +363,19 @@ function TagInput({ label, value, onChange, placeholder, hint }: { label: string
 /*  SEASON WIZARD — multi-step season + all-entity configuration              */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
+import {
+  Trophy, Shield, UserCheck, Star, MapPin, Calendar, Handshake, Rocket
+} from 'lucide-react';
+
 const WIZARD_STEPS = [
-  { id: 'saison',    label: 'Saison',     icon: '🏆', desc: 'Informations de base' },
-  { id: 'clubs',     label: 'Clubs',      icon: '🛡️', desc: 'Équipes participantes' },
-  { id: 'coaches',   label: 'Entraîneurs',icon: '🎯', desc: 'Staffs techniques' },
-  { id: 'joueurs',   label: 'Joueurs',    icon: '👤', desc: 'Effectifs & transferts' },
-  { id: 'stades',    label: 'Stades',     icon: '🏟️', desc: 'Infrastructures' },
-  { id: 'matchs',    label: 'Matchs',     icon: '⚽', desc: 'Calendrier compétitif' },
-  { id: 'sponsors',  label: 'Sponsors',   icon: '🤝', desc: 'Partenaires & financeurs' },
-  { id: 'review',    label: 'Lancement',  icon: '🚀', desc: 'Validation finale' },
+  { id: 'saison',    label: 'Saison',     icon: Trophy, desc: 'Informations de base' },
+  { id: 'clubs',     label: 'Clubs',      icon: Shield, desc: 'Équipes participantes' },
+  { id: 'coaches',   label: 'Entraîneurs',icon: UserCheck, desc: 'Staffs techniques' },
+  { id: 'joueurs',   label: 'Joueurs',    icon: Star, desc: 'Effectifs & transferts' },
+  { id: 'stades',    label: 'Stades',     icon: MapPin, desc: 'Infrastructures' },
+  { id: 'matchs',    label: 'Matchs',     icon: Calendar, desc: 'Calendrier compétitif' },
+  { id: 'sponsors',  label: 'Sponsors',   icon: Handshake, desc: 'Partenaires & financeurs' },
+  { id: 'review',    label: 'Lancement',  icon: Rocket, desc: 'Validation finale' },
 ];
 
 function SeasonWizardProgress({ currentStep, completedSteps }: { currentStep: string; completedSteps: Set<string> }) {
@@ -382,6 +386,7 @@ function SeasonWizardProgress({ currentStep, completedSteps }: { currentStep: st
           const isDone = completedSteps.has(step.id);
           const isCurrent = currentStep === step.id;
           const isAccessible = idx === 0 || completedSteps.has(WIZARD_STEPS[idx - 1].id) || isDone || isCurrent;
+          const Icon = step.icon;
           return (
             <div key={step.id} className="flex items-center">
               <div className={`flex flex-col items-center gap-1 px-1 transition-all`}>
@@ -391,7 +396,7 @@ function SeasonWizardProgress({ currentStep, completedSteps }: { currentStep: st
                   : isAccessible ? 'bg-white/5 border border-white/10 text-white/40'
                   : 'bg-white/[0.02] border border-white/[0.05] text-white/15'
                 }`}>
-                  {isDone ? '✓' : step.icon}
+                  {isDone ? '✓' : <Icon className="h-4.5 w-4.5" />}
                 </div>
                 <p className={`text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${
                   isCurrent ? 'text-accent' : isDone ? 'text-emerald-400' : 'text-white/25'
@@ -426,7 +431,7 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
   // Season info
   const [seasonData, setSeasonData] = useState<any>(initialSeason || {
     name: '', startDate: '', endDate: '', status: 'UPCOMING',
-    description: '', totalRounds: 30, format: 'round-robin',
+    description: '', totalRounds: 30, format: 'round-robin', logoUrl: '',
   });
 
   // Clubs
@@ -598,69 +603,113 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-8 px-4">
+    <div className="fixed inset-0 z-50 bg-[#090d12] flex flex-col overflow-hidden">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-4xl bg-[#0c1117] border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        className="flex flex-col flex-1 overflow-hidden"
       >
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
+        <div className="px-6 pt-5 pb-4 border-b border-white/[0.06] bg-[#0c1117] shrink-0">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-display font-black text-white text-xl">
-                {isEdit ? `Modifier — ${initialSeason?.name}` : '🏆 Nouvelle Saison'}
-              </h2>
-              <p className="text-[11px] text-white/35 mt-0.5">
-                {isEdit ? 'Modifiez les configurations de cette saison' : 'Configurez chaque aspect de la saison en quelques étapes'}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                <Trophy className="h-4 w-4 text-accent" />
+              </div>
+              <div>
+                <h2 className="font-display font-black text-white text-base leading-tight">
+                  {isEdit ? `Configurer — ${initialSeason?.name}` : 'Nouvelle Saison'}
+                </h2>
+                <p className="text-[10px] text-white/30 mt-0.5">
+                  {isEdit ? 'Modifiez les configurations de cette saison' : 'Configurez chaque aspect de la saison en quelques étapes'}
+                </p>
+              </div>
             </div>
             <button type="button" onClick={onClose}
-              className="h-8 w-8 rounded-xl bg-white/5 border border-white/8 text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all text-sm">
-              ✕
+              className="h-8 w-8 rounded-xl bg-white/5 border border-white/8 text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all">
+              <X className="h-4 w-4" />
             </button>
           </div>
           <SeasonWizardProgress currentStep={step} completedSteps={completedSteps} />
         </div>
 
-        {/* Step navigation tabs */}
-        <div className="flex gap-0 border-b border-white/[0.05] overflow-x-auto">
-          {WIZARD_STEPS.map((ws, idx) => {
-            const accessible = idx === 0 || completedSteps.has(WIZARD_STEPS[idx - 1].id) || completedSteps.has(ws.id);
-            return (
-              <button key={ws.id} type="button"
-                onClick={() => accessible && setStep(ws.id)}
-                className={`flex-shrink-0 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-all border-b-2 ${
-                  step === ws.id ? 'text-accent border-accent bg-accent/5'
-                  : completedSteps.has(ws.id) ? 'text-emerald-400/70 border-emerald-500/20 hover:text-emerald-400'
-                  : accessible ? 'text-white/30 border-transparent hover:text-white/50'
-                  : 'text-white/15 border-transparent cursor-not-allowed'
-                }`}>
-                {ws.icon} {ws.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* Main content: tabs + step form + preview */}
+        <div className="flex flex-1 overflow-hidden">
 
-        {/* Step content */}
-        <div className="p-6 space-y-6 min-h-[420px]">
+          {/* ── Left: step navigation rail ── */}
+          <aside className="w-52 shrink-0 border-r border-white/[0.06] bg-[#0b0f16] flex flex-col overflow-y-auto">
+            <div className="px-3 py-4 space-y-1">
+              {WIZARD_STEPS.map((ws, idx) => {
+                const accessible = idx === 0 || completedSteps.has(WIZARD_STEPS[idx - 1].id) || completedSteps.has(ws.id);
+                const done = completedSteps.has(ws.id);
+                const active = step === ws.id;
+                const Icon = ws.icon;
+                return (
+                  <button key={ws.id} type="button"
+                    onClick={() => accessible && setStep(ws.id)}
+                    className={`w-full text-left px-3 py-3 rounded-xl transition-all flex items-start gap-3 ${
+                      active ? 'bg-accent/10 border border-accent/25'
+                      : done ? 'border border-transparent hover:bg-emerald-500/5'
+                      : accessible ? 'border border-transparent hover:bg-white/[0.04]'
+                      : 'border border-transparent opacity-30 cursor-not-allowed'
+                    }`}>
+                    <span className={`mt-0.5 shrink-0 h-5 w-5 rounded-full flex items-center justify-center ${
+                      done ? 'bg-emerald-500/20 text-emerald-400'
+                      : active ? 'bg-accent text-black'
+                      : 'bg-white/5 text-white/30'
+                    }`}>
+                      {done ? '✓' : <Icon className="h-3 w-3" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className={`block text-[11px] font-semibold ${active ? 'text-white' : done ? 'text-emerald-400/80' : 'text-white/50'}`}>
+                        {ws.label}
+                      </span>
+                      <span className="block text-[9px] text-white/25 mt-0.5 leading-snug">{ws.desc}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* ── Centre: step content ── */}
+          <main className="flex-1 overflow-y-auto min-w-0">
+            <div className="max-w-xl mx-auto px-8 py-8 space-y-6">
 
           {/* ── STEP 1: Saison ── */}
           {step === 'saison' && (
             <div className="space-y-5">
-              <div className="flex items-center gap-3 p-4 bg-accent/5 border border-accent/15 rounded-2xl">
-                <span className="text-2xl">🏆</span>
-                <div>
-                  <p className="text-sm font-bold text-white">Informations de la saison</p>
-                  <p className="text-[11px] text-white/40">Définissez le nom, les dates et le format du championnat</p>
-                </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent/70 mb-1">Étape 1 / 8</p>
+                <h3 className="text-lg font-display font-bold text-white">Informations de la saison</h3>
+                <p className="text-[11px] text-white/35 mt-1">Définissez le nom, les dates et le format du championnat</p>
               </div>
 
               {/* ONGOING warning */}
-              <div className="p-3 bg-amber-500/8 border border-amber-500/20 rounded-xl flex items-center gap-3">
-                <span className="text-amber-400 text-lg">⚠️</span>
+              <div className="p-3 bg-amber-500/8 border border-amber-500/20 rounded-xl flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-amber-200/70">Une seule saison peut être <strong className="text-amber-300">EN COURS</strong> à la fois. Activer cette saison clôturera automatiquement toute saison en cours.</p>
+              </div>
+
+              {/* Logo upload */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">Logo de la Saison</label>
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-2xl bg-white/[0.04] border border-white/8 flex items-center justify-center overflow-hidden shrink-0">
+                    {seasonData.logoUrl
+                      ? <img src={seasonData.logoUrl} alt="Logo" className="w-full h-full object-contain p-1.5" />
+                      : <Trophy className="h-7 w-7 text-white/15" />}
+                  </div>
+                  <div className="flex-1">
+                    <FormField
+                      label="URL du logo"
+                      value={seasonData.logoUrl || ''}
+                      onChange={v => setSeasonData((p: any) => ({ ...p, logoUrl: v }))}
+                      hint="Lien direct vers le logo officiel de la saison (PNG/SVG recommandé)"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
@@ -680,9 +729,9 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
                 </div>
                 {isEdit && (
                   <FormField label="Statut" type="select" value={seasonData.status || 'UPCOMING'} onChange={v => setSeasonData((p: any) => ({ ...p, status: v }))} options={[
-                    { value: 'UPCOMING', label: '⏳ À venir' },
-                    { value: 'ONGOING', label: '🟢 En cours' },
-                    { value: 'COMPLETED', label: '✅ Terminée' },
+                    { value: 'UPCOMING', label: 'À venir' },
+                    { value: 'ONGOING', label: 'En cours' },
+                    { value: 'COMPLETED', label: 'Terminée' },
                   ]} />
                 )}
               </div>
@@ -1068,7 +1117,7 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
           {step === 'review' && (
             <div className="space-y-5">
               <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-accent/10 to-emerald-500/10 border border-accent/20 rounded-2xl">
-                <span className="text-2xl">🚀</span>
+                <Rocket className="h-6 w-6 text-accent shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-white">Révision finale & Lancement</p>
                   <p className="text-[11px] text-white/40">Vérifiez toutes les informations avant d'activer la saison</p>
@@ -1077,26 +1126,29 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
 
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { icon: '🏆', label: 'Saison', value: seasonData.name || '—', sub: `${seasonData.startDate?.slice(0,10) || '?'} → ${seasonData.endDate?.slice(0,10) || '?'}`, done: completedSteps.has('saison') },
-                  { icon: '🛡️', label: 'Clubs', value: `${selectedClubIds.size} club(s)`, sub: 'sélectionnés pour la saison', done: completedSteps.has('clubs') },
-                  { icon: '🎯', label: 'Entraîneurs', value: `${allCoaches.length} entraîneur(s)`, sub: 'dans la base de données', done: completedSteps.has('coaches') },
-                  { icon: '👤', label: 'Joueurs', value: `${allPlayers.length} joueur(s)`, sub: 'dans les effectifs', done: completedSteps.has('joueurs') },
-                  { icon: '🏟️', label: 'Stades', value: `${allStadiums.length} stade(s)`, sub: 'disponibles', done: completedSteps.has('stades') },
-                  { icon: '⚽', label: 'Matchs', value: `${seasonMatches.length} match(s)`, sub: 'planifiés', done: completedSteps.has('matchs') },
-                  { icon: '🤝', label: 'Sponsors', value: `${allSponsors.length} sponsor(s)`, sub: 'partenaires', done: completedSteps.has('sponsors') },
-                ].map(item => (
-                  <div key={item.label} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                    item.done ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-white/[0.02] border-white/[0.05]'
-                  }`}>
-                    <span className="text-xl shrink-0">{item.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">{item.label}</p>
-                      <p className="text-[13px] font-bold text-white">{item.value}</p>
-                      <p className="text-[9px] text-white/30">{item.sub}</p>
+                  { icon: Trophy, label: 'Saison', value: seasonData.name || '—', sub: `${seasonData.startDate?.slice(0,10) || '?'} → ${seasonData.endDate?.slice(0,10) || '?'}`, done: completedSteps.has('saison') },
+                  { icon: Shield, label: 'Clubs', value: `${selectedClubIds.size} club(s)`, sub: 'sélectionnés pour la saison', done: completedSteps.has('clubs') },
+                  { icon: UserCheck, label: 'Entraîneurs', value: `${allCoaches.length} entraîneur(s)`, sub: 'dans la base de données', done: completedSteps.has('coaches') },
+                  { icon: Star, label: 'Joueurs', value: `${allPlayers.length} joueur(s)`, sub: 'dans les effectifs', done: completedSteps.has('joueurs') },
+                  { icon: MapPin, label: 'Stades', value: `${allStadiums.length} stade(s)`, sub: 'disponibles', done: completedSteps.has('stades') },
+                  { icon: Calendar, label: 'Matchs', value: `${seasonMatches.length} match(s)`, sub: 'planifiés', done: completedSteps.has('matchs') },
+                  { icon: Handshake, label: 'Sponsors', value: `${allSponsors.length} sponsor(s)`, sub: 'partenaires', done: completedSteps.has('sponsors') },
+                ].map(item => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <div key={item.label} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      item.done ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-white/[0.02] border-white/[0.05]'
+                    }`}>
+                      <ItemIcon className="h-5 w-5 text-white/40 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">{item.label}</p>
+                        <p className="text-[13px] font-bold text-white">{item.value}</p>
+                        <p className="text-[9px] text-white/30">{item.sub}</p>
+                      </div>
+                      <span className={`text-sm shrink-0 ${item.done ? 'text-emerald-400' : 'text-white/15'}`}>{item.done ? '✓' : '○'}</span>
                     </div>
-                    <span className={`text-sm shrink-0 ${item.done ? 'text-emerald-400' : 'text-white/15'}`}>{item.done ? '✓' : '○'}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="p-4 bg-amber-500/8 border border-amber-500/20 rounded-2xl">
@@ -1111,7 +1163,7 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
                   <AdminButton variant="secondary" onClick={onClose}>Sauvegarder & fermer</AdminButton>
                   {createdSeasonId && (
                     <AdminButton onClick={handleActivateSeason} loading={loading}>
-                      🚀 Activer la Saison
+                      Activer la Saison
                     </AdminButton>
                   )}
                 </div>
@@ -1119,7 +1171,73 @@ function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
             </div>
           )}
 
-        </div>
+            </div>{/* end max-w-xl */}
+          </main>
+
+          {/* ── Right: live preview panel ── */}
+          <aside className="w-[300px] shrink-0 border-l border-white/[0.06] bg-[#0b0f16] flex flex-col overflow-y-auto">
+            <div className="h-11 border-b border-white/[0.06] flex items-center px-5 shrink-0">
+              <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Aperçu en direct</span>
+            </div>
+            <div className="flex-1 p-4 flex flex-col gap-4">
+              {/* Season card preview */}
+              <div className="rounded-2xl overflow-hidden border border-white/[0.07] bg-[#0e1520]">
+                {/* Banner */}
+                <div className="relative h-20 bg-gradient-to-br from-accent/30 via-[#1a2535] to-[#0e1520] flex items-center justify-center">
+                  {seasonData.logoUrl
+                    ? <img src={seasonData.logoUrl} alt="logo" className="h-14 w-14 object-contain drop-shadow-xl" />
+                    : <Trophy className="h-10 w-10 text-accent/30" />}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0e1520]/60 to-transparent" />
+                </div>
+                {/* Info */}
+                <div className="px-4 py-4">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-accent/60 mb-1">Championnat</p>
+                  <h4 className="font-display font-black text-white text-sm leading-tight">
+                    {seasonData.name || 'Nom de la saison'}
+                  </h4>
+                  {(seasonData.startDate || seasonData.endDate) && (
+                    <p className="text-[10px] text-white/40 mt-1.5 flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3" />
+                      {seasonData.startDate?.slice(0,10) || '?'} → {seasonData.endDate?.slice(0,10) || '?'}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                      {seasonData.status === 'ONGOING' ? 'En cours' : seasonData.status === 'COMPLETED' ? 'Terminée' : 'À venir'}
+                    </span>
+                    {seasonData.format && (
+                      <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/[0.04] text-white/30 border border-white/[0.06]">
+                        {seasonData.format}
+                      </span>
+                    )}
+                    {seasonData.totalRounds && (
+                      <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/[0.04] text-white/30 border border-white/[0.06]">
+                        {seasonData.totalRounds} journées
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress summary */}
+              <div className="space-y-2">
+                <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">Progression</p>
+                {WIZARD_STEPS.filter(s => s.id !== 'review').map(s => (
+                  <div key={s.id} className="flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                      completedSteps.has(s.id) ? 'bg-emerald-500' : 'bg-white/[0.08]'
+                    }`} />
+                    <span className={`text-[10px] font-medium ${
+                      completedSteps.has(s.id) ? 'text-emerald-400/80' : 'text-white/25'
+                    }`}>{s.label}</span>
+                    {completedSteps.has(s.id) && <span className="text-[9px] text-emerald-500 ml-auto">✓</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+        </div>{/* end flex row */}
       </motion.div>
     </div>
   );
