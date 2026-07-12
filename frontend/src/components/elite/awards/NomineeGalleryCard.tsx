@@ -146,13 +146,14 @@ const NomineeDetailModal = memo(({
   const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
-      onClick={onClose}
-    >
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      >
       <motion.div
         initial={{ scale: 0.85, y: 40, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -467,16 +468,17 @@ const NomineeDetailModal = memo(({
             </motion.div>
           )}
         </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
 
-    {/* Goal video modal — stacks on top */}
-    <AnimatePresence>
-      {videoOpen && hasGoalCtx && (
-        <GoalVideoModal nominee={player} onClose={() => setVideoOpen(false)} />
-      )}
-    </AnimatePresence>
-  </>);
+      {/* Goal video modal — stacks on top */}
+      <AnimatePresence>
+        {videoOpen && hasGoalCtx && (
+          <GoalVideoModal nominee={player} onClose={() => setVideoOpen(false)} />
+        )}
+      </AnimatePresence>
+    </>
+  );
 });
 NomineeDetailModal.displayName = 'NomineeDetailModal';
 
