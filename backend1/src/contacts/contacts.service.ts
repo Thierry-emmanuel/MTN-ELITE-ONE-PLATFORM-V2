@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ContactMessage, ContactMessageDocument } from './schemas/contact.schema';
@@ -22,7 +22,7 @@ export class ContactsService {
   async updateStatus(id: string, status: string): Promise<ContactMessage> {
     const updated = await this.contactModel.findByIdAndUpdate(id, { status }, { new: true }).exec();
     if (!updated) {
-      throw new import('@nestjs/common').NotFoundException(`Contact message with ID ${id} not found`);
+      throw new NotFoundException(`Contact message with ID ${id} not found`);
     }
     return updated;
   }

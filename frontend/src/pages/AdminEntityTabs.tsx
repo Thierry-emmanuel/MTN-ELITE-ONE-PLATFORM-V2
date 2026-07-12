@@ -360,15 +360,790 @@ function TagInput({ label, value, onChange, placeholder, hint }: { label: string
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
+/*  SEASON WIZARD — multi-step season + all-entity configuration              */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+const WIZARD_STEPS = [
+  { id: 'saison',    label: 'Saison',     icon: '🏆', desc: 'Informations de base' },
+  { id: 'clubs',     label: 'Clubs',      icon: '🛡️', desc: 'Équipes participantes' },
+  { id: 'coaches',   label: 'Entraîneurs',icon: '🎯', desc: 'Staffs techniques' },
+  { id: 'joueurs',   label: 'Joueurs',    icon: '👤', desc: 'Effectifs & transferts' },
+  { id: 'stades',    label: 'Stades',     icon: '🏟️', desc: 'Infrastructures' },
+  { id: 'matchs',    label: 'Matchs',     icon: '⚽', desc: 'Calendrier compétitif' },
+  { id: 'sponsors',  label: 'Sponsors',   icon: '🤝', desc: 'Partenaires & financeurs' },
+  { id: 'review',    label: 'Lancement',  icon: '🚀', desc: 'Validation finale' },
+];
+
+function SeasonWizardProgress({ currentStep, completedSteps }: { currentStep: string; completedSteps: Set<string> }) {
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex items-start gap-0 min-w-max pb-2">
+        {WIZARD_STEPS.map((step, idx) => {
+          const isDone = completedSteps.has(step.id);
+          const isCurrent = currentStep === step.id;
+          const isAccessible = idx === 0 || completedSteps.has(WIZARD_STEPS[idx - 1].id) || isDone || isCurrent;
+          return (
+            <div key={step.id} className="flex items-center">
+              <div className={`flex flex-col items-center gap-1 px-1 transition-all`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
+                  isCurrent ? 'bg-accent text-black shadow-[0_0_16px_rgba(252,209,22,0.4)]'
+                  : isDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : isAccessible ? 'bg-white/5 border border-white/10 text-white/40'
+                  : 'bg-white/[0.02] border border-white/[0.05] text-white/15'
+                }`}>
+                  {isDone ? '✓' : step.icon}
+                </div>
+                <p className={`text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${
+                  isCurrent ? 'text-accent' : isDone ? 'text-emerald-400' : 'text-white/25'
+                }`}>{step.label}</p>
+              </div>
+              {idx < WIZARD_STEPS.length - 1 && (
+                <div className={`w-8 h-[2px] mt-[-12px] mx-1 rounded-full transition-all ${
+                  completedSteps.has(step.id) ? 'bg-emerald-500/40' : 'bg-white/[0.06]'
+                }`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Season Wizard Body ────────────────────────────────────────────────── */
+function SeasonWizard({ initialSeason, onClose, onSaved, showToast }: {
+  initialSeason?: any; onClose: () => void;
+  onSaved: (season: any) => void; showToast: ToastFn;
+}) {
+  const isEdit = !!initialSeason?.id;
+  const [step, setStep] = useState('saison');
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(
+    isEdit ? new Set(['saison', 'clubs', 'coaches', 'joueurs', 'stades', 'matchs', 'sponsors']) : new Set()
+  );
+  const [loading, setLoading] = useState(false);
+  const [createdSeasonId, setCreatedSeasonId] = useState<string>(initialSeason?.id || '');
+
+  // Season info
+  const [seasonData, setSeasonData] = useState<any>(initialSeason || {
+    name: '', startDate: '', endDate: '', status: 'UPCOMING',
+    description: '', totalRounds: 30, format: 'round-robin',
+  });
+
+  // Clubs
+  const [allClubs, setAllClubs] = useState<any[]>([]);
+  const [selectedClubIds, setSelectedClubIds] = useState<Set<string>>(new Set());
+
+  // Coaches
+  const [allCoaches, setAllCoaches] = useState<any[]>([]);
+  const [newCoach, setNewCoach] = useState<any>({ firstName: '', lastName: '', nationality: '', clubId: '', qualification: '' });
+  const [addingCoach, setAddingCoach] = useState(false);
+
+  // Players
+  const [allPlayers, setAllPlayers] = useState<any[]>([]);
+  const [newPlayer, setNewPlayer] = useState<any>({ firstName: '', lastName: '', position: 'MID', nationality: '', clubId: '', jerseyNumber: '' });
+  const [addingPlayer, setAddingPlayer] = useState(false);
+
+  // Stadiums
+  const [allStadiums, setAllStadiums] = useState<any[]>([]);
+  const [newStadium, setNewStadium] = useState<any>({ name: '', city: '', capacity: '', country: 'Cameroun' });
+  const [addingStadium, setAddingStadium] = useState(false);
+
+  // Matches
+  const [seasonMatches, setSeasonMatches] = useState<any[]>([]);
+  const [newMatch, setNewMatch] = useState<any>({ homeClubId: '', awayClubId: '', scheduledAt: '', venue: '', round: 1 });
+  const [addingMatch, setAddingMatch] = useState(false);
+
+  // Sponsors
+  const [allSponsors, setAllSponsors] = useState<any[]>([]);
+  const [newSponsor, setNewSponsor] = useState<any>({ name: '', tier: 'SILVER', logoUrl: '', websiteUrl: '' });
+  const [addingsponsor, setAddingSponsors] = useState(false);
+
+  const run = async (fn: () => Promise<void>) => {
+    setLoading(true);
+    try { await fn(); }
+    catch (e: any) {
+      const msg = e?.response?.data?.message;
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || (e as Error).message), 'error');
+    }
+    finally { setLoading(false); }
+  };
+
+  // Load reference data on mount
+  useEffect(() => {
+    Promise.all([
+      layoutApi.getClubs({ limit: 100 }),
+      layoutApi.getCoaches({ limit: 200 }),
+      layoutApi.getPlayers({ limit: 500 }),
+    ]).then(([clubs, coaches, players]) => {
+      setAllClubs(clubs.data ?? clubs);
+      setAllCoaches(coaches.data ?? coaches);
+      setAllPlayers(players.data ?? players);
+    }).catch(console.error);
+
+    // Load stadiums from local storage (entity registry)
+    const saved = JSON.parse(localStorage.getItem('mock_entity_stadiums') || '[]');
+    setAllStadiums(saved);
+
+    // Load sponsors from local storage
+    const savedSponsors = JSON.parse(localStorage.getItem('mock_entity_sponsors') || '[]');
+    setAllSponsors(savedSponsors);
+  }, []);
+
+  // Load season matches when on matches step and we have a created season
+  useEffect(() => {
+    if (step === 'matchs' && createdSeasonId) {
+      layoutApi.getMatches({ seasonId: createdSeasonId, limit: 200 })
+        .then(r => setSeasonMatches(r.data ?? r))
+        .catch(console.error);
+    }
+  }, [step, createdSeasonId]);
+
+  const markDone = (s: string) => setCompletedSteps(prev => new Set([...prev, s]));
+
+  /* ── Step: Save season info ── */
+  const handleSaveSeasonInfo = async () => {
+    if (!seasonData.name || !seasonData.startDate || !seasonData.endDate) {
+      showToast('Nom, date de début et fin sont obligatoires.', 'error'); return;
+    }
+    await run(async () => {
+      const dto = {
+        name: seasonData.name, startDate: seasonData.startDate, endDate: seasonData.endDate,
+        status: seasonData.status || 'UPCOMING',
+      };
+      let saved: any;
+      if (createdSeasonId) {
+        saved = await layoutApi.updateSeason(createdSeasonId, dto);
+      } else {
+        saved = await layoutApi.createSeason(dto);
+        setCreatedSeasonId(saved.id);
+        onSaved(saved);
+      }
+      markDone('saison');
+      setStep('clubs');
+      showToast(createdSeasonId ? 'Saison mise à jour.' : 'Saison créée ! Configurez les clubs.', 'success');
+    });
+  };
+
+  /* ── Step: Clubs toggle ── */
+  const toggleClub = (id: string) => {
+    setSelectedClubIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const handleClubsNext = () => { markDone('clubs'); setStep('coaches'); };
+
+  /* ── Step: Add coach inline ── */
+  const handleAddCoach = () => run(async () => {
+    const r = await layoutApi.createCoach({ ...newCoach, jerseyNumber: undefined });
+    setAllCoaches(prev => [...prev, r]);
+    setNewCoach({ firstName: '', lastName: '', nationality: '', clubId: '', qualification: '' });
+    setAddingCoach(false);
+    showToast('Entraîneur ajouté.', 'success');
+  });
+
+  /* ── Step: Add player inline ── */
+  const handleAddPlayer = () => run(async () => {
+    const r = await layoutApi.createPlayer({ ...newPlayer, jerseyNumber: newPlayer.jerseyNumber ? Number(newPlayer.jerseyNumber) : undefined });
+    setAllPlayers(prev => [...prev, r]);
+    setNewPlayer({ firstName: '', lastName: '', position: 'MID', nationality: '', clubId: '', jerseyNumber: '' });
+    setAddingPlayer(false);
+    showToast('Joueur ajouté.', 'success');
+  });
+
+  /* ── Step: Add stadium inline ── */
+  const handleAddStadium = () => {
+    const list = [...allStadiums, { ...newStadium, id: Date.now().toString() }];
+    localStorage.setItem('mock_entity_stadiums', JSON.stringify(list));
+    setAllStadiums(list);
+    setNewStadium({ name: '', city: '', capacity: '', country: 'Cameroun' });
+    setAddingStadium(false);
+    showToast('Stade enregistré.', 'success');
+  };
+
+  /* ── Step: Add match inline ── */
+  const handleAddMatch = () => run(async () => {
+    if (!createdSeasonId) { showToast('Créez d'abord la saison.', 'error'); return; }
+    const r = await layoutApi.createMatch({
+      homeClubId: Number(newMatch.homeClubId), awayClubId: Number(newMatch.awayClubId),
+      status: 'SCHEDULED', round: Number(newMatch.round || 1),
+      scheduledAt: new Date(newMatch.scheduledAt).toISOString(),
+      venue: newMatch.venue, seasonId: Number(createdSeasonId),
+    } as any);
+    setSeasonMatches(prev => [...prev, r]);
+    setNewMatch({ homeClubId: '', awayClubId: '', scheduledAt: '', venue: '', round: 1 });
+    setAddingMatch(false);
+    showToast('Match planifié.', 'success');
+  });
+
+  /* ── Step: Add sponsor inline ── */
+  const handleAddSponsor = () => {
+    const list = [...allSponsors, { ...newSponsor, id: Date.now().toString() }];
+    localStorage.setItem('mock_entity_sponsors', JSON.stringify(list));
+    setAllSponsors(list);
+    setNewSponsor({ name: '', tier: 'SILVER', logoUrl: '', websiteUrl: '' });
+    setAddingSponsors(false);
+    showToast('Sponsor enregistré.', 'success');
+  };
+
+  /* ── Final: Activate season ── */
+  const handleActivateSeason = () => run(async () => {
+    if (!createdSeasonId) return;
+    const r = await layoutApi.activateSeason(createdSeasonId);
+    onSaved(r);
+    showToast('🏆 Saison activée avec succès !', 'success');
+    onClose();
+  });
+
+  const selectedClubs = allClubs.filter(c => selectedClubIds.has(String(c.id)));
+  const currentIdx = WIZARD_STEPS.findIndex(s => s.id === step);
+  const canGoPrev = currentIdx > 0;
+  const goTo = (s: string) => {
+    const targetIdx = WIZARD_STEPS.findIndex(ws => ws.id === s);
+    if (targetIdx === 0 || completedSteps.has(WIZARD_STEPS[targetIdx - 1].id)) setStep(s);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm overflow-y-auto py-8 px-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="w-full max-w-4xl bg-[#0c1117] border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden"
+      >
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-white/[0.06]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-display font-black text-white text-xl">
+                {isEdit ? `Modifier — ${initialSeason?.name}` : '🏆 Nouvelle Saison'}
+              </h2>
+              <p className="text-[11px] text-white/35 mt-0.5">
+                {isEdit ? 'Modifiez les configurations de cette saison' : 'Configurez chaque aspect de la saison en quelques étapes'}
+              </p>
+            </div>
+            <button type="button" onClick={onClose}
+              className="h-8 w-8 rounded-xl bg-white/5 border border-white/8 text-white/40 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all text-sm">
+              ✕
+            </button>
+          </div>
+          <SeasonWizardProgress currentStep={step} completedSteps={completedSteps} />
+        </div>
+
+        {/* Step navigation tabs */}
+        <div className="flex gap-0 border-b border-white/[0.05] overflow-x-auto">
+          {WIZARD_STEPS.map((ws, idx) => {
+            const accessible = idx === 0 || completedSteps.has(WIZARD_STEPS[idx - 1].id) || completedSteps.has(ws.id);
+            return (
+              <button key={ws.id} type="button"
+                onClick={() => accessible && setStep(ws.id)}
+                className={`flex-shrink-0 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-all border-b-2 ${
+                  step === ws.id ? 'text-accent border-accent bg-accent/5'
+                  : completedSteps.has(ws.id) ? 'text-emerald-400/70 border-emerald-500/20 hover:text-emerald-400'
+                  : accessible ? 'text-white/30 border-transparent hover:text-white/50'
+                  : 'text-white/15 border-transparent cursor-not-allowed'
+                }`}>
+                {ws.icon} {ws.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Step content */}
+        <div className="p-6 space-y-6 min-h-[420px]">
+
+          {/* ── STEP 1: Saison ── */}
+          {step === 'saison' && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-3 p-4 bg-accent/5 border border-accent/15 rounded-2xl">
+                <span className="text-2xl">🏆</span>
+                <div>
+                  <p className="text-sm font-bold text-white">Informations de la saison</p>
+                  <p className="text-[11px] text-white/40">Définissez le nom, les dates et le format du championnat</p>
+                </div>
+              </div>
+
+              {/* ONGOING warning */}
+              <div className="p-3 bg-amber-500/8 border border-amber-500/20 rounded-xl flex items-center gap-3">
+                <span className="text-amber-400 text-lg">⚠️</span>
+                <p className="text-[11px] text-amber-200/70">Une seule saison peut être <strong className="text-amber-300">EN COURS</strong> à la fois. Activer cette saison clôturera automatiquement toute saison en cours.</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <FormField label="Nom officiel de la saison *" value={seasonData.name || ''} onChange={v => setSeasonData((p: any) => ({ ...p, name: v }))} required hint="Ex: MTN Elite One — Saison 2025/2026" />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Date de début *" type="date" value={seasonData.startDate?.slice(0, 10) || ''} onChange={v => setSeasonData((p: any) => ({ ...p, startDate: v }))} required />
+                  <FormField label="Date de fin *" type="date" value={seasonData.endDate?.slice(0, 10) || ''} onChange={v => setSeasonData((p: any) => ({ ...p, endDate: v }))} required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="Nombre de journées" type="number" value={seasonData.totalRounds || 30} onChange={v => setSeasonData((p: any) => ({ ...p, totalRounds: Number(v) }))} hint="Ex: 30 pour 16 équipes aller-retour" />
+                  <FormField label="Format" type="select" value={seasonData.format || 'round-robin'} onChange={v => setSeasonData((p: any) => ({ ...p, format: v }))} options={[
+                    { value: 'round-robin', label: 'Aller-Retour (championnat)' },
+                    { value: 'single-round', label: 'Aller simple' },
+                    { value: 'playoffs', label: 'Playoffs' },
+                    { value: 'groups+knockout', label: 'Poules + Élimination' },
+                  ]} />
+                </div>
+                {isEdit && (
+                  <FormField label="Statut" type="select" value={seasonData.status || 'UPCOMING'} onChange={v => setSeasonData((p: any) => ({ ...p, status: v }))} options={[
+                    { value: 'UPCOMING', label: '⏳ À venir' },
+                    { value: 'ONGOING', label: '🟢 En cours' },
+                    { value: 'COMPLETED', label: '✅ Terminée' },
+                  ]} />
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <AdminButton onClick={handleSaveSeasonInfo} loading={loading}>
+                  {createdSeasonId ? 'Mettre à jour et continuer' : 'Créer la saison →'} 
+                </AdminButton>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 2: Clubs ── */}
+          {step === 'clubs' && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-3 p-4 bg-sky-500/8 border border-sky-500/15 rounded-2xl">
+                <span className="text-2xl">🛡️</span>
+                <div>
+                  <p className="text-sm font-bold text-white">Clubs participants</p>
+                  <p className="text-[11px] text-white/40">Sélectionnez les clubs qui disputeront cette saison ({selectedClubIds.size} sélectionnés)</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                {allClubs.map(club => {
+                  const selected = selectedClubIds.has(String(club.id));
+                  return (
+                    <button key={club.id} type="button" onClick={() => toggleClub(String(club.id))}
+                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all text-left ${
+                        selected
+                          ? 'bg-accent/10 border-accent/40 shadow-[0_0_12px_rgba(252,209,22,0.1)]'
+                          : 'bg-white/[0.02] border-white/[0.06] hover:border-white/12'
+                      }`}>
+                      {club.logoUrl
+                        ? <img src={club.logoUrl} alt={club.name} className="h-8 w-8 rounded-xl object-contain bg-white/5 p-0.5 shrink-0" />
+                        : <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center text-[10px] text-white/30 shrink-0">🛡️</div>
+                      }
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-white truncate">{club.name}</p>
+                        <p className="text-[9px] text-white/35">{club.city || '—'}</p>
+                      </div>
+                      {selected && <span className="ml-auto text-accent text-xs shrink-0">✓</span>}
+                    </button>
+                  );
+                })}
+                {allClubs.length === 0 && (
+                  <div className="col-span-3 text-center py-8 text-white/25 text-sm">
+                    Aucun club trouvé — créez des clubs dans l'onglet Clubs d'abord.
+                  </div>
+                )}
+              </div>
+
+              {selectedClubIds.size > 0 && (
+                <div className="p-3 bg-emerald-500/8 border border-emerald-500/20 rounded-xl">
+                  <p className="text-[11px] text-emerald-300"><strong>{selectedClubIds.size} club(s)</strong> sélectionné(s) pour participer à cette saison.</p>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-2">
+                <AdminButton variant="secondary" onClick={() => setStep('saison')}>← Précédent</AdminButton>
+                <AdminButton onClick={handleClubsNext}>Clubs confirmés — Configurer Entraîneurs →</AdminButton>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 3: Coaches ── */}
+          {step === 'coaches' && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 p-4 bg-purple-500/8 border border-purple-500/15 rounded-2xl flex-1 mr-4">
+                  <span className="text-2xl">🎯</span>
+                  <div>
+                    <p className="text-sm font-bold text-white">Staffs techniques</p>
+                    <p className="text-[11px] text-white/40">{allCoaches.length} entraîneur(s) enregistré(s)</p>
+                  </div>
+                </div>
+                <AdminButton onClick={() => setAddingCoach(v => !v)}>
+                  <Plus className="h-3.5 w-3.5" /> Ajouter
+                </AdminButton>
+              </div>
+
+              {addingCoach && (
+                <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-2xl space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Nouvel Entraîneur</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Prénom *" value={newCoach.firstName} onChange={v => setNewCoach((p: any) => ({ ...p, firstName: v }))} />
+                    <FormField label="Nom *" value={newCoach.lastName} onChange={v => setNewCoach((p: any) => ({ ...p, lastName: v }))} />
+                    <FormField label="Nationalité" value={newCoach.nationality} onChange={v => setNewCoach((p: any) => ({ ...p, nationality: v }))} />
+                    <FormField label="Qualification" type="select" value={newCoach.qualification} onChange={v => setNewCoach((p: any) => ({ ...p, qualification: v }))} options={[
+                      { value: '', label: 'Sélectionner...' },
+                      { value: 'UEFA Pro', label: 'UEFA Pro' }, { value: 'CAF A', label: 'CAF A' },
+                      { value: 'CAF B', label: 'CAF B' }, { value: 'FECAFOOT', label: 'FECAFOOT' },
+                    ]} />
+                    <FormField label="Club assigné" type="select" value={newCoach.clubId} onChange={v => setNewCoach((p: any) => ({ ...p, clubId: v }))} options={[
+                      { value: '', label: 'Sélectionner...' }, ...allClubs.map(c => ({ value: c.id, label: c.name }))
+                    ]} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <AdminButton variant="secondary" onClick={() => setAddingCoach(false)}>Annuler</AdminButton>
+                    <AdminButton onClick={handleAddCoach} loading={loading}>Enregistrer</AdminButton>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {allCoaches.slice(0, 30).map((c: any) => (
+                  <div key={c.id} className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                    {c.photoUrl
+                      ? <img src={c.photoUrl} alt="" className="h-8 w-8 rounded-full object-cover bg-white/5 shrink-0" />
+                      : <div className="h-8 w-8 rounded-full bg-purple-500/15 flex items-center justify-center text-xs shrink-0">🎯</div>
+                    }
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-semibold text-white">{c.firstName} {c.lastName}</p>
+                      <p className="text-[10px] text-white/35">{c.qualification || '—'} · {allClubs.find(cl => String(cl.id) === String(c.clubId))?.name || 'Non assigné'}</p>
+                    </div>
+                  </div>
+                ))}
+                {allCoaches.length === 0 && <p className="text-center text-white/25 text-sm py-8">Aucun entraîneur — ajoutez-en ci-dessus.</p>}
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <AdminButton variant="secondary" onClick={() => setStep('clubs')}>← Précédent</AdminButton>
+                <AdminButton onClick={() => { markDone('coaches'); setStep('joueurs'); }}>Entraîneurs OK — Joueurs →</AdminButton>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 4: Players ── */}
+          {step === 'joueurs' && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 p-4 bg-sky-500/8 border border-sky-500/15 rounded-2xl flex-1 mr-4">
+                  <span className="text-2xl">👤</span>
+                  <div>
+                    <p className="text-sm font-bold text-white">Effectifs de la saison</p>
+                    <p className="text-[11px] text-white/40">{allPlayers.length} joueur(s) enregistré(s)</p>
+                  </div>
+                </div>
+                <AdminButton onClick={() => setAddingPlayer(v => !v)}>
+                  <Plus className="h-3.5 w-3.5" /> Ajouter
+                </AdminButton>
+              </div>
+
+              {addingPlayer && (
+                <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-2xl space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Nouveau Joueur</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Prénom *" value={newPlayer.firstName} onChange={v => setNewPlayer((p: any) => ({ ...p, firstName: v }))} />
+                    <FormField label="Nom *" value={newPlayer.lastName} onChange={v => setNewPlayer((p: any) => ({ ...p, lastName: v }))} />
+                    <FormField label="Position" type="select" value={newPlayer.position} onChange={v => setNewPlayer((p: any) => ({ ...p, position: v }))} options={[
+                      { value: 'GK', label: 'Gardien (GK)' }, { value: 'DEF', label: 'Défenseur (DEF)' },
+                      { value: 'MID', label: 'Milieu (MID)' }, { value: 'FWD', label: 'Attaquant (FWD)' },
+                    ]} />
+                    <FormField label="Nationalité" value={newPlayer.nationality} onChange={v => setNewPlayer((p: any) => ({ ...p, nationality: v }))} />
+                    <FormField label="Club" type="select" value={newPlayer.clubId} onChange={v => setNewPlayer((p: any) => ({ ...p, clubId: v }))} options={[
+                      { value: '', label: 'Sélectionner...' }, ...allClubs.map(c => ({ value: c.id, label: c.name }))
+                    ]} />
+                    <FormField label="Numéro de maillot" type="number" value={newPlayer.jerseyNumber} onChange={v => setNewPlayer((p: any) => ({ ...p, jerseyNumber: v }))} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <AdminButton variant="secondary" onClick={() => setAddingPlayer(false)}>Annuler</AdminButton>
+                    <AdminButton onClick={handleAddPlayer} loading={loading}>Enregistrer</AdminButton>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
+                {allPlayers.slice(0, 40).map((p: any) => (
+                  <div key={p.id} className="flex items-center gap-2.5 px-3 py-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                    {p.photoUrl
+                      ? <img src={p.photoUrl} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                      : <div className="h-7 w-7 rounded-full bg-sky-500/15 flex items-center justify-center text-[8px] font-bold text-sky-400 shrink-0">{p.position}</div>
+                    }
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold text-white truncate">{p.firstName} {p.lastName}</p>
+                      <p className="text-[9px] text-white/35">{allClubs.find(c => String(c.id) === String(p.clubId))?.name || '—'}</p>
+                    </div>
+                    <span className="text-[9px] font-bold text-white/25 shrink-0">#{p.jerseyNumber || '—'}</span>
+                  </div>
+                ))}
+                {allPlayers.length === 0 && <div className="col-span-2 text-center text-white/25 text-sm py-8">Aucun joueur enregistré.</div>}
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <AdminButton variant="secondary" onClick={() => setStep('coaches')}>← Précédent</AdminButton>
+                <AdminButton onClick={() => { markDone('joueurs'); setStep('stades'); }}>Effectifs OK — Stades →</AdminButton>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 5: Stadiums ── */}
+          {step === 'stades' && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 p-4 bg-orange-500/8 border border-orange-500/15 rounded-2xl flex-1 mr-4">
+                  <span className="text-2xl">🏟️</span>
+                  <div>
+                    <p className="text-sm font-bold text-white">Stades & Infrastructures</p>
+                    <p className="text-[11px] text-white/40">{allStadiums.length} stade(s) enregistré(s)</p>
+                  </div>
+                </div>
+                <AdminButton onClick={() => setAddingStadium(v => !v)}>
+                  <Plus className="h-3.5 w-3.5" /> Ajouter
+                </AdminButton>
+              </div>
+
+              {addingStadium && (
+                <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-2xl space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Nouveau Stade</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Nom du stade *" value={newStadium.name} onChange={v => setNewStadium((p: any) => ({ ...p, name: v }))} />
+                    <FormField label="Ville *" value={newStadium.city} onChange={v => setNewStadium((p: any) => ({ ...p, city: v }))} />
+                    <FormField label="Capacité" type="number" value={newStadium.capacity} onChange={v => setNewStadium((p: any) => ({ ...p, capacity: v }))} />
+                    <FormField label="Pays" value={newStadium.country} onChange={v => setNewStadium((p: any) => ({ ...p, country: v }))} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <AdminButton variant="secondary" onClick={() => setAddingStadium(false)}>Annuler</AdminButton>
+                    <AdminButton onClick={handleAddStadium}>Enregistrer</AdminButton>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                {allStadiums.map((st: any) => (
+                  <div key={st.id || st.name} className="flex items-start gap-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                    <span className="text-2xl mt-0.5">🏟️</span>
+                    <div>
+                      <p className="text-[12px] font-semibold text-white">{st.name}</p>
+                      <p className="text-[10px] text-white/35">{st.city}{st.capacity ? ` · ${Number(st.capacity).toLocaleString()} places` : ''}</p>
+                    </div>
+                  </div>
+                ))}
+                {allStadiums.length === 0 && <div className="col-span-2 text-center text-white/25 text-sm py-8">Aucun stade enregistré. Ajoutez-en ci-dessus.</div>}
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <AdminButton variant="secondary" onClick={() => setStep('joueurs')}>← Précédent</AdminButton>
+                <AdminButton onClick={() => { markDone('stades'); setStep('matchs'); }}>Stades OK — Planifier Matchs →</AdminButton>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 6: Matches ── */}
+          {step === 'matchs' && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 p-4 bg-emerald-500/8 border border-emerald-500/15 rounded-2xl flex-1 mr-4">
+                  <span className="text-2xl">⚽</span>
+                  <div>
+                    <p className="text-sm font-bold text-white">Calendrier compétitif</p>
+                    <p className="text-[11px] text-white/40">{seasonMatches.length} match(s) planifié(s) pour cette saison</p>
+                  </div>
+                </div>
+                <AdminButton onClick={() => setAddingMatch(v => !v)} disabled={!createdSeasonId}>
+                  <Plus className="h-3.5 w-3.5" /> Planifier
+                </AdminButton>
+              </div>
+
+              {!createdSeasonId && (
+                <div className="p-3 bg-red-500/8 border border-red-500/20 rounded-xl text-[11px] text-red-300">
+                  ⚠️ Vous devez d'abord créer la saison (Étape 1) avant de planifier des matchs.
+                </div>
+              )}
+
+              {addingMatch && (
+                <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-2xl space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Nouveau Match</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Club Domicile *" type="select" value={newMatch.homeClubId} onChange={v => setNewMatch((p: any) => ({ ...p, homeClubId: v }))} options={[
+                      { value: '', label: 'Sélectionner...' }, ...allClubs.map(c => ({ value: c.id, label: c.name }))
+                    ]} />
+                    <FormField label="Club Extérieur *" type="select" value={newMatch.awayClubId} onChange={v => setNewMatch((p: any) => ({ ...p, awayClubId: v }))} options={[
+                      { value: '', label: 'Sélectionner...' }, ...allClubs.map(c => ({ value: c.id, label: c.name }))
+                    ]} />
+                    <FormField label="Date & Heure" type="datetime-local" value={newMatch.scheduledAt} onChange={v => setNewMatch((p: any) => ({ ...p, scheduledAt: v }))} />
+                    <FormField label="Journée" type="number" value={newMatch.round} onChange={v => setNewMatch((p: any) => ({ ...p, round: v }))} />
+                    <FormField label="Stade / Lieu" type="select" value={newMatch.venue} onChange={v => setNewMatch((p: any) => ({ ...p, venue: v }))} options={[
+                      { value: '', label: 'Sélectionner...' }, ...allStadiums.map(s => ({ value: s.name, label: `${s.name} (${s.city})` }))
+                    ]} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <AdminButton variant="secondary" onClick={() => setAddingMatch(false)}>Annuler</AdminButton>
+                    <AdminButton onClick={handleAddMatch} loading={loading}>Planifier</AdminButton>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                {seasonMatches.map((m: any, idx: number) => {
+                  const home = allClubs.find(c => String(c.id) === String(m.homeClubId || m.homeClub?.id));
+                  const away = allClubs.find(c => String(c.id) === String(m.awayClubId || m.awayClub?.id));
+                  return (
+                    <div key={m.id || idx} className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                      <span className="text-[10px] font-bold text-white/25 w-6">J{m.round}</span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {home?.logoUrl && <img src={home.logoUrl} alt="" className="h-5 w-5 object-contain shrink-0" />}
+                        <span className="text-[11px] font-semibold text-white truncate">{home?.name || m.homeClub?.name || 'Domicile'}</span>
+                        <span className="text-[10px] text-white/25 shrink-0">vs</span>
+                        {away?.logoUrl && <img src={away.logoUrl} alt="" className="h-5 w-5 object-contain shrink-0" />}
+                        <span className="text-[11px] font-semibold text-white truncate">{away?.name || m.awayClub?.name || 'Extérieur'}</span>
+                      </div>
+                      <span className="text-[9px] text-white/30 shrink-0">
+                        {m.scheduledAt ? new Date(m.scheduledAt).toLocaleDateString('fr-FR') : '—'}
+                      </span>
+                    </div>
+                  );
+                })}
+                {seasonMatches.length === 0 && <p className="text-center text-white/25 text-sm py-8">Aucun match planifié. Ajoutez des rencontres ci-dessus.</p>}
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <AdminButton variant="secondary" onClick={() => setStep('stades')}>← Précédent</AdminButton>
+                <AdminButton onClick={() => { markDone('matchs'); setStep('sponsors'); }}>Matchs OK — Sponsors →</AdminButton>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 7: Sponsors ── */}
+          {step === 'sponsors' && (
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 p-4 bg-pink-500/8 border border-pink-500/15 rounded-2xl flex-1 mr-4">
+                  <span className="text-2xl">🤝</span>
+                  <div>
+                    <p className="text-sm font-bold text-white">Partenaires & Sponsors</p>
+                    <p className="text-[11px] text-white/40">{allSponsors.length} sponsor(s) enregistré(s)</p>
+                  </div>
+                </div>
+                <AdminButton onClick={() => setAddingSponsors(v => !v)}>
+                  <Plus className="h-3.5 w-3.5" /> Ajouter
+                </AdminButton>
+              </div>
+
+              {addingSponsors && (
+                <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-2xl space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Nouveau Sponsor</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label="Nom du sponsor *" value={newSponsor.name} onChange={v => setNewSponsor((p: any) => ({ ...p, name: v }))} />
+                    <FormField label="Niveau" type="select" value={newSponsor.tier} onChange={v => setNewSponsor((p: any) => ({ ...p, tier: v }))} options={[
+                      { value: 'TITLE', label: '🥇 Title Sponsor (Naming)' },
+                      { value: 'GOLD', label: '🥇 Gold' },
+                      { value: 'SILVER', label: '🥈 Silver' },
+                      { value: 'BRONZE', label: '🥉 Bronze' },
+                      { value: 'MEDIA', label: '📺 Partenaire Médias' },
+                    ]} />
+                    <FormField label="Logo URL" value={newSponsor.logoUrl} onChange={v => setNewSponsor((p: any) => ({ ...p, logoUrl: v }))} hint="URL publique du logo" />
+                    <FormField label="Site web" value={newSponsor.websiteUrl} onChange={v => setNewSponsor((p: any) => ({ ...p, websiteUrl: v }))} hint="https://..." />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <AdminButton variant="secondary" onClick={() => setAddingSponsors(false)}>Annuler</AdminButton>
+                    <AdminButton onClick={handleAddSponsor}>Enregistrer</AdminButton>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 max-h-[280px] overflow-y-auto pr-1">
+                {allSponsors.map((sp: any) => {
+                  const tierColors: Record<string, string> = { TITLE: 'text-amber-400 bg-amber-500/10 border-amber-500/20', GOLD: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20', SILVER: 'text-slate-300 bg-slate-500/10 border-slate-500/20', BRONZE: 'text-orange-400 bg-orange-500/10 border-orange-500/20', MEDIA: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
+                  return (
+                    <div key={sp.id || sp.name} className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                      {sp.logoUrl
+                        ? <img src={sp.logoUrl} alt={sp.name} className="h-8 w-8 rounded-lg object-contain bg-white/5 shrink-0" />
+                        : <div className="h-8 w-8 rounded-lg bg-white/5 flex items-center justify-center text-lg shrink-0">🤝</div>
+                      }
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-semibold text-white truncate">{sp.name}</p>
+                        <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full border mt-0.5 ${tierColors[sp.tier] || tierColors.SILVER}`}>{sp.tier}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {allSponsors.length === 0 && <div className="col-span-2 text-center text-white/25 text-sm py-8">Aucun sponsor enregistré.</div>}
+              </div>
+
+              <div className="flex justify-between pt-2">
+                <AdminButton variant="secondary" onClick={() => setStep('matchs')}>← Précédent</AdminButton>
+                <AdminButton onClick={() => { markDone('sponsors'); setStep('review'); }}>Sponsors OK — Révision finale →</AdminButton>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 8: Review & Launch ── */}
+          {step === 'review' && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-accent/10 to-emerald-500/10 border border-accent/20 rounded-2xl">
+                <span className="text-2xl">🚀</span>
+                <div>
+                  <p className="text-sm font-bold text-white">Révision finale & Lancement</p>
+                  <p className="text-[11px] text-white/40">Vérifiez toutes les informations avant d'activer la saison</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: '🏆', label: 'Saison', value: seasonData.name || '—', sub: `${seasonData.startDate?.slice(0,10) || '?'} → ${seasonData.endDate?.slice(0,10) || '?'}`, done: completedSteps.has('saison') },
+                  { icon: '🛡️', label: 'Clubs', value: `${selectedClubIds.size} club(s)`, sub: 'sélectionnés pour la saison', done: completedSteps.has('clubs') },
+                  { icon: '🎯', label: 'Entraîneurs', value: `${allCoaches.length} entraîneur(s)`, sub: 'dans la base de données', done: completedSteps.has('coaches') },
+                  { icon: '👤', label: 'Joueurs', value: `${allPlayers.length} joueur(s)`, sub: 'dans les effectifs', done: completedSteps.has('joueurs') },
+                  { icon: '🏟️', label: 'Stades', value: `${allStadiums.length} stade(s)`, sub: 'disponibles', done: completedSteps.has('stades') },
+                  { icon: '⚽', label: 'Matchs', value: `${seasonMatches.length} match(s)`, sub: 'planifiés', done: completedSteps.has('matchs') },
+                  { icon: '🤝', label: 'Sponsors', value: `${allSponsors.length} sponsor(s)`, sub: 'partenaires', done: completedSteps.has('sponsors') },
+                ].map(item => (
+                  <div key={item.label} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                    item.done ? 'bg-emerald-500/5 border-emerald-500/15' : 'bg-white/[0.02] border-white/[0.05]'
+                  }`}>
+                    <span className="text-xl shrink-0">{item.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">{item.label}</p>
+                      <p className="text-[13px] font-bold text-white">{item.value}</p>
+                      <p className="text-[9px] text-white/30">{item.sub}</p>
+                    </div>
+                    <span className={`text-sm shrink-0 ${item.done ? 'text-emerald-400' : 'text-white/15'}`}>{item.done ? '✓' : '○'}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-4 bg-amber-500/8 border border-amber-500/20 rounded-2xl">
+                <p className="text-[11px] text-amber-200/80 font-medium">
+                  <strong className="text-amber-300">Rappel :</strong> En activant cette saison, toute saison actuellement EN COURS sera automatiquement clôturée. Cette action est irréversible.
+                </p>
+              </div>
+
+              <div className="flex justify-between items-center pt-2">
+                <AdminButton variant="secondary" onClick={() => setStep('sponsors')}>← Précédent</AdminButton>
+                <div className="flex gap-3">
+                  <AdminButton variant="secondary" onClick={onClose}>Sauvegarder & fermer</AdminButton>
+                  {createdSeasonId && (
+                    <AdminButton onClick={handleActivateSeason} loading={loading}>
+                      🚀 Activer la Saison
+                    </AdminButton>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
 /*  SEASONS TAB                                                                */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 export function SeasonsTab({ showToast }: { showToast: ToastFn }) {
   const [seasons, setSeasons] = useState<any[]>([]);
-  const [editing, setEditing] = useState<any | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editingSeason, setEditingSeason] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await layoutApi.getSeasons(); setSeasons(res);
+    try { const res = await layoutApi.getSeasons(); setSeasons(res); }
+    catch { /* ignore */ }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -377,73 +1152,157 @@ export function SeasonsTab({ showToast }: { showToast: ToastFn }) {
     try { await fn(); }
     catch (e: any) {
       const msg = e?.response?.data?.message;
-      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || e.message), 'error');
+      showToast(Array.isArray(msg) ? msg.join(', ') : (msg || (e as Error).message), 'error');
     }
     finally { setLoading(false); }
   };
 
-  const save = (e: React.FormEvent) => { e.preventDefault(); run(async () => {
-    const dto = { name: editing.name, startDate: editing.startDate, endDate: editing.endDate, status: editing.status || 'UPCOMING' };
-    if (editing.id) {
-      const r = await layoutApi.updateSeason(editing.id, dto);
-      setSeasons(p => p.map(s => s.id === r.id ? r : s)); showToast('Saison mise à jour.');
-    } else {
-      const r = await layoutApi.createSeason(dto);
-      setSeasons(p => [...p, r]); showToast('Saison créée !');
-    }
-    setEditing(null);
-  }); };
+  const activate = (id: string) => run(async () => {
+    const r = await layoutApi.activateSeason(id);
+    setSeasons(p => p.map(s => s.id === id ? r : (s.status === 'ONGOING' ? { ...s, status: 'COMPLETED' } : s)));
+    showToast('Saison activée.');
+  });
+  const close = (id: string) => run(async () => {
+    const r = await layoutApi.closeSeason(id);
+    setSeasons(p => p.map(s => s.id === id ? r : s));
+    showToast('Saison clôturée.');
+  });
+  const initStandings = (id: string) => run(async () => {
+    const r = await layoutApi.initStandings(id);
+    showToast(r.message || 'Classements initialisés.', 'info');
+  });
+  const remove = (id: string, name: string) => {
+    if (!confirm(`Supprimer "${name}" ?`)) return;
+    run(async () => {
+      await layoutApi.deleteSeason(id);
+      setSeasons(p => p.filter(s => s.id !== id));
+      showToast('Saison supprimée.');
+    });
+  };
 
-  const activate = (id: string) => run(async () => { const r = await layoutApi.activateSeason(id); setSeasons(p => p.map(s => s.id === id ? r : (s.status === 'ONGOING' ? { ...s, status: 'COMPLETED' } : s))); showToast('Saison activée.'); });
-  const close = (id: string) => run(async () => { const r = await layoutApi.closeSeason(id); setSeasons(p => p.map(s => s.id === id ? r : s)); showToast('Saison clôturée.'); });
-  const initStandings = (id: string) => run(async () => { const r = await layoutApi.initStandings(id); showToast(r.message || 'Classements initialisés.', 'info'); });
-  const remove = (id: string, name: string) => { if (!confirm(`Supprimer "${name}" ?`)) return; run(async () => { await layoutApi.deleteSeason(id); setSeasons(p => p.filter(s => s.id !== id)); showToast('Saison supprimée.'); }); };
+  const handleWizardSaved = (season: any) => {
+    setSeasons(p => {
+      const exists = p.find(s => s.id === season.id);
+      return exists ? p.map(s => s.id === season.id ? season : s) : [...p, season];
+    });
+  };
 
-  const STATUS_COLOR: Record<string, string> = { UPCOMING: 'text-sky-400', ONGOING: 'text-emerald-400', COMPLETED: 'text-white/30' };
+  const STATUS_COLOR: Record<string, string> = {
+    UPCOMING: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+    ONGOING: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    COMPLETED: 'text-white/30 bg-white/5 border-white/[0.07]',
+  };
+  const STATUS_LABEL: Record<string, string> = { UPCOMING: 'À venir', ONGOING: 'En cours', COMPLETED: 'Terminée' };
+
+  const ongoing = seasons.find(s => s.status === 'ONGOING');
 
   return (
-    <div className="space-y-6">
-      <SectionHeader title="Gestion des Saisons" subtitle="Créez et gérez le cycle de vie de chaque saison"
-        actions={<AdminButton onClick={() => setEditing({ name: '', startDate: '', endDate: '', status: 'UPCOMING' })}><Plus className="h-3.5 w-3.5" /> Nouvelle Saison</AdminButton>} />
-      {editing && (
-        <AdminCard title={editing.id ? 'Modifier la Saison' : 'Créer une Saison'} accent>
-          <form onSubmit={save} className="space-y-4">
-            <FormField label="Nom de la saison" value={editing.name || ''} onChange={v => setEditing((p: any) => ({ ...p, name: v }))} required hint="Ex: Saison 2025/2026" />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField label="Date de début" type="date" value={editing.startDate?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, startDate: v }))} required />
-              <FormField label="Date de fin" type="date" value={editing.endDate?.slice(0, 10) || ''} onChange={v => setEditing((p: any) => ({ ...p, endDate: v }))} required />
-            </div>
-            {editing.id && (<FormField label="Statut" type="select" value={editing.status || 'UPCOMING'} onChange={v => setEditing((p: any) => ({ ...p, status: v }))} options={[{ value: 'UPCOMING', label: 'À venir' }, { value: 'ONGOING', label: 'En cours' }, { value: 'COMPLETED', label: 'Terminée' }]} />)}
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
-              <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
-              <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
-            </div>
-          </form>
-        </AdminCard>
+    <>
+      {/* Season Wizard Overlay */}
+      {wizardOpen && (
+        <SeasonWizard
+          initialSeason={editingSeason}
+          onClose={() => { setWizardOpen(false); setEditingSeason(null); }}
+          onSaved={handleWizardSaved}
+          showToast={showToast}
+        />
       )}
-      <div className="space-y-3">
-        {seasons.map((s, i) => (
-          <motion.div key={s.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-            className="flex items-center gap-4 p-5 bg-[#111820] border border-white/[0.06] rounded-2xl hover:border-white/12 transition-all group">
-            <div className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${s.status === 'ONGOING' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : s.status === 'UPCOMING' ? 'bg-sky-500' : 'bg-white/15'}`} />
+
+      <div className="space-y-6">
+        <SectionHeader
+          title="Gestion des Saisons"
+          subtitle="Créez et configurez chaque saison avec son écosystème complet"
+          actions={
+            <AdminButton onClick={() => { setEditingSeason(null); setWizardOpen(true); }}>
+              <Plus className="h-3.5 w-3.5" /> Nouvelle Saison
+            </AdminButton>
+          }
+        />
+
+        {/* Ongoing season banner */}
+        {ongoing && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-4 p-4 bg-gradient-to-r from-emerald-500/10 to-sky-500/5 border border-emerald-500/20 rounded-2xl">
+            <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.6)] shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-display font-bold text-white/90 text-sm">{s.name}</p>
-                <span className={`text-[9px] font-bold uppercase tracking-widest ${STATUS_COLOR[s.status]}`}>{s.status === 'UPCOMING' ? 'À venir' : s.status === 'ONGOING' ? 'En cours' : 'Terminée'}</span>
-              </div>
-              <p className="text-[10px] text-white/35 mt-0.5">{s.startDate ? new Date(s.startDate).toLocaleDateString('fr-FR') : '—'} → {s.endDate ? new Date(s.endDate).toLocaleDateString('fr-FR') : '—'}</p>
+              <p className="text-sm font-bold text-emerald-300">Saison en cours : <span className="text-white">{ongoing.name}</span></p>
+              <p className="text-[10px] text-white/35 mt-0.5">
+                {new Date(ongoing.startDate).toLocaleDateString('fr-FR')} → {new Date(ongoing.endDate).toLocaleDateString('fr-FR')}
+              </p>
             </div>
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
-              {s.status === 'UPCOMING' && (<AdminButton size="sm" variant="success" onClick={() => activate(s.id)} loading={loading}><Play className="h-3 w-3" /> Activer</AdminButton>)}
-              {s.status === 'ONGOING' && (<><AdminButton size="sm" variant="secondary" onClick={() => initStandings(s.id)} loading={loading}><RefreshCw className="h-3 w-3" /> Init Classements</AdminButton><AdminButton size="sm" variant="danger" onClick={() => close(s.id)} loading={loading}><StopCircle className="h-3 w-3" /> Clôturer</AdminButton></>)}
-              <AdminButton size="sm" variant="ghost" onClick={() => setEditing(s)}><Edit3 className="h-3 w-3" /></AdminButton>
-              {s.status !== 'ONGOING' && (<AdminButton size="sm" variant="danger" onClick={() => remove(s.id, s.name)}><Trash2 className="h-3 w-3" /></AdminButton>)}
+            <div className="flex gap-2 shrink-0">
+              <AdminButton size="sm" variant="secondary" onClick={() => initStandings(ongoing.id)} loading={loading}>
+                <RefreshCw className="h-3 w-3" /> Init Classements
+              </AdminButton>
+              <AdminButton size="sm" variant="danger" onClick={() => close(ongoing.id)} loading={loading}>
+                <StopCircle className="h-3 w-3" /> Clôturer
+              </AdminButton>
             </div>
           </motion.div>
-        ))}
-        {!seasons.length && <p className="text-center text-white/25 text-sm py-12">Aucune saison créée</p>}
+        )}
+
+        {/* Seasons list */}
+        <div className="space-y-3">
+          {seasons.map((s, i) => (
+            <motion.div key={s.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+              className="group flex items-center gap-4 p-5 bg-[#111820] border border-white/[0.06] rounded-2xl hover:border-white/12 transition-all">
+
+              <div className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${
+                s.status === 'ONGOING' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse'
+                : s.status === 'UPCOMING' ? 'bg-sky-500' : 'bg-white/15'
+              }`} />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-display font-bold text-white/90 text-sm">{s.name}</p>
+                  <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${STATUS_COLOR[s.status]}`}>
+                    {STATUS_LABEL[s.status]}
+                  </span>
+                </div>
+                <p className="text-[10px] text-white/35 mt-0.5">
+                  {s.startDate ? new Date(s.startDate).toLocaleDateString('fr-FR') : '—'} → {s.endDate ? new Date(s.endDate).toLocaleDateString('fr-FR') : '—'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-wrap shrink-0">
+                {s.status === 'UPCOMING' && (
+                  <AdminButton size="sm" variant="success" onClick={() => activate(s.id)} loading={loading}>
+                    <Play className="h-3 w-3" /> Activer
+                  </AdminButton>
+                )}
+                {s.status === 'ONGOING' && (
+                  <>
+                    <AdminButton size="sm" variant="secondary" onClick={() => initStandings(s.id)} loading={loading}>
+                      <RefreshCw className="h-3 w-3" /> Init Classements
+                    </AdminButton>
+                    <AdminButton size="sm" variant="danger" onClick={() => close(s.id)} loading={loading}>
+                      <StopCircle className="h-3 w-3" /> Clôturer
+                    </AdminButton>
+                  </>
+                )}
+                <AdminButton size="sm" variant="ghost" onClick={() => { setEditingSeason(s); setWizardOpen(true); }}>
+                  <Edit3 className="h-3 w-3" /> Configurer
+                </AdminButton>
+                {s.status !== 'ONGOING' && (
+                  <AdminButton size="sm" variant="danger" onClick={() => remove(s.id, s.name)}>
+                    <Trash2 className="h-3 w-3" />
+                  </AdminButton>
+                )}
+              </div>
+            </motion.div>
+          ))}
+          {!seasons.length && (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-20 h-20 rounded-3xl bg-accent/10 border border-accent/20 flex items-center justify-center text-4xl">🏆</div>
+              <p className="text-white/25 text-sm font-medium">Aucune saison créée</p>
+              <AdminButton onClick={() => { setEditingSeason(null); setWizardOpen(true); }}>
+                <Plus className="h-3.5 w-3.5" /> Créer la première saison
+              </AdminButton>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
