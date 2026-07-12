@@ -46,4 +46,24 @@ export const transfersConfig: EntityConfig<Transfer> = {
   emptyRecord: () => ({
     type: 'PERMANENT', windowLabel: '', transferDate: new Date().toISOString().slice(0, 10), announced: false,
   }),
+  builderSteps: [
+    {
+      id: 'involved',
+      label: 'Acteurs',
+      description: 'Joueur concerné et clubs de départ / destination.',
+      fieldKeys: ['playerId', 'fromClubId', 'toClubId'],
+    },
+    {
+      id: 'terms',
+      label: 'Modalités',
+      description: 'Type de transfert, montant de l\'indemnité, date et fenêtre.',
+      fieldKeys: ['type', 'fee', 'windowLabel', 'transferDate', 'announced'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: 'Vérifiez la fiche de transfert avant de la valider.',
+      fieldKeys: [],
+    },
+  ],
 };

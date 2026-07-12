@@ -43,4 +43,24 @@ export const equipmentsConfig: EntityConfig<Equipment> = {
   emptyRecord: () => ({
     name: '', type: 'JERSEY_HOME', brand: '',
   }),
+  builderSteps: [
+    {
+      id: 'details',
+      label: 'Détails',
+      description: 'Marque, type et nom de l\'équipement.',
+      fieldKeys: ['name', 'type', 'brand', 'clubId'],
+    },
+    {
+      id: 'media',
+      label: 'Visuel',
+      description: 'Photo de l\'équipement.',
+      fieldKeys: ['imageUrl'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: 'Vérifiez les détails de l\'équipement avant de le publier.',
+      fieldKeys: [],
+    },
+  ],
 };

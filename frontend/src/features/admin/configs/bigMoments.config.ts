@@ -46,4 +46,24 @@ export const bigMomentsConfig: EntityConfig<BigMoment> = {
     category: 'OTHER', momentDate: new Date().toISOString().slice(0, 10),
     mediaType: 'image', featured: false,
   }),
+  builderSteps: [
+    {
+      id: 'general',
+      label: 'Général',
+      description: 'Quel est ce moment marquant ?',
+      fieldKeys: ['title', 'category', 'momentDate'],
+    },
+    {
+      id: 'media',
+      label: 'Média & Récit',
+      description: 'L\'image et le récit de ce moment.',
+      fieldKeys: ['mediaUrl', 'description', 'featured'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: 'Vérifiez le grand moment avant de le publier.',
+      fieldKeys: [],
+    },
+  ],
 };

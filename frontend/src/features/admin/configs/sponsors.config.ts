@@ -39,4 +39,24 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
   emptyRecord: () => ({
     name: '', type: 'PARTNER',
   }),
+  builderSteps: [
+    {
+      id: 'details',
+      label: 'Détails',
+      description: 'Nom, niveau de sponsoring et site internet.',
+      fieldKeys: ['name', 'type', 'websiteUrl'],
+    },
+    {
+      id: 'logo',
+      label: 'Logo',
+      description: 'Logo officiel du sponsor.',
+      fieldKeys: ['logoUrl'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: 'Vérifiez le sponsor avant de l\'enregistrer.',
+      fieldKeys: [],
+    },
+  ],
 };

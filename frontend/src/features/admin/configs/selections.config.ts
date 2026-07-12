@@ -38,4 +38,24 @@ export const selectionsConfig: EntityConfig<Selection> = {
   emptyRecord: () => ({
     squadDate: new Date().toISOString().slice(0, 10), status: 'PROVISIONAL', playerIds: [],
   }),
+  builderSteps: [
+    {
+      id: 'campaign',
+      label: 'Campagne',
+      description: 'Campagne, sélectionneur et statut de la liste.',
+      fieldKeys: ['campaignLabel', 'squadDate', 'status', 'coachName'],
+    },
+    {
+      id: 'players',
+      label: 'Joueurs',
+      description: 'Sélectionnez les joueurs convoqués pour la liste.',
+      fieldKeys: ['playerIds', 'notes'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: 'Vérifiez la liste des convoqués avant publication officielle.',
+      fieldKeys: [],
+    },
+  ],
 };

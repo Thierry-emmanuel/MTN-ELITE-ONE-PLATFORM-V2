@@ -51,4 +51,24 @@ export const injuriesConfig: EntityConfig<Injury> = {
   emptyRecord: () => ({
     severity: 'MINOR', status: 'ACTIVE', injuredAt: new Date().toISOString().slice(0, 10),
   }),
+  builderSteps: [
+    {
+      id: 'general',
+      label: 'Général',
+      description: 'Quel joueur est blessé, quel type de blessure et quelle gravité ?',
+      fieldKeys: ['playerId', 'type', 'severity'],
+    },
+    {
+      id: 'timeline',
+      label: 'Statut & Chronologie',
+      description: 'Dates de blessure, retour prévu et notes médicales.',
+      fieldKeys: ['status', 'injuredAt', 'expectedReturn', 'notes'],
+    },
+    {
+      id: 'review',
+      label: 'Relecture',
+      description: 'Vérifiez la fiche médicale avant publication.',
+      fieldKeys: [],
+    },
+  ],
 };
