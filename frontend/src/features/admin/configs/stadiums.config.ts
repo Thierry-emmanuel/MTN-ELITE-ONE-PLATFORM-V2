@@ -44,4 +44,21 @@ export const stadiumsConfig: EntityConfig<Stadium> = {
   emptyRecord: () => ({
     name: '', city: '', capacity: 20000, status: 'ACTIVE',
   }),
+
+  // ── League Studio: Stadium Builder ─────────────────────────────────────
+  builderSteps: [
+    {
+      id: 'identity',
+      label: 'Identité',
+      description: 'Nom, ville et capacité du stade.',
+      fieldKeys: ['name', 'city', 'capacity', 'clubId'],
+    },
+    {
+      id: 'media',
+      label: 'Média & Statut',
+      description: 'Photo et disponibilité actuelle.',
+      fieldKeys: ['photoUrl', 'status'],
+    },
+  ],
+  publishOverrides: { status: 'ACTIVE' },
 };

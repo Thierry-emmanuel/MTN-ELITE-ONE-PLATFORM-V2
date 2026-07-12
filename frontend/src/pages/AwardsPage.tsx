@@ -7,13 +7,14 @@ import {
   Rocket, Lock, ArrowUpRight, Crown,
   Medal,
 } from 'lucide-react';
-import { useAwards, useTeamOfWeek, useRealtimeVotes, useBallonDor } from '@/hooks/useAwards';
+import { useAwards, useTeamOfWeek, useRealtimeVotes, useBallonDor, useHistoricalWinners } from '@/hooks/useAwards';
 import { useVotingStore, useRealtimeStore } from '@/store/awards.store';
 import { AwardCard } from '@/components/elite/awards/AwardCard';
 import { FormationPitch } from '@/components/elite/awards/FormationPitch';
 import { PastWinnersGallery } from '@/components/elite/awards/BallonDorComponents';
 import { CeremonyBackdrop } from '@/components/elite/awards/CeremonyBackdrop';
 import { CinematicHero, FeaturedWinner } from '@/components/elite/awards/AwardsCinematicHero';
+import { AwardsArchiveTimeline } from '@/components/elite/awards/AwardsArchiveTimeline';
 import { CEREMONY_PHOTOS } from '@/services/ceremonyPhotos';
 import { AWARD_GROUPS, AWARD_META } from '@/types/awards.types';
 import type { AwardGroup, AwardCategory, Award, PlayerNominee } from '@/types/awards.types';
@@ -396,6 +397,7 @@ export default function AwardsPage() {
   const { data: awards, isLoading } = useAwards();
   const { data: teamOfWeek, isLoading: towLoading } = useTeamOfWeek();
   const { data: ballonDor } = useBallonDor();
+  const { data: historicalWinners } = useHistoricalWinners();
   const { connected, totalLiveVotes } = useRealtimeVotes();
   const { votedAwards } = useVotingStore();
   const { liveFeed } = useRealtimeStore();
@@ -515,6 +517,9 @@ export default function AwardsPage() {
                 ))}
               </div>
             )}
+
+            {/* Awards Archive — the narrated, multi-category timeline */}
+            <AwardsArchiveTimeline entries={historicalWinners} />
 
             {/* Hall of Fame */}
             <HallOfFame />

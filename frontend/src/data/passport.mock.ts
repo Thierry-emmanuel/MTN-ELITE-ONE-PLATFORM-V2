@@ -2,7 +2,7 @@ import { clubs } from '@/components/elite/data';
 import type { PlayerProfile } from '@/types/playerProfile.types';
 import type {
   PassportStamp, StampCategory, StampTier, CareerChapter, RoadToLionsEvent,
-  MemoryObject, CareerDna, PassportData,
+  MemoryObject, CareerDna, PassportData, CareerMapStop, LegacyData, LegacyTestimonial,
 } from '@/types/passport.types';
 
 import action1 from '@/assets/images/actions/img1.png';
@@ -244,14 +244,105 @@ function buildDna(p: PlayerProfile): CareerDna {
   };
 }
 
+// ─── Career Map ─────────────────────────────────────────────────────────────
+function buildCareerMap(p: PlayerProfile, roadToLions: RoadToLionsEvent[]): CareerMapStop[] {
+  const stops: CareerMapStop[] = [];
+
+  stops.push({
+    id: `${p.playerId}-map-formation`, kind: 'formation',
+    title: 'Centre de Formation', place: p.birthPlace ?? 'Cameroun', years: '—',
+    description: `Tout commence ici : ${p.playerName} apprend les fondamentaux du jeu et développe son style, encadré par les premiers éducateurs qui ont cru en lui.`,
+  });
+
+  // Dedupe consecutive club stints from the chronological season rows into stops
+  const clubStints: { club: PlayerProfile['careerSeasons'][number]['club']; seasons: string[]; appearances: number; goals: number; assists: number }[] = [];
+  for (const row of p.careerSeasons) {
+    const last = clubStints[clubStints.length - 1];
+    if (last && last.club.id === row.club.id) {
+      last.seasons.push(row.season); last.appearances += row.appearances; last.goals += row.goals; last.assists += row.assists;
+    } else {
+      clubStints.push({ club: row.club, seasons: [row.season], appearances: row.appearances, goals: row.goals, assists: row.assists });
+    }
+  }
+
+  clubStints.forEach((stint, i) => {
+    const isCurrent = i === clubStints.length - 1;
+    stops.push({
+      id: `${p.playerId}-map-club-${i}`, kind: 'club', club: stint.club,
+      title: stint.club.name, place: 'MTN Elite One',
+      years: stint.seasons.length > 1 ? `${stint.seasons[0]} — ${stint.seasons[stint.seasons.length - 1]}` : stint.seasons[0],
+      description: isCurrent
+        ? `Étape actuelle du voyage. ${p.playerName} porte les couleurs de ${stint.club.name}, où il continue d'écrire son histoire saison après saison.`
+        : `Un passage déterminant chez ${stint.club.name}, qui a posé les bases de la suite de la carrière de ${p.playerName}.`,
+      stats: [{ label: 'Matchs', value: String(stint.appearances) }, { label: 'Buts', value: String(stint.goals) }, { label: 'Passes D.', value: String(stint.assists) }],
+    });
+  });
+
+  if (roadToLions.some(e => e.type === 'debut')) {
+    stops.push({
+      id: `${p.playerId}-map-national`, kind: 'national',
+      title: 'Lions Indomptables', place: 'Équipe Nationale du Cameroun',
+      years: roadToLions[0]?.date.slice(0, 4) ?? '—',
+      description: `La sélection nationale l'appelle. ${p.playerName} rejoint le groupe des Lions Indomptables et découvre l'exigence du plus haut niveau continental.`,
+      stats: [{ label: 'Sélections', value: String(Math.max(0, ...roadToLions.map(e => e.caps ?? 0)) || '—') }],
+    });
+  }
+  if (roadToLions.some(e => e.type === 'tournament')) {
+    stops.push({
+      id: `${p.playerId}-map-continental`, kind: 'continental',
+      title: 'Coupe d\'Afrique des Nations', place: 'Scène Continentale',
+      years: roadToLions.find(e => e.type === 'tournament')?.date.slice(0, 4) ?? '—',
+      description: `${p.playerName} dispute la CAN sous les couleurs du Cameroun — l'une des plus grandes fiertés d'une carrière internationale.`,
+    });
+  }
+  return stops;
+}
+
+// ─── Legacy ─────────────────────────────────────────────────────────────────
+function buildLegacy(p: PlayerProfile, rng: () => number): LegacyData {
+  const debutClub = p.formerClubs?.[0] ?? p.clubName;
+  const testimonials: LegacyTestimonial[] = [
+    { id: `${p.playerId}-leg-1`, role: 'Coéquipier',
+      quote: `Il élève le niveau de tout le vestiaire rien que par son attitude à l'entraînement. Un exemple pour les jeunes qui arrivent.`,
+      author: `Un coéquipier de ${p.clubName}` },
+    { id: `${p.playerId}-leg-2`, role: 'Entraîneur',
+      quote: `C'est un joueur sur qui on peut construire un projet. Sa marge de progression est encore immense.`,
+      author: `Le staff technique de ${p.clubName}` },
+    { id: `${p.playerId}-leg-3`, role: 'Supporter',
+      quote: `Quand il touche le ballon, tout le stade se lève. Il représente ce que notre club a de mieux à offrir.`,
+      author: `Un supporter fidèle` },
+  ];
+  if (rng() > 0.4) testimonials.push({
+    id: `${p.playerId}-leg-4`, role: 'Journaliste',
+    quote: `Sa trajectoire depuis ${debutClub} est l'une des plus belles histoires de ce championnat ces dernières saisons.`,
+    author: `Presse sportive camerounaise`,
+  });
+
+  const stats: LegacyData['stats'] = [
+    { label: 'Matchs Officiels', value: String(p.appearances), detail: 'Toutes compétitions confondues' },
+    { label: 'Contributions Buts', value: String(p.goals + p.assists), detail: 'Buts + passes décisives' },
+    { label: 'Saisons Suivies', value: String(p.careerSeasons.length), detail: `Avec ${new Set(p.careerSeasons.map(s => s.club.id)).size} club(s)` },
+  ];
+
+  return {
+    statement: `Au-delà des chiffres, ${p.playerName} incarne une génération de footballeurs camerounais qui refuse de se contenter du minimum. Chaque saison, il repousse un peu plus loin ce qui semblait possible — pour lui, pour son club, et pour tous ceux qui suivent sa trace.`,
+    stats,
+    testimonials,
+    closingLine: `L'histoire de ${p.playerName} n'est pas terminée. Elle continue de s'écrire, un match à la fois.`,
+  };
+}
+
 export function buildPassportData(p: PlayerProfile): PassportData {
   const rng = mulberry32(hashSeed(p.playerId) ^ 0x9e3779b9);
+  const roadToLions = buildRoadToLions(p, rng);
   return {
     stamps: buildStamps(p, rng),
     chapters: buildChapters(p, rng),
-    roadToLions: buildRoadToLions(p, rng),
+    roadToLions,
     memoryBox: buildMemoryBox(p, rng),
     dna: buildDna(p),
+    careerMap: buildCareerMap(p, roadToLions),
+    legacy: buildLegacy(p, rng),
     passportNumber: `CM-MEO-${String(hashSeed(p.playerId) % 900000 + 100000)}`,
     issueDate: p.sinceClubDate,
     motto: 'Chaque match écrit une page. Chaque saison ajoute un chapitre.',

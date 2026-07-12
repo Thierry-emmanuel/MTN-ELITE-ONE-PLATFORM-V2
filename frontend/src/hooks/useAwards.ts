@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { awardsApi, connectAwardsSocket, disconnectAwardsSocket, subscribeToAward, unsubscribeFromAward } from '../services/awardsApi';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '../store/awards.store';
-import { MOCK_AWARDS, MOCK_BALLON_DOR, MOCK_TEAM_OF_WEEK } from '../services/mockAwards';
-import type { BallonDorEdition } from '../types/awards.types';
+import { MOCK_AWARDS, MOCK_BALLON_DOR, MOCK_TEAM_OF_WEEK, MOCK_HISTORICAL } from '../services/mockAwards';
+import type { BallonDorEdition, HistoricalWinner, AwardCategory } from '../types/awards.types';
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? 'season-2025-26';
 
@@ -13,6 +13,7 @@ export const AWARD_QK = {
   ballonDor:  (year?: number)  => ['ballon-dor', year] as const,
   teamOfWeek: ()               => ['team-of-week']     as const,
   votes:      (id: string)     => ['award-votes', id]  as const,
+  historical: (category?: string) => ['awards-historical', category] as const,
 };
 
 // ─── useAwards ────────────────────────────────────────────────────────────────
@@ -129,6 +130,31 @@ export function useBallonDor(year?: number) {
   });
   useEffect(() => { if (query.data) setBallonDor(query.data); }, [query.data]);
   return { ...query, data: query.data ?? MOCK_BALLON_DOR };
+}
+
+// ─── useHistoricalWinners ───────────────────────────────────────────────────
+// Powers the Awards Archive timeline. Same backend gap as useBallonDor:
+// awardsApi.getHistorical() currently resolves `Award[]` (no dedicated route
+// yet), so anything that isn't already shaped like a HistoricalWinner[] falls
+// back to the mock archive, optionally filtered to a single category.
+export function useHistoricalWinners(category?: AwardCategory) {
+  const query = useQuery({
+    queryKey: AWARD_QK.historical(category),
+    queryFn:  async (): Promise<HistoricalWinner[]> => {
+      try {
+        const result = await awardsApi.getHistorical(category);
+        const list = Array.isArray(result) && result.length > 0 && 'winner' in result[0]
+          ? (result as unknown as HistoricalWinner[])
+          : MOCK_HISTORICAL;
+        return category ? list.filter(w => w.category === category) : list;
+      } catch {
+        return category ? MOCK_HISTORICAL.filter(w => w.category === category) : MOCK_HISTORICAL;
+      }
+    },
+    staleTime: 300_000,
+  });
+  const fallback = category ? MOCK_HISTORICAL.filter(w => w.category === category) : MOCK_HISTORICAL;
+  return { ...query, data: (query.data ?? fallback).slice().sort((a, b) => b.year - a.year) };
 }
 
 // ─── useTeamOfWeek ────────────────────────────────────────────────────────────

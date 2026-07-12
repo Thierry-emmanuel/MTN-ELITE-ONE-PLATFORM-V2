@@ -65,12 +65,47 @@ export interface CareerDna {
   development: string;
 }
 
+export type MapStopKind = 'formation' | 'club' | 'national' | 'continental' | 'world';
+
+export interface CareerMapStop {
+  id: string;
+  kind: MapStopKind;
+  title: string;
+  place: string;
+  years: string;
+  description: string;
+  stats?: { label: string; value: string }[];
+  club?: Club;
+}
+
+export interface LegacyTestimonial {
+  id: string;
+  quote: string;
+  author: string;
+  role: 'Coéquipier' | 'Entraîneur' | 'Supporter' | 'Journaliste';
+}
+
+export interface LegacyStat {
+  label: string;
+  value: string;
+  detail: string;
+}
+
+export interface LegacyData {
+  statement: string;
+  stats: LegacyStat[];
+  testimonials: LegacyTestimonial[];
+  closingLine: string;
+}
+
 export interface PassportData {
   stamps: PassportStamp[];
   chapters: CareerChapter[];
   roadToLions: RoadToLionsEvent[];
   memoryBox: MemoryObject[];
   dna: CareerDna;
+  careerMap: CareerMapStop[];
+  legacy: LegacyData;
   passportNumber: string;
   issueDate: string;
   motto: string;

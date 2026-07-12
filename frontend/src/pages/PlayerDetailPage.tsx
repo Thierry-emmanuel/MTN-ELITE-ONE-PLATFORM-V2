@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Shield, ArrowLeft, User, BarChart2, History, Trophy, Repeat, TrendingUp, Images, Newspaper,
-  BookMarked, Compass, BookOpen, Flag, Archive, Dna,
+  BookMarked, Compass, BookOpen, Flag, Archive, Dna, Map, Crown,
 } from 'lucide-react';
 import { usePlayerStats, usePlayer } from '@/hooks/useFootball';
 import { useArticles } from '@/hooks/useNews';
@@ -19,6 +19,7 @@ import { PassportStampsSection } from '@/components/elite/player-profile/passpor
 import { JourneyIndexSection } from '@/components/elite/player-profile/passport/JourneyIndexSection';
 import { CareerChaptersSection } from '@/components/elite/player-profile/passport/CareerChaptersSection';
 import { CareerSection } from '@/components/elite/player-profile/CareerSection';
+import { CareerMapSection } from '@/components/elite/player-profile/passport/CareerMapSection';
 import { RoadToLionsSection } from '@/components/elite/player-profile/passport/RoadToLionsSection';
 import { AchievementsSection } from '@/components/elite/player-profile/AchievementsSection';
 import { MemoryBoxSection } from '@/components/elite/player-profile/passport/MemoryBoxSection';
@@ -26,6 +27,7 @@ import { CareerDnaSection } from '@/components/elite/player-profile/passport/Car
 import { TransfersInjuriesSection } from '@/components/elite/player-profile/TransfersInjuriesSection';
 import { TrendsSection } from '@/components/elite/player-profile/TrendsSection';
 import { GallerySection } from '@/components/elite/player-profile/GallerySection';
+import { LegacySection } from '@/components/elite/player-profile/passport/LegacySection';
 import { RelatedNewsSection } from '@/components/elite/player-profile/RelatedNewsSection';
 import type { PlayerStat } from '@/types/football.types';
 
@@ -36,6 +38,7 @@ const NAV_SECTIONS: ProfileNavSection[] = [
   { id: 'parcours', label: 'Parcours', icon: Compass },
   { id: 'chapitres', label: 'Chapitres', icon: BookOpen },
   { id: 'carriere', label: 'Carrière', icon: History },
+  { id: 'carte', label: 'Carte', icon: Map },
   { id: 'lions', label: 'Lions', icon: Flag },
   { id: 'palmares', label: 'Palmarès', icon: Trophy },
   { id: 'souvenirs', label: 'Souvenirs', icon: Archive },
@@ -43,6 +46,7 @@ const NAV_SECTIONS: ProfileNavSection[] = [
   { id: 'transferts', label: 'Transferts', icon: Repeat },
   { id: 'tendances', label: 'Tendances', icon: TrendingUp },
   { id: 'galerie', label: 'Galerie', icon: Images },
+  { id: 'heritage', label: 'Héritage', icon: Crown },
   { id: 'actualites', label: 'Actualités', icon: Newspaper },
 ];
 
@@ -191,6 +195,7 @@ export default function PlayerDetailPage() {
         </>
       )}
       <CareerSection player={player} />
+      {passport && <CareerMapSection stops={passport.careerMap} />}
       {passport && <RoadToLionsSection events={passport.roadToLions} />}
       <AchievementsSection player={player} />
       {passport && (
@@ -202,6 +207,7 @@ export default function PlayerDetailPage() {
       <TransfersInjuriesSection player={player} />
       <TrendsSection player={player} />
       <GallerySection player={player} />
+      {passport && <LegacySection player={player} legacy={passport.legacy} />}
       <RelatedNewsSection player={player} articles={relatedArticles} relatedPlayers={relatedPlayers} />
     </PageLayout>
   );

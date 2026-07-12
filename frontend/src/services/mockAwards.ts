@@ -279,4 +279,15 @@ export const MOCK_HISTORICAL: HistoricalWinner[] = [
     winner: { id: 'hof2', type: 'PLAYER' as const, name: 'Mohammed Idrissou', photoUrl: IMG.mohammedI, clubName: 'Coton Sport', clubShort: 'COT', position: 'FWD', nationality: 'CMR', age: 35, stats: { goals: 16 }, highlightStat: { label: 'Buts', value: 16 }, description: 'International camerounais vétéran. Sa dernière grande saison avant la retraite.' } as any },
   { year: 2019, period: 'Saison 2019–20', season: 'season-2019-20', category: 'BALLON_DOR',
     winner: { id: 'hof3', type: 'PLAYER' as const, name: 'Théophile Abega', photoUrl: IMG.theophile, clubName: 'Canon Yaoundé', clubShort: 'CNK', position: 'MID', nationality: 'CMR', age: 38, stats: { goals: 8, assists: 12 }, highlightStat: { label: 'Passes D.', value: 12 }, description: 'Maestro du milieu de terrain camerounais. Sa créativité a illuminé le championnat.' } as any },
+
+  // Player of the Season — chosen by the technical panel rather than public vote,
+  // so it doesn't always crown the same name as the Ballon d'Or that same year.
+  { year: 2024, period: 'Saison 2024–25', season: 'season-2024-25', category: 'PLAYER_OF_SEASON',
+    winner: { ...NJOH, description: 'Élu meilleur joueur de la saison par le panel technique : 8 clean sheets et une constance qui a porté Coton Sport vers le titre.' } as any },
+  { year: 2023, period: 'Saison 2023–24', season: 'season-2023-24', category: 'PLAYER_OF_SEASON',
+    winner: { ...MAROU, description: 'Distingué par le panel technique pour une saison à 15 buts qui a relancé Coton Sport dans la course au titre.' } as any },
+  { year: 2022, period: 'Saison 2022–23', season: 'season-2022-23', category: 'PLAYER_OF_SEASON',
+    winner: { ...NGONDO, description: 'Révélation de la saison : à 21 ans, il devient le plus jeune lauréat de la distinction, salué pour son impact offensif à Victoria United.' } as any },
+  { year: 2021, period: 'Saison 2021–22', season: 'season-2021-22', category: 'PLAYER_OF_SEASON',
+    winner: { id: 'hof4', type: 'PLAYER' as const, name: 'Thomas Nkono', photoUrl: IMG.thomasNkono, clubName: 'Canon Yaoundé', clubShort: 'CNK', position: 'GK', nationality: 'CMR', age: 34, stats: { cleanSheets: 11, saves: 61 }, highlightStat: { label: 'Clean sheets', value: 11 }, description: 'Le portier le plus décisif du championnat cette saison-là, désigné meilleur joueur pour sa maîtrise totale de sa surface.' } as any },
 ];
