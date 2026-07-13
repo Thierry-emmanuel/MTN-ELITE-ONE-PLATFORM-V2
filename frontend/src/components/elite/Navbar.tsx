@@ -7,7 +7,7 @@ import {
   Vote, Circle, Shield,
 } from "lucide-react";
 import { tickerItems } from "./data";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import fallbackLogo from "@/assets/images/logo/logo.png";
 import { layoutApi } from "@/services/layoutApi";
 
@@ -285,8 +285,42 @@ const MobileNavItem = ({
   );
 };
 
+type StoredUser = { name?: string; role?: string } | null;
+
+function getStoredUser(): StoredUser {
+  try {
+    const raw = localStorage.getItem('mtn_user');
+    return raw ? (JSON.parse(raw) as StoredUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+const getUserDashboardPath = (role?: string) => {
+  switch (role) {
+    case 'admin': return '/admin';
+    case 'editor': return '/editor';
+    default: return '/';
+  }
+};
+
+const getDashboardLabel = (role?: string) => {
+  switch (role) {
+    case 'admin': return 'Tableau de bord';
+    case 'editor': return "Espace éditeur";
+    default: return 'Accueil';
+  }
+};
+
 // ─── Mobile drawer ────────────────────────────────────────────────────────────
-const MobileMenu = ({ open, onClose, logo }: { open: boolean; onClose: () => void; logo: string }) => (
+const MobileMenu = ({ open, onClose, logo, user, onLogout }: { open: boolean; onClose: () => void; logo: string; user: StoredUser; onLogout: () => void }) => {
+  const navigate = useNavigate();
+  const onDashboard = () => {
+    navigate(getUserDashboardPath(user?.role));
+    onClose();
+  };
+
+  return (
   <AnimatePresence>
     {open && (
       <>
@@ -343,18 +377,37 @@ const MobileMenu = ({ open, onClose, logo }: { open: boolean; onClose: () => voi
 
           {/* Auth */}
           <div className="px-4 pb-6 pt-3 border-t border-white/8 space-y-2.5">
-            <Link
-              to="/login" onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
-            >
-              <LogIn className="h-4 w-4" /> Connexion
-            </Link>
-            <Link
-              to="/register" onClick={onClose}
-              className="flex items-center justify-center w-full py-3 rounded-2xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity"
-            >
-              S'inscrire — C'est gratuit
-            </Link>
+            {user ? (
+              <>
+                <button
+                  onClick={onDashboard}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
+                >
+                  {getDashboardLabel(user.role)}
+                </button>
+                <button
+                  onClick={() => { onLogout(); onClose(); }}
+                  className="flex items-center justify-center w-full py-3 rounded-2xl bg-red-500/10 text-red-300 text-sm font-bold hover:bg-red-500/15 transition-colors"
+                >
+                  Déconnexion
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login" onClick={onClose}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
+                >
+                  <LogIn className="h-4 w-4" /> Connexion
+                </Link>
+                <Link
+                  to="/register" onClick={onClose}
+                  className="flex items-center justify-center w-full py-3 rounded-2xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity"
+                >
+                  S'inscrire — C'est gratuit
+                </Link>
+              </>
+            )}
           </div>
         </motion.div>
       </>
@@ -370,7 +423,11 @@ interface NavbarProps {
 export const Navbar = ({ onSearchOpen }: NavbarProps) => {
   const [scrolled, setScrolled]     = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser]             = useState<StoredUser>(() => getStoredUser());
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const logo = useDynamicLogo();
 
   useEffect(() => {
@@ -379,7 +436,38 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => { setMobileOpen(false); }, [location]);
+  useEffect(() => {
+    const onStorage = () => setUser(getStoredUser());
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  useEffect(() => { setMobileOpen(false); setUserMenuOpen(false); }, [location]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('mtn_token');
+    localStorage.removeItem('mtn_user');
+    window.dispatchEvent(new Event('storage'));
+    setUser(null);
+    setUserMenuOpen(false);
+    navigate('/');
+  };
+
+  const handleDashboard = () => {
+    const path = getUserDashboardPath(user?.role);
+    setUserMenuOpen(false);
+    navigate(path);
+  };
 
   return (
     <>
@@ -452,32 +540,73 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
               </kbd>
             </button>
 
-            {/* Connexion — hidden xs */}
-            <Link
-              to="/login"
-              className="hidden sm:flex items-center gap-1.5 h-8 px-3 rounded-xl text-[11px] font-medium text-white/55 hover:text-white border border-transparent hover:border-white/10 hover:bg-white/5 transition-all"
-            >
-              <LogIn className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline">Connexion</span>
-            </Link>
+            {/* Connexion / user menu */}
+            {user ? (
+              <div ref={userMenuRef} className="relative hidden sm:block">
+                <button
+                  onClick={() => setUserMenuOpen(v => !v)}
+                  className="flex items-center gap-2 h-8 px-3 rounded-xl text-[11px] font-medium text-white/70 bg-white/5 border border-white/10 hover:text-white hover:bg-white/10 transition-all"
+                  aria-expanded={userMenuOpen}
+                >
+                  <span className="truncate max-w-[110px] text-left text-[11px] font-medium">
+                    {user.name || 'Mon compte'}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
 
-            {/* Admin */}
-            <Link
-              to="/admin"
-              title="Administration CMS"
-              className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[11px] font-medium text-accent/70 hover:text-accent border border-accent/10 hover:border-accent/30 hover:bg-accent/5 transition-all"
-            >
-              <Shield className="h-3.5 w-3.5" />
-              <span className="hidden lg:inline">Admin</span>
-            </Link>
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                      transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute right-0 mt-2 min-w-[180px] rounded-2xl border border-white/10 bg-[#07190e]/96 backdrop-blur-md shadow-2xl overflow-hidden z-50"
+                    >
+                      <button
+                        onClick={handleDashboard}
+                        className="w-full text-left px-4 py-3 text-[12px] text-white/80 hover:bg-white/5 transition-colors"
+                      >
+                        {getDashboardLabel(user.role)}
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-3 text-[12px] text-red-300 hover:bg-white/5 transition-colors"
+                      >
+                        Se déconnecter
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="hidden sm:flex items-center gap-1.5 h-8 px-3 rounded-xl text-[11px] font-medium text-white/55 hover:text-white border border-transparent hover:border-white/10 hover:bg-white/5 transition-all"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  <span className="hidden lg:inline">Connexion</span>
+                </Link>
+                <Link
+                  to="/register"
+                  className="hidden sm:flex items-center h-8 px-3.5 rounded-xl bg-accent text-accent-foreground text-[11px] font-bold hover:bg-accent/90 transition-colors shadow-[0_2px_12px_rgba(252,209,22,0.2)]"
+                >
+                  S'inscrire
+                </Link>
+              </>
+            )}
 
-            {/* S'inscrire */}
-            <Link
-              to="/register"
-              className="hidden sm:flex items-center h-8 px-3.5 rounded-xl bg-accent text-accent-foreground text-[11px] font-bold hover:bg-accent/90 transition-colors shadow-[0_2px_12px_rgba(252,209,22,0.2)]"
-            >
-              S'inscrire
-            </Link>
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                title="Administration CMS"
+                className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[11px] font-medium text-accent/70 hover:text-accent border border-accent/10 hover:border-accent/30 hover:bg-accent/5 transition-all"
+              >
+                <Shield className="h-3.5 w-3.5" />
+                <span className="hidden lg:inline">Admin</span>
+              </Link>
+            )}
 
             {/* Mobile menu button */}
             <button
@@ -522,7 +651,13 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
       {/* Spacer — accounts for 2-row header on desktop, 1-row on mobile */}
       <div className="h-[62px] lg:h-[90px]" />
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} logo={logo} />
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        logo={logo}
+        user={user}
+        onLogout={handleLogout}
+      />
     </>
   );
 };
