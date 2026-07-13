@@ -13,23 +13,6 @@ import { coachesConfig } from './configs/coaches.config';
 import { awardsConfig } from './configs/awards.config';
 import type { EntityConfig } from './engine/entityConfig.types';
 
-/**
- * Every config-driven entity goes here. Bespoke domains that need more than
- * CRUD (matches with live status, articles with the Tiptap editor screen,
- * awards with nominations/voting) stay as their own pages and are NOT
- * registered here — this registry is only for the generic engine.
- *
- * Clubs and Players are config-driven as of this change: their forms are
- * rich (image uploads, nested JSON) but still fit the generic engine via
- * the 'media-image', 'nested-object', and 'color' field types — no bespoke
- * page needed.
- *
- * Seasons and Matches are registered too, but their tabs remain the
- * bespoke SeasonsTab / matches block in AdminPage — those own lifecycle
- * actions (Activer, Clôturer, live score entry) the generic table doesn't
- * model. Registering them here just lets their configs power the League
- * Studio guided builders via createEntityHooks, same as every other entity.
- */
 export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   transfers: transfersConfig,
   injuries: injuriesConfig,

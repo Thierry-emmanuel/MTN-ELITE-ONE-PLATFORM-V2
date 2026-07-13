@@ -94,13 +94,6 @@ export interface EntityConfig<T extends { id?: string; _id?: string }> {
    * turning a `datetime-local` input's local string into an ISO timestamp.
    */
   beforeSave?: (payload: Partial<T>) => Partial<T>;
-  /**
-   * Extra fields merged into the payload specifically when the guided
-   * builder's "Publier" action fires (as opposed to "Enregistrer le
-   * brouillon"). Lets each entity define what "published" means in its own
-   * vocabulary — e.g. { isActive: true, status: 'ACTIVE' } for a Player,
-   * nothing at all for a Season where status is a lifecycle the editor
-   * chooses explicitly.
-   */
+ 
   publishOverrides?: Partial<T>;
 }
