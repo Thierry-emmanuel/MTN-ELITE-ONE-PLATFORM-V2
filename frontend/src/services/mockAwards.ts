@@ -91,7 +91,7 @@ const SOMBANG = {
   stats: { goals: 2, assists: 4, appearances: 16, minutesPlayed: 1380, rating: 7.6, keyPasses: 28 },
   highlightStat: { label: 'Matchs', value: 16 }, form: ['D','W','W','L','D'],
 };
-const MBAI = {
+export const MBAI = {
   id: 'p9', type: 'PLAYER' as const,
   name: 'Rostand Mbaï', position: 'DEF', nationality: 'CMR', age: 28,
   photoUrl: IMG.rostandardMbai,

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, User, ArrowRight, ChevronDown, LayoutGrid, List as ListIcon, ChevronRight } from 'lucide-react';
+import { Search, User, ArrowRight, ChevronDown, LayoutGrid, List as ListIcon, ChevronRight, Heart } from 'lucide-react';
 import { usePlayers, useClubs } from '@/hooks/useFootball';
 import { PageHero } from '@/components/elite/FootballPrimitives';
 import { ClubBadge } from '@/components/elite/ClubBadge';
@@ -12,6 +12,7 @@ import { clubs as CLUB_DIRECTORY } from '@/components/elite/data';
 import { computeRating } from '@/lib/statsRating';
 import { getQuickMeta } from '@/data/playerProfile.mock';
 import { flagFor, shade } from '@/lib/playerVisuals';
+import { useFavoritesStore } from '@/store/favorites.store';
 import PageLayout from '@/layout/PageLayout';
 import type { PlayerStat, Club } from '@/types/football.types';
 
@@ -42,6 +43,7 @@ export default function PlayersPage() {
   const [positionFilter, setPositionFilter] = useState<'ALL'|'GK'|'DF'|'MF'|'FW'>('ALL');
   const [clubFilter,     setClubFilter]     = useState<string>('ALL');
   const [viewMode,       setViewMode]       = useState<ViewMode>(() => (localStorage.getItem('players-view') as ViewMode) || 'grid');
+  const { toggleLikePlayer, isPlayerLiked } = useFavoritesStore();
 
   useEffect(() => { localStorage.setItem('players-view', viewMode); }, [viewMode]);
 
@@ -262,6 +264,17 @@ export default function PlayersPage() {
                         </div>
                       </div>
                     </Link>
+                     {/* Like overlay button */}
+                     <button
+                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleLikePlayer(pid); }}
+                       className={`absolute top-2.5 right-2.5 z-20 h-7 w-7 rounded-xl flex items-center justify-center transition-all backdrop-blur-sm border ${
+                         isPlayerLiked(pid)
+                           ? 'bg-red-500/30 border-red-500/50 text-red-400'
+                           : 'bg-black/40 border-white/10 text-white/40 hover:text-red-400'
+                       }`}
+                     >
+                       <Heart className={`h-3.5 w-3.5 ${isPlayerLiked(pid) ? 'fill-current' : ''}`} />
+                     </button>
                   </motion.div>
                 );
               })}
@@ -328,12 +341,24 @@ export default function PlayersPage() {
                           <td className="text-center px-3 py-2.5 tabular-nums text-muted-foreground hidden lg:table-cell">{player.minutesPlayed.toLocaleString('fr-FR')}</td>
                           <td className="text-center px-3 py-2.5"><RatingBadge rating={rating} size="sm" /></td>
                           <td className="px-3 py-2.5">
-                            <Link
-                              to={`/players/${player.playerId}`}
-                              className="flex items-center justify-center h-7 w-7 rounded-lg bg-white/5 group-hover:bg-accent group-hover:text-black text-muted-foreground transition-all ml-auto"
-                            >
-                              <ArrowRight className="h-3.5 w-3.5" />
-                            </Link>
+                            <div className="flex items-center gap-2 justify-end">
+                              <button
+                                onClick={() => toggleLikePlayer(player.playerId ?? String((player as any).id))}
+                                className={`flex items-center justify-center h-7 w-7 rounded-lg border transition-all ${
+                                  isPlayerLiked(player.playerId ?? String((player as any).id))
+                                    ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                                    : 'bg-white/5 border-white/10 text-white/30 hover:text-red-400'
+                                }`}
+                              >
+                                <Heart className={`h-3.5 w-3.5 ${isPlayerLiked(player.playerId ?? String((player as any).id)) ? 'fill-current' : ''}`} />
+                              </button>
+                              <Link
+                                to={`/players/${player.playerId}`}
+                                className="flex items-center justify-center h-7 w-7 rounded-lg bg-white/5 group-hover:bg-accent group-hover:text-black text-muted-foreground transition-all"
+                              >
+                                <ArrowRight className="h-3.5 w-3.5" />
+                              </Link>
+                            </div>
                           </td>
                         </tr>
                       );

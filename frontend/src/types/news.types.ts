@@ -60,6 +60,7 @@ export interface Article {
   commentsCount: number;
   readingTime: number;           // estimated minutes
   views?: number;
+  likesCount?: number;
 }
 
 // ─── API shapes ───────────────────────────────────────────────────────────────

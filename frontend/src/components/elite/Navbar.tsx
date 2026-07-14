@@ -10,6 +10,7 @@ import { tickerItems } from "./data";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import fallbackLogo from "@/assets/images/logo/logo.png";
 import { layoutApi } from "@/services/layoutApi";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // ─── Fetch logo URL from backend system-settings ───────────────────────────────
 function useDynamicLogo(): string {
@@ -285,7 +286,7 @@ const MobileNavItem = ({
   );
 };
 
-type StoredUser = { name?: string; role?: string } | null;
+type StoredUser = { name?: string; role?: string; avatarUrl?: string } | null;
 
 function getStoredUser(): StoredUser {
   try {
@@ -296,11 +297,19 @@ function getStoredUser(): StoredUser {
   }
 }
 
+const getUserInitials = (name?: string) => {
+  if (!name) return "UI";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "UI";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
 const getUserDashboardPath = (role?: string) => {
   switch (role) {
     case 'admin': return '/admin';
-    case 'editor': return '/editor';
-    default: return '/';
+    case 'editor': return '/dashboard';
+    default: return '/dashboard';
   }
 };
 
@@ -321,99 +330,108 @@ const MobileMenu = ({ open, onClose, logo, user, onLogout }: { open: boolean; on
   };
 
   return (
-  <AnimatePresence>
-    {open && (
-      <>
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 bg-black/65 backdrop-blur-sm z-40 lg:hidden"
-          onClick={onClose}
-        />
-        <motion.div
-          initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 30, stiffness: 320 }}
-          className="fixed top-0 right-0 bottom-0 w-[300px] bg-[#05140B]/98 backdrop-blur-md border-l border-white/10 z-50 lg:hidden flex flex-col"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallbackLogo; }} />
-              <div>
-                <div className="font-display text-xs tracking-widest leading-none">MTN ELITE ONE</div>
-                <div className="text-[9px] text-muted-foreground/50 mt-0.5 uppercase tracking-wider">Saison 25/26</div>
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/65 backdrop-blur-sm z-40 lg:hidden"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 320 }}
+            className="fixed top-0 right-0 bottom-0 w-[300px] bg-[#05140B]/98 backdrop-blur-md border-l border-white/10 z-50 lg:hidden flex flex-col"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <img src={logo} alt="Elite One" className="h-8 w-8 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallbackLogo; }} />
+                <div>
+                  <div className="font-display text-xs tracking-widest leading-none">MTN ELITE ONE</div>
+                  <div className="text-[9px] text-muted-foreground/50 mt-0.5 uppercase tracking-wider">Saison 25/26</div>
+                </div>
               </div>
+              <button
+                onClick={onClose}
+                className="h-8 w-8 grid place-items-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="h-8 w-8 grid place-items-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
 
-          {/* Matchday pill */}
-          <div className="mx-4 mt-4 flex items-center justify-between bg-white/4 border border-white/8 rounded-xl px-4 py-2.5">
-            <span className="text-[11px] text-muted-foreground">Journée en cours</span>
-            <span className="font-display text-sm text-accent">J{CURRENT_MATCHDAY} / {TOTAL_MATCHDAYS}</span>
-          </div>
+            {/* Matchday pill */}
+            <div className="mx-4 mt-4 flex items-center justify-between bg-white/4 border border-white/8 rounded-xl px-4 py-2.5">
+              <span className="text-[11px] text-muted-foreground">Journée en cours</span>
+              <span className="font-display text-sm text-accent">J{CURRENT_MATCHDAY} / {TOTAL_MATCHDAYS}</span>
+            </div>
 
-          {/* Season progress bar */}
-          <div className="mx-4 mt-2.5 h-1 rounded-full bg-white/5 overflow-hidden">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]"
-              initial={{ width: "0%" }}
-              animate={{ width: `${SEASON_PROGRESS}%` }}
-              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-            />
-          </div>
+            {/* Season progress bar */}
+            <div className="mx-4 mt-2.5 h-1 rounded-full bg-white/5 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]"
+                initial={{ width: "0%" }}
+                animate={{ width: `${SEASON_PROGRESS}%` }}
+                transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+              />
+            </div>
 
-          {/* Nav items */}
-          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            {NAV_LINKS.map((link, i) => (
-              <MobileNavItem key={i} link={link} onClose={onClose} />
-            ))}
-          </nav>
+            {/* Nav items */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+              {NAV_LINKS.map((link, i) => (
+                <MobileNavItem key={i} link={link} onClose={onClose} />
+              ))}
+            </nav>
 
-          {/* Auth */}
-          <div className="px-4 pb-6 pt-3 border-t border-white/8 space-y-2.5">
-            {user ? (
-              <>
-                <button
-                  onClick={onDashboard}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
-                >
-                  {getDashboardLabel(user.role)}
-                </button>
-                <button
-                  onClick={() => { onLogout(); onClose(); }}
-                  className="flex items-center justify-center w-full py-3 rounded-2xl bg-red-500/10 text-red-300 text-sm font-bold hover:bg-red-500/15 transition-colors"
-                >
-                  Déconnexion
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login" onClick={onClose}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
-                >
-                  <LogIn className="h-4 w-4" /> Connexion
-                </Link>
-                <Link
-                  to="/register" onClick={onClose}
-                  className="flex items-center justify-center w-full py-3 rounded-2xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity"
-                >
-                  S'inscrire — C'est gratuit
-                </Link>
-              </>
-            )}
-          </div>
-        </motion.div>
-      </>
-    )}
-  </AnimatePresence>
-);
+            {/* Auth */}
+            <div className="px-4 pb-6 pt-3 border-t border-white/8 space-y-2.5">
+              {user ? (
+                <>
+                  <button
+                    onClick={onDashboard}
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-accent/30 bg-accent/5 text-sm text-accent font-bold hover:bg-accent/10 transition-all"
+                  >
+                    🏟️ Mon espace personnel
+                  </button>
+                  {user?.role === 'editor' && (
+                    <Link
+                      to="/editor" onClick={onClose}
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
+                    >
+                      ✍️ Console éditeur
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => { onLogout(); onClose(); }}
+                    className="flex items-center justify-center w-full py-3 rounded-2xl bg-red-500/10 text-red-300 text-sm font-bold hover:bg-red-500/15 transition-colors"
+                  >
+                    Déconnexion
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login" onClick={onClose}
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/12 text-sm text-white/70 hover:bg-white/5 transition-all"
+                  >
+                    <LogIn className="h-4 w-4" /> Connexion
+                  </Link>
+                  <Link
+                    to="/register" onClick={onClose}
+                    className="flex items-center justify-center w-full py-3 rounded-2xl bg-accent text-accent-foreground text-sm font-bold hover:opacity-90 transition-opacity"
+                  >
+                    S'inscrire — C'est gratuit
+                  </Link>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
 
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 interface NavbarProps {
@@ -548,6 +566,13 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
                   className="flex items-center gap-2 h-8 px-3 rounded-xl text-[11px] font-medium text-white/70 bg-white/5 border border-white/10 hover:text-white hover:bg-white/10 transition-all"
                   aria-expanded={userMenuOpen}
                 >
+                  <Avatar className="h-8 w-8">
+                    {user.avatarUrl ? (
+                      <AvatarImage src={user.avatarUrl} alt={user.name ?? 'Avatar'} />
+                    ) : (
+                      <AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
+                    )}
+                  </Avatar>
                   <span className="truncate max-w-[110px] text-left text-[11px] font-medium">
                     {user.name || 'Mon compte'}
                   </span>

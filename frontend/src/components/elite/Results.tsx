@@ -1,16 +1,12 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { footballApi as api } from "@/services/api";
-import { MOCK_RESULTS, DEV_SEASON_ID } from "@/services/mockData";
+import { MOCK_RESULTS } from "@/services/mockData";
 import { ClubLogo } from "@/components/ui/football";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
-import type { ApiMatch } from "@/types/football.types";
 import { useResults } from "@/hooks/useFootball";
 import { useMemo } from "react";
-
-const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
 const containerVariants = {
   hidden: {},
@@ -20,13 +16,13 @@ const rowVariants = {
   hidden:  { opacity: 0, x: -12 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as any } },
 };
-const ResultRow = ({ match }: { match: ApiMatch }) => {
+const ResultRow = ({ match }: { match: any }) => {
   const hs      = match.homeScore ?? 0;
   const as_     = match.awayScore ?? 0;
   const homeWin = hs > as_;
   const awayWin = as_ > hs;
   const draw    = hs === as_;
-  const dt      = new Date(match.scheduledAt);
+  const dt      = new Date(match.scheduledAt ?? match.kickoffUtc);
   const date    = dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 
   return (

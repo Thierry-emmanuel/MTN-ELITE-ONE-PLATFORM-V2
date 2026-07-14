@@ -112,7 +112,7 @@ export function useMatch(matchId: string | null) {
         if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
           // Find in mock data
           const allMatches = [...MOCK_FIXTURES, ...MOCK_RESULTS].flatMap(day => day.matches);
-          const match = allMatches.find(m => m.id === matchId || m.id === Number(matchId));
+          const match = allMatches.find(m => String(m.id) === String(matchId));
           if (match) return match;
         }
         throw err;

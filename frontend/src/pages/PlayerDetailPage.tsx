@@ -82,6 +82,11 @@ function normalizeBackendPlayer(p: any): PlayerStat {
     minutesPlayed: clubStats.minutesPlayed ?? 0,
     photoUrl:     p.photoUrl,
     nationality:  p.nationality,
+    keyPasses:    0,
+    shots:        0,
+    shotsOnTarget:0,
+    penaltiesScored:0,
+    penaltiesMissed:0,
   } as PlayerStat;
 }
 

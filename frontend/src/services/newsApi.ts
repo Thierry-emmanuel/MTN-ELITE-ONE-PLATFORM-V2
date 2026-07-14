@@ -1,6 +1,6 @@
 import { apiClient } from './api';
 import type {
-  Article, Comment, PaginatedArticles,
+  Comment, PaginatedArticles,
   ArticlesFilter, CreateArticlePayload, CreateCommentPayload,
 } from '../types/news.types';
 

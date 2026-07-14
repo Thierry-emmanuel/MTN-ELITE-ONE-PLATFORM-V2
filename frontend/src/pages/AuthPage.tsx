@@ -24,7 +24,7 @@ interface StoredUser {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const saveUser = (user: StoredUser) => {
+export const saveUser = (user: StoredUser) => {
   localStorage.setItem("mtn_user", JSON.stringify(user));
   window.dispatchEvent(new Event("storage"));
 };

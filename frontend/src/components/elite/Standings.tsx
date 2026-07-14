@@ -48,7 +48,7 @@ export const Standings = () => {
 
   useEffect(() => {
     api.getStandings(SEASON_ID)
-      .then(data => setStandings(data.length > 0 ? data : MOCK_STANDINGS))
+      .then((data: any) => setStandings(data.length > 0 ? data : MOCK_STANDINGS))
       .catch(() => setStandings(MOCK_STANDINGS))
       .finally(() => setLoading(false));
   }, []);

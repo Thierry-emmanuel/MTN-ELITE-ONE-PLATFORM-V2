@@ -17,7 +17,7 @@ import {
   CircleDot, SquareX, ArrowLeftRight,
   TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
-import type { Club, FormResult, Match, MatchEvent } from '@/types/football.types';
+import type { FormResult, Match, MatchEvent } from '@/types/football.types';
 import { statusLabel, formatKickoff } from '@/utils/football.utils';
 
 // ─── ClubLogo ─────────────────────────────────────────────────────────────────
@@ -25,7 +25,14 @@ import { statusLabel, formatKickoff } from '@/utils/football.utils';
 // Works with both `Club` (has `.color`, `.short`) and legacy `ApiClub` (has `.primaryColor`).
 
 export interface ClubLogoProps {
-  club: Club & { primaryColor?: string; short?: string };
+  club: {
+    id: string;
+    name: string;
+    short?: string;
+    color?: string;
+    primaryColor?: string;
+    logoUrl?: string;
+  };
   size?: number;
   className?: string;
 }

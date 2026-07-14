@@ -4,13 +4,20 @@ import {
   AlertTriangle, RefreshCw, Radio, Clock,
   CalendarX, Trophy, MapPin, User,
 } from 'lucide-react';
-import type { Club, FormResult, Match, MatchEvent } from '../../types/football.types';
+import type { FormResult, Match, MatchEvent } from '../../types/football.types';
 import { statusLabel, formatKickoff } from '../../utils/football.utils';
 
 // ─── ClubLogo ─────────────────────────────────────────────────────────────────
 
 interface ClubLogoProps {
-  club: Club;
+  club: {
+    id: string;
+    name: string;
+    short?: string;
+    color?: string;
+    primaryColor?: string;
+    logoUrl?: string;
+  };
   size?: number;
   className?: string;
 }
@@ -28,20 +35,22 @@ export const ClubLogo = memo(({ club, size = 32, className = '' }: ClubLogoProps
       />
     );
   }
+  const color = club.color ?? club.primaryColor ?? '#FCD116';
+  const shortName = club.short ?? club.name.slice(0, 3);
   // Fallback: colored initials badge
   return (
     <div
       className={`rounded-lg grid place-items-center font-display font-bold shrink-0 ${className}`}
       style={{
         width: size, height: size,
-        background: `${club.color}22`,
-        color: club.color,
+        background: `${color}22`,
+        color: color,
         fontSize: Math.round(size * 0.35),
-        border: `1.5px solid ${club.color}40`,
+        border: `1.5px solid ${color}40`,
       }}
       aria-label={club.name}
     >
-      {club.short.slice(0, 3)}
+      {shortName.slice(0, 3)}
     </div>
   );
 });

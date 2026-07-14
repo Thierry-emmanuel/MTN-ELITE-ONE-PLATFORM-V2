@@ -7,7 +7,7 @@ import { MOCK_FIXTURES } from '../services/mockData';
 import { extractRounds, extractClubs } from '../utils/football.utils';
 import type { MatchDay } from '../types/football.types';
 import {
-  FilterPill, FixtureCardSkeleton, EmptyState, ErrorState,
+  FixtureCardSkeleton, EmptyState, ErrorState,
 } from '@/components/ui/football';
 import { MatchdayCard } from '@/components/elite/matches/MatchdayCard';
 import { SegmentedTabs } from '@/components/elite/matches/SegmentedTabs';

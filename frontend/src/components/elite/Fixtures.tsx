@@ -1,16 +1,12 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight, Radio } from "lucide-react";
-import { footballApi as api } from "@/services/api";
-import type { ApiMatch } from "@/types/football.types";
-import { MOCK_FIXTURES, DEV_SEASON_ID } from "@/services/mockData";
+import { MOCK_FIXTURES } from "@/services/mockData";
 import { ClubLogo } from "@/components/ui/football";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
 import { useFixtures } from "@/hooks/useFootball";
 import { useMemo } from "react";
-
-const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
 const containerVariants = {
   hidden: {},
@@ -21,9 +17,9 @@ const cardVariants = {
   visible: { opacity: 1, y: 0,  scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as any } },
 };
 
-const FixtureCard = ({ match }: { match: ApiMatch }) => {
+const FixtureCard = ({ match }: { match: any }) => {
   const live = match.status === "LIVE";
-  const dt   = new Date(match.scheduledAt);
+  const dt   = new Date(match.scheduledAt ?? match.kickoffUtc);
   const time = dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const date = dt.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 
