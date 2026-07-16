@@ -34,6 +34,7 @@ import { MatchPreviewCard } from '@/features/admin/components/MatchPreviewCard';
 import { PlayerPreviewCard } from '@/features/admin/components/PlayerPreviewCard';
 import { CommandPalette } from '@/features/admin/components/CommandPalette';
 import { MatchCommandCenter } from '@/features/admin/components/MatchCommandCenter';
+import { AwardsStudio } from '@/features/admin/components/AwardsStudio';
 import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
 import { AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -257,7 +258,11 @@ export default function AdminPage() {
   const [seasons, setSeasons] = useState<any[]>([]);
   const [clubs, setClubs] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
+  const [coaches, setCoaches] = useState<any[]>([]);
   const [currentSeasonId, setCurrentSeasonId] = useState('');
+
+  /* Awards Studio builder overlay */
+  const [awardsStudioRecord, setAwardsStudioRecord] = useState<any | null>(null);
 
   /* Dashboard */
   const [stats, setStats] = useState({ users: 0, clubs: 0, players: 0, matches: 0, votes: 0, articles: 0 });
@@ -335,6 +340,7 @@ export default function AdminPage() {
 
     layoutApi.getClubs({ limit: 100 }).then(res => setClubs(res.data ?? res)).catch(console.error);
     layoutApi.getPlayers({ limit: 500 }).then(res => setPlayers(res.data ?? res)).catch(console.error);
+    layoutApi.getCoaches({ limit: 200 }).then(res => setCoaches(res.data ?? res)).catch(console.error);
 
     // Dashboard stats
     apiClient.get('/admin/dashboard-stats').then(r => setStats(r.data)).catch(console.error);
@@ -980,8 +986,8 @@ export default function AdminPage() {
       {activeTab === 'awards' && (
         <div className="space-y-6">
           <SectionHeader
-            title="Awards & Ballon d'Or"
-            subtitle="Gérez les campagnes de votes et les distinctions individuelles"
+            title="Awards & Distinctions"
+            subtitle="Système officiel de récompenses du football camerounais — Ballon d'Or, Golden Boot, Gant d'Or et plus"
             icon={Trophy_}
             actions={
               <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -992,33 +998,14 @@ export default function AdminPage() {
                   onImport={importAwards}
                   importLoading={importingAwards}
                 />
-                {!selectedAward && <AdminButton onClick={() => setEditingAward({ category: '', status: 'CLOSED', seasonId: currentSeasonId })}>
-                  <Plus className="h-3.5 w-3.5" /> Créer un Award
-                </AdminButton>}
+                {!selectedAward && (
+                  <AdminButton onClick={() => setAwardsStudioRecord({})}>
+                    <Sparkles className="h-3.5 w-3.5" /> Nouveau Award — Studio
+                  </AdminButton>
+                )}
               </div>
             }
           />
-
-          {editingAward && (
-            <AdminCard title={editingAward.id ? 'Modifier Award' : 'Créer un Award'} accent>
-              <form onSubmit={saveAward} className="space-y-4">
-                <FormField label="Catégorie" type="select" value={editingAward.category || ''} onChange={v => setEditingAward(p => ({ ...p, category: v }))} options={[{ value: '', label: 'Choisissez une catégorie...' }, ...AWARD_CATEGORIES]} required />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Début des votes" type="datetime-local" value={(editingAward.periodStart || '').replace('Z','').slice(0,16)} onChange={v => setEditingAward(p => ({ ...p, periodStart: new Date(v).toISOString() }))} />
-                  <FormField label="Fin des votes" type="datetime-local" value={(editingAward.periodEnd || '').replace('Z','').slice(0,16)} onChange={v => setEditingAward(p => ({ ...p, periodEnd: new Date(v).toISOString() }))} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Statut" type="select" value={editingAward.status || 'CLOSED'} onChange={v => setEditingAward(p => ({ ...p, status: v as any }))} options={[{value:'OPEN',label:'Votes Ouverts'},{value:'CLOSED',label:'Votes Fermés'},{value:'ANNOUNCED',label:'Vainqueur Annoncé'}]} />
-                  <FormField label="Saison" type="select" value={editingAward.seasonId || ''} onChange={v => setEditingAward(p => ({ ...p, seasonId: v }))} options={seasons.map(s => ({ value: s.id, label: s.name }))} />
-                </div>
-                <FormField label="Vainqueur (optionnel)" type="select" value={editingAward.winnerId || ''} onChange={v => setEditingAward(p => ({ ...p, winnerId: v || null }))} options={[{value:'',label:'Non encore désigné'},...players.map(p => ({value:p.id,label:p.name}))]} />
-                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
-                  <AdminButton variant="secondary" onClick={() => setEditingAward(null)}>Annuler</AdminButton>
-                  <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
-                </div>
-              </form>
-            </AdminCard>
-          )}
 
           {/* Nominee management panel */}
           {selectedAward && (
@@ -1067,16 +1054,21 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {awards.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                  className="bg-[#111820] border border-white/[0.06] rounded-2xl p-5 flex flex-col gap-4 hover:border-white/12 transition-all">
+                  className="group bg-[#111820] border border-white/[0.06] rounded-2xl p-5 flex flex-col gap-4 hover:border-accent/20 transition-all cursor-pointer">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-xs font-bold text-white/85 leading-tight">{a.category}</p>
-                      <p className="text-[10px] text-white/30 mt-1">{a.nominations?.length || 0} candidats</p>
-                      {a.status === 'ANNOUNCED' && a.winnerId && (
-                        <p className="text-[10px] text-accent font-semibold mt-1">
-                          🏆 {players.find(p => p.id === a.winnerId)?.name || '—'}
-                        </p>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                        <Trophy className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white/85 leading-tight">{a.category}</p>
+                        <p className="text-[10px] text-white/30 mt-0.5">{a.nominations?.length || 0} candidats</p>
+                        {a.status === 'ANNOUNCED' && a.winnerId && (
+                          <p className="text-[10px] text-accent font-semibold mt-0.5">
+                            🏆 {players.find(p => p.id === a.winnerId)?.name || '—'}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <StatusBadge status={a.status} />
                   </div>
@@ -1088,11 +1080,23 @@ export default function AdminPage() {
                       <AdminButton size="sm" variant="danger" onClick={() => closeAwardVote(a.id!)} loading={loading}><StopCircle className="h-3 w-3" /> Clôturer</AdminButton>
                     )}
                     <AdminButton size="sm" variant="secondary" onClick={() => setSelectedAward(a)} className="flex-1">Nominations</AdminButton>
-                    <AdminButton size="sm" variant="ghost" onClick={() => setEditingAward(a)}><Edit3 className="h-3 w-3" /></AdminButton>
+                    <AdminButton size="sm" variant="ghost" onClick={() => setAwardsStudioRecord(a)}><Edit3 className="h-3 w-3" /></AdminButton>
                     <AdminButton size="sm" variant="danger" onClick={() => deleteAward(a.id!)}><Trash2 className="h-3 w-3" /></AdminButton>
                   </div>
                 </motion.div>
               ))}
+              {awards.length === 0 && (
+                <div className="col-span-3 flex flex-col items-center justify-center py-24 text-center gap-4">
+                  <div className="h-16 w-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                    <Trophy className="h-8 w-8 text-accent/40" />
+                  </div>
+                  <p className="text-sm font-bold text-white/30">Aucun Award configuré</p>
+                  <p className="text-xs text-white/20">Lancez l'Awards Studio pour créer votre première campagne de distinction.</p>
+                  <AdminButton onClick={() => setAwardsStudioRecord({})}>
+                    <Sparkles className="h-3.5 w-3.5" /> Créer le premier Award
+                  </AdminButton>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -2138,6 +2142,29 @@ export default function AdminPage() {
         <SettingsPanel showToast={showToast} />
       )}
     </AdminLayout>
+
+    {/* ── Awards Studio overlay ──────────────────────────────────────────── */}
+    <AnimatePresence>
+      {awardsStudioRecord !== null && (
+        <AwardsStudio
+          award={awardsStudioRecord.id ? awardsStudioRecord : undefined}
+          seasons={seasons}
+          players={players}
+          clubs={clubs}
+          coaches={coaches}
+          showToast={showToast}
+          onSaved={(savedAward) => {
+            setAwards(prev => {
+              const exists = prev.some(a => a.id === savedAward.id);
+              return exists
+                ? prev.map(a => a.id === savedAward.id ? savedAward : a)
+                : [...prev, savedAward];
+            });
+          }}
+          onClose={() => setAwardsStudioRecord(null)}
+        />
+      )}
+    </AnimatePresence>
 
     {/* ── League Studio: Player Builder overlay ─────────────────────────── */}
     {playerBuilderRecord && (

@@ -37,7 +37,7 @@ interface PreviewOption {
   badge?: string;
 }
 
-function PreviewSelect({
+export function PreviewSelect({
   label,
   placeholder,
   value,
@@ -143,7 +143,7 @@ function PreviewSelect({
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-xs text-white/60 font-bold flex-shrink-0">
-                    {opt.name.charAt(0)}
+                    {(opt.name ?? '?').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
