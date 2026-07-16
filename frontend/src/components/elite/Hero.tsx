@@ -187,7 +187,7 @@ export const Hero = () => {
                     </span>
                   </div>
 
-                  <h1 className="font-serif text-[13vw] leading-[0.98] tracking-tight text-white sm:text-6xl lg:text-[5.2rem]">
+                  <h1 className="font-display text-[13vw] leading-[0.98] tracking-tight text-white sm:text-6xl lg:text-[5.2rem]">
                     {active.title}
                     {active.titleAccent && (
                       <>
@@ -236,7 +236,7 @@ export const Hero = () => {
                 aria-label={`Chapitre ${c.roman}`}
               >
                 <span
-                  className={`font-serif text-sm transition-colors ${
+                  className={`font-display text-sm transition-colors ${
                     i === idx ? "text-accent" : "text-white/25 group-hover:text-white/50"
                   }`}
                 >

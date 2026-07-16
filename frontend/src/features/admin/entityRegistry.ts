@@ -10,6 +10,8 @@ import { sponsorsConfig } from './configs/sponsors.config';
 import { seasonsConfig } from './configs/seasons.config';
 import { matchesConfig } from './configs/matches.config';
 import { coachesConfig } from './configs/coaches.config';
+import { refereesConfig } from './configs/referees.config';
+import { staffConfig } from './configs/staff.config';
 import { awardsConfig } from './configs/awards.config';
 import { competitionsConfig } from './configs/competitions.config';
 import { sponsorPlacementsConfig } from './configs/sponsorPlacements.config';
@@ -29,6 +31,8 @@ export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   seasons: seasonsConfig,
   matches: matchesConfig,
   coaches: coachesConfig,
+  referees: refereesConfig,
+  staff: staffConfig,
   awards: awardsConfig,
   competitions: competitionsConfig,
   'sponsor-placements': sponsorPlacementsConfig,

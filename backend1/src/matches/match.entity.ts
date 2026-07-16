@@ -8,6 +8,8 @@ import { Season } from '../seasons/season.entity';
 import { MatchEvent } from './match-event.entity';
 import { MatchStats } from './match-stats.entity';
 import { MatchLineup } from './match-lineup.entity';
+import { Stadium } from '../stadiums/stadium.entity';
+import { Referee } from '../referees/referee.entity';
 
 export enum MatchStatus {
   SCHEDULED  = 'SCHEDULED',
@@ -50,6 +52,9 @@ export class Match {
   @Column({ length: 100, nullable: true })
   city: string;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  referee: string | null;
+
   @Column({ name: 'home_formation', type: 'varchar', length: 12, nullable: true })
   homeFormation: string | null;
 
@@ -66,6 +71,12 @@ export class Match {
   @Column({ name: 'season_id' })
   seasonId: number;
 
+  @Column({ name: 'stadium_id', nullable: true })
+  stadiumId: number | null;
+
+  @Column({ name: 'referee_id', nullable: true })
+  refereeId: number | null;
+
   // ── Relations ────────────────────────────────────────────────────────────────
   @ManyToOne(() => Club, (club) => club.homeMatches, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'home_club_id' })
@@ -78,6 +89,14 @@ export class Match {
   @ManyToOne(() => Season, (season) => season.matches, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'season_id' })
   season: Season;
+
+  @ManyToOne(() => Stadium, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'stadium_id' })
+  stadium: Stadium;
+
+  @ManyToOne(() => Referee, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'referee_id' })
+  refereeObj: Referee;
 
   @OneToMany(() => MatchEvent, (event) => event.match, { cascade: true })
   events: MatchEvent[];

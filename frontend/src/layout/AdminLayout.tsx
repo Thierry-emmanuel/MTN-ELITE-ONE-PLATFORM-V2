@@ -37,6 +37,8 @@ const NAV_GROUPS = [
       { id: 'players',    label: 'Joueurs',                icon: Star },
       { id: 'coaches',    label: 'Entraîneurs',             icon: Star },
       { id: 'stadiums',   label: 'Stades',                 icon: MapPin },
+      { id: 'referees',   label: 'Arbitres',               icon: Users },
+      { id: 'staff',      label: 'Staff Technique',        icon: UserCog },
       { id: 'equipments', label: 'Équipements',             icon: Shirt },
       { id: 'sponsors',   label: 'Sponsors',                icon: Handshake },
     ],

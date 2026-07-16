@@ -70,11 +70,11 @@ export const FeaturedStory = () => {
               </span>
             )}
 
-            <h2 className="font-serif text-3xl leading-[1.08] text-foreground sm:text-4xl lg:text-[2.75rem]">
+            <h2 className="font-display text-3xl leading-[1.08] text-foreground sm:text-4xl lg:text-[2.75rem]">
               {story.title}
             </h2>
 
-            <p className="mt-5 font-serif text-lg italic leading-relaxed text-muted-foreground/80">
+            <p className="mt-5 font-sans text-lg italic leading-relaxed text-muted-foreground/80">
               {story.excerpt}
             </p>
 

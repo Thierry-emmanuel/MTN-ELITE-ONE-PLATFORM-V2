@@ -182,6 +182,22 @@ export const layoutApi = {
     const res = await apiClient.patch<Match>(`/matches/${id}/score`, { homeScore, awayScore });
     return res.data;
   },
+  getMatchLineups: async (id: string): Promise<any> => {
+    const res = await apiClient.get(`/matches/${id}/lineups`);
+    return res.data;
+  },
+  setMatchLineups: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/matches/${id}/lineups`, dto);
+    return res.data;
+  },
+  getMatchStats: async (id: string): Promise<any> => {
+    const res = await apiClient.get(`/matches/${id}/stats`);
+    return res.data;
+  },
+  getMatchHeadToHead: async (id: string, limit?: number): Promise<any> => {
+    const res = await apiClient.get(`/matches/${id}/head-to-head`, { params: { limit: limit ?? 6 } });
+    return res.data;
+  },
 
   // Articles / News
   getArticles: async (params?: any): Promise<any> => {
@@ -327,6 +343,60 @@ export const layoutApi = {
   },
   deleteCoach: async (id: string): Promise<any> => {
     const res = await apiClient.delete(`/coaches/${id}`);
+    return res.data;
+  },
+
+  // ── Referees CRUD ────────────────────────────────────────────────────────────
+  getReferees: async (params?: any): Promise<any> => {
+    const res = await apiClient.get('/referees', { params });
+    return res.data;
+  },
+  createReferee: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/referees', dto);
+    return res.data;
+  },
+  updateReferee: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/referees/${id}`, dto);
+    return res.data;
+  },
+  deleteReferee: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/referees/${id}`);
+    return res.data;
+  },
+
+  // ── Staff CRUD ───────────────────────────────────────────────────────────────
+  getStaff: async (params?: any): Promise<any> => {
+    const res = await apiClient.get('/staff', { params });
+    return res.data;
+  },
+  createStaff: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/staff', dto);
+    return res.data;
+  },
+  updateStaff: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/staff/${id}`, dto);
+    return res.data;
+  },
+  deleteStaff: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/staff/${id}`);
+    return res.data;
+  },
+
+  // ── Stadiums CRUD ────────────────────────────────────────────────────────────
+  getStadiums: async (params?: any): Promise<any> => {
+    const res = await apiClient.get('/stadiums', { params });
+    return res.data;
+  },
+  createStadium: async (dto: any): Promise<any> => {
+    const res = await apiClient.post('/stadiums', dto);
+    return res.data;
+  },
+  updateStadium: async (id: string, dto: any): Promise<any> => {
+    const res = await apiClient.patch(`/stadiums/${id}`, dto);
+    return res.data;
+  },
+  deleteStadium: async (id: string): Promise<any> => {
+    const res = await apiClient.delete(`/stadiums/${id}`);
     return res.data;
   },
 

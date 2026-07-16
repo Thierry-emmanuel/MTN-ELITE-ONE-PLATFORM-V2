@@ -29,9 +29,13 @@ import { bigMomentsConfig, type BigMoment } from '@/features/admin/configs/bigMo
 import { stadiumsConfig, type Stadium } from '@/features/admin/configs/stadiums.config';
 import { equipmentsConfig, type Equipment } from '@/features/admin/configs/equipments.config';
 import { sponsorsConfig, type Sponsor } from '@/features/admin/configs/sponsors.config';
+import { matchesConfig } from '@/features/admin/configs/matches.config';
+import { MatchPreviewCard } from '@/features/admin/components/MatchPreviewCard';
 import { PlayerPreviewCard } from '@/features/admin/components/PlayerPreviewCard';
 import { CommandPalette } from '@/features/admin/components/CommandPalette';
+import { MatchCommandCenter } from '@/features/admin/components/MatchCommandCenter';
 import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
+import { AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 
 // BF-06.1 — the three MVP award categories. Kept as plain strings (matches
@@ -226,13 +230,16 @@ export default function AdminPage() {
   const [coachBuilderRecord, setCoachBuilderRecord] = useState<Partial<Coach> | null>(null);
   const [coachesBuilderRefreshKey, setCoachesBuilderRefreshKey] = useState(0);
   const [stadiumBuilderRecord, setStadiumBuilderRecord] = useState<Partial<Stadium> | null>(null);
+  const [refereeBuilderRecord, setRefereeBuilderRecord] = useState<any | null>(null);
+  const [staffBuilderRecord, setStaffBuilderRecord] = useState<any | null>(null);
   const [equipmentBuilderRecord, setEquipmentBuilderRecord] = useState<Partial<Equipment> | null>(null);
   const [sponsorBuilderRecord, setSponsorBuilderRecord] = useState<Partial<Sponsor> | null>(null);
   const [actionBuilderRecord, setActionBuilderRecord] = useState<Partial<BigMoment> | null>(null);
   const [transferBuilderRecord, setTransferBuilderRecord] = useState<Partial<Transfer> | null>(null);
   const [injuryBuilderRecord, setInjuryBuilderRecord] = useState<Partial<Injury> | null>(null);
   const [selectionBuilderRecord, setSelectionBuilderRecord] = useState<Partial<Selection> | null>(null);
-  const [bigMomentBuilderRecord, setBigMomentBuilderRecord] = useState<Partial<BigMoment> | null>(null);
+  const [matchBuilderRecord, setMatchBuilderRecord] = useState<Partial<Match> | null>(null);
+  const [matchesRefreshKey, setMatchesRefreshKey] = useState(0);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
@@ -352,7 +359,7 @@ export default function AdminPage() {
     layoutApi.getMatches({ page: matchPage, limit: 20, ...(matchStatus ? { status: matchStatus } : {}) })
       .then(res => { setMatches(res.data ?? res); setMatchTotal(res.total ?? res.length ?? 0); })
       .catch(console.error);
-  }, [activeTab, matchPage, matchStatus]);
+  }, [activeTab, matchPage, matchStatus, matchesRefreshKey]);
 
   /* ─── Load Articles ───────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -900,7 +907,7 @@ export default function AdminPage() {
                   onImport={importMatches}
                   importLoading={importingMatches}
                 />
-                <AdminButton onClick={() => setEditingMatch({ homeClubId: '', awayClubId: '', status: 'SCHEDULED', round: 1, kickoff: new Date().toISOString(), venue: '', seasonId: currentSeasonId })}>
+                <AdminButton onClick={() => setMatchBuilderRecord(matchesConfig.emptyRecord())}>
                   <Plus className="h-3.5 w-3.5" /> Planifier un Match
                 </AdminButton>
               </div>
@@ -917,52 +924,51 @@ export default function AdminPage() {
             ))}
           </div>
 
-          {editingMatch && (
-            <AdminCard title={editingMatch.id ? 'Modifier Match' : 'Planifier un Match'} accent>
-              <form onSubmit={saveMatch} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Club Domicile" type="select" value={editingMatch.homeClubId || ''} onChange={v => setEditingMatch(p => ({ ...p, homeClubId: v }))} options={clubs.map(c => ({ value: c.id, label: c.name }))} required />
-                  <FormField label="Club Extérieur" type="select" value={editingMatch.awayClubId || ''} onChange={v => setEditingMatch(p => ({ ...p, awayClubId: v }))} options={clubs.map(c => ({ value: c.id, label: c.name }))} required />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Score Domicile" type="number" value={editingMatch.homeScore ?? ''} onChange={v => setEditingMatch(p => ({ ...p, homeScore: v }))} />
-                  <FormField label="Score Extérieur" type="number" value={editingMatch.awayScore ?? ''} onChange={v => setEditingMatch(p => ({ ...p, awayScore: v }))} />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Statut" type="select" value={editingMatch.status || 'SCHEDULED'} onChange={v => setEditingMatch(p => ({ ...p, status: v as any }))} options={[{value:'SCHEDULED',label:'Programmé'},{value:'LIVE',label:'LIVE'},{value:'FINISHED',label:'Terminé'},{value:'POSTPONED',label:'Reporté'},{value:'CANCELLED',label:'Annulé'}]} />
-                  <FormField label="Journée" type="number" value={editingMatch.round || 1} onChange={v => setEditingMatch(p => ({ ...p, round: v }))} />
-                  <FormField label="Coup d'envoi" type="datetime-local" value={(editingMatch.kickoff || '').replace('Z','').slice(0,16)} onChange={v => setEditingMatch(p => ({ ...p, kickoff: new Date(v).toISOString() }))} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Stade / Lieu" value={editingMatch.venue || ''} onChange={v => setEditingMatch(p => ({ ...p, venue: v }))} />
-                  <FormField label="Saison" type="select" value={editingMatch.seasonId || ''} onChange={v => setEditingMatch(p => ({ ...p, seasonId: v }))} options={seasons.map(s => ({ value: s.id, label: s.name }))} />
-                </div>
-                <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.05]">
-                  <AdminButton variant="secondary" onClick={() => setEditingMatch(null)}>Annuler</AdminButton>
-                  <AdminButton type="submit" loading={loading}>Sauvegarder</AdminButton>
-                </div>
-              </form>
-            </AdminCard>
-          )}
-
           <AdminCard noPadding>
             <DataTable
               columns={[
                 { key: 'round', label: 'J.', align: 'center', render: r => <span className="font-display font-bold text-white/70">{r.round}</span> },
                 { key: 'home', label: 'Domicile', render: r => <span className="font-semibold text-white/80">{r.homeClub?.name || '—'}</span> },
                 { key: 'score', label: 'Score', align: 'center', render: r => (
-                  <span className={`font-display font-bold ${r.status === 'LIVE' ? 'text-red-400' : 'text-white'}`}>
+                  <span className={`font-display font-bold ${r.status === 'LIVE' ? 'text-red-400 animate-pulse' : 'text-white'}`}>
                     {r.status === 'SCHEDULED' ? 'VS' : `${r.homeScore ?? '?'} – ${r.awayScore ?? '?'}`}
                   </span>
                 )},
                 { key: 'away', label: 'Extérieur', render: r => <span className="font-semibold text-white/80">{r.awayClub?.name || '—'}</span> },
-                { key: 'venue', label: 'Stade' },
                 { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
-                { key: 'kickoff', label: 'Coup d\'envoi', render: r => <span className="text-white/40 text-[10px]">{(r.scheduledAt || r.kickoff) ? new Date(r.scheduledAt || r.kickoff).toLocaleDateString('fr-FR') : '—'}</span> },
+                { key: 'kickoff', label: 'Date', render: r => <span className="text-white/40 text-[10px]">{(r.scheduledAt || r.kickoff) ? new Date(r.scheduledAt || r.kickoff).toLocaleDateString('fr-FR') : '—'}</span> },
+                { key: 'actions', label: '', align: 'center', render: r => (
+                  <div className="flex items-center gap-1 justify-end">
+                    {r.status === 'SCHEDULED' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); withLoading(async () => {
+                          const upd = await layoutApi.updateMatch(r.id!, { status: 'LIVE' } as any);
+                          setMatches(prev => prev.map(m => m.id === upd.id ? upd : m));
+                          showToast('Match démarré — EN DIRECT ⚡');
+                        }); }}
+                        className="px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 text-[9px] font-bold uppercase hover:bg-red-500/25 transition-all"
+                      >⚡ Démarrer</button>
+                    )}
+                    {r.status === 'LIVE' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); withLoading(async () => {
+                          const upd = await layoutApi.finishMatch(r.id!);
+                          setMatches(prev => prev.map(m => m.id === upd.id ? upd : m));
+                          showToast('Match terminé — classements mis à jour ✓', 'success');
+                        }); }}
+                        className="px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-[9px] font-bold uppercase hover:bg-emerald-500/25 transition-all"
+                      >✓ Terminer</button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMatchBuilderRecord(r); }}
+                      className="px-2 py-1 rounded-lg bg-white/[0.05] border border-white/[0.08] text-white/50 text-[9px] font-bold hover:text-white hover:bg-white/10 transition-all"
+                    >Gérer</button>
+                  </div>
+                )},
               ]}
               data={matches}
               keyField="id"
-              onEdit={r => setEditingMatch(r)}
+              onEdit={r => setMatchBuilderRecord(r)}
               onDelete={r => deleteMatch(r.id!)}
             />
             <div className="px-4 pb-4"><Paginator page={matchPage} total={matchTotal} limit={20} onChange={setMatchPage} /></div>
@@ -1603,6 +1609,25 @@ export default function AdminPage() {
         />
       )}
 
+      {/* ── REFEREES ───────────────────────────────────────────────────────── */}
+      {activeTab === 'referees' && (
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.referees}
+          showToast={showToast}
+          onOpenBuilder={(r) => setRefereeBuilderRecord(r)}
+        />
+      )}
+
+      {/* ── STAFF ──────────────────────────────────────────────────────────── */}
+      {activeTab === 'staff' && (
+        <EntityCrudEngine
+          config={ENTITY_REGISTRY.staff}
+          showToast={showToast}
+          lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+          onOpenBuilder={(r) => setStaffBuilderRecord(r)}
+        />
+      )}
+
       {/* ── EQUIPMENTS ─────────────────────────────────────────────────────── */}
       {activeTab === 'equipments' && (
         <EntityCrudEngine
@@ -2172,6 +2197,27 @@ export default function AdminPage() {
       />
     )}
 
+    {/* ── League Studio: Referee Builder overlay ────────────────────────── */}
+    {refereeBuilderRecord && (
+      <GuidedBuilderEngine
+        config={ENTITY_REGISTRY.referees}
+        record={refereeBuilderRecord}
+        showToast={showToast}
+        onClose={() => setRefereeBuilderRecord(null)}
+      />
+    )}
+
+    {/* ── League Studio: Staff Builder overlay ──────────────────────────── */}
+    {staffBuilderRecord && (
+      <GuidedBuilderEngine
+        config={ENTITY_REGISTRY.staff}
+        record={staffBuilderRecord}
+        lookupOptions={{ clubs: clubs.map((c: any) => ({ value: c.id, label: c.name })) }}
+        showToast={showToast}
+        onClose={() => setStaffBuilderRecord(null)}
+      />
+    )}
+
     {/* ── League Studio: Equipment Builder overlay ──────────────────────── */}
     {equipmentBuilderRecord && (
       <GuidedBuilderEngine
@@ -2247,13 +2293,43 @@ export default function AdminPage() {
       />
     )}
 
+    {/* ── Match Command Center overlay ─────────────────────────────────────── */}
+    <AnimatePresence>
+      {matchBuilderRecord && (
+        <MatchCommandCenter
+          match={matchBuilderRecord}
+          seasons={seasons}
+          clubs={clubs}
+          players={players}
+          currentSeasonId={currentSeasonId}
+          showToast={showToast}
+          onSaved={(updated) => {
+            setMatches(prev => {
+              const exists = prev.some(m => m.id === updated.id);
+              return exists
+                ? prev.map(m => m.id === updated.id ? updated : m)
+                : [updated, ...prev];
+            });
+          }}
+          onClose={() => {
+            setMatchBuilderRecord(null);
+            setMatchesRefreshKey((k) => k + 1);
+            // Reload match list to reflect any status/score changes
+            layoutApi.getMatches({ page: matchPage, limit: 20, status: matchStatus || undefined })
+              .then(r => { setMatches(r.data ?? r); setMatchTotal(r.total ?? r.length ?? 0); })
+              .catch(() => {});
+          }}
+        />
+      )}
+    </AnimatePresence>
+
     {/* ── League Studio: Big Moment Builder overlay ─────────────────────── */}
-    {bigMomentBuilderRecord && (
+    {actionBuilderRecord && (
       <GuidedBuilderEngine
         config={bigMomentsConfig}
-        record={bigMomentBuilderRecord}
+        record={actionBuilderRecord}
         showToast={showToast}
-        onClose={() => setBigMomentBuilderRecord(null)}
+        onClose={() => setActionBuilderRecord(null)}
       />
     )}
 
@@ -2269,9 +2345,11 @@ export default function AdminPage() {
         setActiveTab('seasons');
         setPaletteOpen(false);
       }}
-      onCreateMatch={() => setEditingMatch({ homeClubId: '', awayClubId: '', status: 'SCHEDULED', round: 1, kickoff: new Date().toISOString(), venue: '', seasonId: currentSeasonId })}
+      onCreateMatch={() => setMatchBuilderRecord(matchesConfig.emptyRecord())}
       onCreateCoach={() => setCoachBuilderRecord(coachesConfig.emptyRecord())}
       onCreateStadium={() => setStadiumBuilderRecord(stadiumsConfig.emptyRecord())}
+      onCreateReferee={() => setRefereeBuilderRecord(ENTITY_REGISTRY.referees.emptyRecord())}
+      onCreateStaff={() => setStaffBuilderRecord(ENTITY_REGISTRY.staff.emptyRecord())}
       onCreateAward={() => setEditingAward({ category: 'Joueur de la Semaine', periodStart: new Date().toISOString(), periodEnd: new Date().toISOString(), status: 'CLOSED', seasonId: Number(currentSeasonId) as any })}
     />
     </>

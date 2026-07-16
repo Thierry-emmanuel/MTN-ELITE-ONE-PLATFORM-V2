@@ -62,7 +62,7 @@ export const TodaysFootball = () => {
         visual: (
           <div className="flex items-center gap-2">
             <ClubLogo club={next.homeClub} size={28} />
-            <span className="font-serif italic text-sm text-white/30">vs</span>
+            <span className="font-display italic text-sm text-white/30">vs</span>
             <ClubLogo club={next.awayClub} size={28} />
           </div>
         ),
@@ -84,7 +84,7 @@ export const TodaysFootball = () => {
         visual: (
           <div className="flex items-center gap-2">
             <ClubLogo club={result.homeClub} size={28} />
-            <span className="font-serif text-sm text-white/60 tabular-nums">
+            <span className="font-display text-sm text-white/60 tabular-nums">
               {result.homeScore}–{result.awayScore}
             </span>
             <ClubLogo club={result.awayClub} size={28} />
@@ -146,7 +146,7 @@ export const TodaysFootball = () => {
     list.push({
       index: "06",
       eyebrow: "Distinction de la semaine",
-      visual: <span className="font-serif italic text-lg text-accent">★</span>,
+      visual: <span className="font-display italic text-lg text-accent">★</span>,
       headline: totw?.period
         ? `Équipe type — ${totw.period}`
         : "Équipe type de la semaine dévoilée",
@@ -171,7 +171,7 @@ export const TodaysFootball = () => {
                 L'essentiel du jour
               </span>
             </div>
-            <h2 className="font-serif text-4xl leading-[1.05] text-foreground lg:text-5xl">
+            <h2 className="font-display text-4xl leading-[1.05] text-foreground lg:text-5xl">
               Aujourd'hui, dans le
               <br className="hidden sm:block" /> football camerounais.
             </h2>
@@ -195,7 +195,7 @@ export const TodaysFootball = () => {
                 to={e.to}
                 className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-border/40 py-5 transition-colors hover:bg-white/[0.025] sm:grid-cols-[3rem_auto_1fr_auto] sm:gap-6 sm:py-6"
               >
-                <span className="hidden font-serif text-lg text-white/15 sm:block">{e.index}</span>
+                <span className="hidden font-display text-lg text-white/15 sm:block">{e.index}</span>
 
                 <span className="shrink-0">{e.visual}</span>
 
@@ -204,7 +204,7 @@ export const TodaysFootball = () => {
                     {e.live && <Radio className="h-2.5 w-2.5 animate-pulse text-live" />}
                     {e.eyebrow}
                   </span>
-                  <span className="block truncate font-serif text-lg text-foreground sm:text-xl">
+                  <span className="block truncate font-display text-lg text-foreground sm:text-xl">
                     {e.headline}
                   </span>
                 </span>
