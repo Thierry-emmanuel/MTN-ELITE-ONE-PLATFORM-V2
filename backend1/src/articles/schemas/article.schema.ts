@@ -13,6 +13,7 @@ export enum ArticleCategory {
   RESULTS       = 'RESULTS',
   OPINION       = 'OPINION',
   FEATURE       = 'FEATURE',
+  CULTURE       = 'CULTURE',   // Phase 0.2 — Heritage Centre content
 }
 
 export enum ArticleStatus {

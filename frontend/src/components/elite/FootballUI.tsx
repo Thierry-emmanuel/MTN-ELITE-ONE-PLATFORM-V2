@@ -93,6 +93,8 @@ export const PositionChange = ({ delta }: { delta: number }) => {
 const STATUS_LABEL: Record<string, string> = {
   SCHEDULED: 'À venir',
   LIVE:      'En direct',
+  HT:        'Mi-temps',
+  FT:        'FT',        // legacy alias — DB still returns FINISHED
   FINISHED:  'FT',
   POSTPONED: 'Reporté',
   CANCELLED: 'Annulé',

@@ -450,7 +450,8 @@ export default function AdminPage() {
       awayScore:  (editingMatch!.awayScore !== undefined && String(editingMatch!.awayScore) !== '') ? Number(editingMatch!.awayScore) : undefined,
       status:     editingMatch!.status || 'SCHEDULED',
       round:      Number(editingMatch!.round || 1),
-      kickoff:    editingMatch!.kickoff || (editingMatch as any).scheduledAt || new Date().toISOString(),
+      // Backend expects scheduledAt; kickoff is the legacy local state key
+      scheduledAt: editingMatch!.kickoff || (editingMatch as any).scheduledAt || new Date().toISOString(),
       venue:      editingMatch!.venue || '',
       seasonId:   String(editingMatch!.seasonId || currentSeasonId),
     };
@@ -957,7 +958,7 @@ export default function AdminPage() {
                 { key: 'away', label: 'Extérieur', render: r => <span className="font-semibold text-white/80">{r.awayClub?.name || '—'}</span> },
                 { key: 'venue', label: 'Stade' },
                 { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
-                { key: 'kickoff', label: 'Coup d\'envoi', render: r => <span className="text-white/40 text-[10px]">{r.kickoff ? new Date(r.kickoff).toLocaleDateString('fr-FR') : '—'}</span> },
+                { key: 'kickoff', label: 'Coup d\'envoi', render: r => <span className="text-white/40 text-[10px]">{(r.scheduledAt || r.kickoff) ? new Date(r.scheduledAt || r.kickoff).toLocaleDateString('fr-FR') : '—'}</span> },
               ]}
               data={matches}
               keyField="id"

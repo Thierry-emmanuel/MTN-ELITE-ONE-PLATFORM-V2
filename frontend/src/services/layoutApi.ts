@@ -33,9 +33,11 @@ export interface Match {
   awayClubId: string;
   homeScore?: number;
   awayScore?: number;
-  status: 'SCHEDULED' | 'LIVE' | 'HT' | 'FT' | 'POSTPONED' | 'CANCELLED';
+  status: 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED' | 'CANCELLED';
   round: number;
-  kickoff: string;
+  /** Backend field is scheduledAt; "kickoff" is a legacy alias on the wire */
+  scheduledAt: string;
+  kickoff?: string; // kept for backward-compat with AdminPage state shape
   venue: string;
   seasonId: string;
   homeClub?: any;
@@ -171,6 +173,14 @@ export const layoutApi = {
   },
   deleteMatch: async (id: string): Promise<void> => {
     await apiClient.delete(`/matches/${id}`);
+  },
+  finishMatch: async (id: string): Promise<Match> => {
+    const res = await apiClient.patch<Match>(`/matches/${id}/finish`);
+    return res.data;
+  },
+  updateMatchScore: async (id: string, homeScore: number, awayScore: number): Promise<Match> => {
+    const res = await apiClient.patch<Match>(`/matches/${id}/score`, { homeScore, awayScore });
+    return res.data;
   },
 
   // Articles / News
