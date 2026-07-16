@@ -19,7 +19,7 @@ const STALE = {
 
 // ─── useArticles ──────────────────────────────────────────────────────────────
 /** List of articles, filtered. Falls back to mock data when API is unreachable. */
-export function useArticles(filters?: ArticlesFilter) {
+export function useArticles(filters?: ArticlesFilter, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: NEWS_QK.articles(filters),
     queryFn: async () => {
@@ -32,6 +32,7 @@ export function useArticles(filters?: ArticlesFilter) {
     },
     staleTime:      STALE.articles,
     placeholderData: MOCK_ARTICLES,
+    enabled:        options?.enabled ?? true,
   });
 }
 

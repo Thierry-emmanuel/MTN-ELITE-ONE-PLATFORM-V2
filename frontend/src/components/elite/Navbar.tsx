@@ -1,16 +1,22 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, LogIn, Menu, X, ChevronDown, Radio,
   Trophy, Calendar, Users, ArrowLeftRight,
   Activity, Star, Award, BarChart2, Newspaper, Edit3,
-  Vote, Circle, Shield,
+  Circle, Shield, Home as HomeIcon, Compass, Landmark,
+  Film, BookOpen, Sparkles, Crown, Images, ArrowRight,
 } from "lucide-react";
 import { tickerItems } from "./data";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import fallbackLogo from "@/assets/images/logo/logo.png";
 import { layoutApi } from "@/services/layoutApi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClubLogo } from "./FootballPrimitives";
+import { useFixtures, useStandings, useTopPerformers, useLegends } from "@/hooks/useFootball";
+import { useFeatured, useArticles } from "@/hooks/useNews";
+import { statusLabel } from "@/utils/football.utils";
+import type { Match } from "@/types/football.types";
 
 // ─── Fetch logo URL from backend system-settings ───────────────────────────────
 function useDynamicLogo(): string {
@@ -30,66 +36,103 @@ const TOTAL_MATCHDAYS  = 34;
 const SEASON_PROGRESS  = (CURRENT_MATCHDAY / TOTAL_MATCHDAYS) * 100;
 
 // ─── Nav definition ───────────────────────────────────────────────────────────
-const NAV_LINKS = [
+// Seven pillars of the institution — Home stands alone; everything else opens
+// an editorial mega-panel: a curated quick-nav rail + a live "spotlight" drawn
+// from real data, never a generic dropdown list.
+type NavChild = { label: string; href: string; icon: ReactNode; roles?: string[] };
+type NavItem = {
+  label: string;
+  icon: ReactNode;
+  href?: string;
+  tagline?: string;
+  spotlight?: "competitions" | "clubs" | "players" | "discover" | "legacy" | "media";
+  children?: NavChild[];
+  accent?: boolean;
+};
+
+const NAV_LINKS: NavItem[] = [
   {
-    label: "Championnat",
-    icon: <Trophy className="h-3.5 w-3.5" />,
-    children: [
-      { label: "Matchs",     href: "/matches",   icon: <Radio     className="h-3.5 w-3.5 text-live" /> },
-      { label: "Classement", href: "/standings", icon: <Trophy    className="h-3.5 w-3.5 text-accent" /> },
-      { label: "Résultats",  href: "/results",   icon: <Star      className="h-3.5 w-3.5 text-accent" /> },
-      { label: "Calendrier", href: "/fixtures",  icon: <Calendar  className="h-3.5 w-3.5 text-accent" /> },
-    ],
+    label: "Accueil",
+    icon: <HomeIcon className="h-3.5 w-3.5" />,
+    href: "/",
   },
   {
-    label: "Statistiques",
-    icon: <BarChart2 className="h-3.5 w-3.5" />,
-    href: "/stats",
+    label: "Compétitions",
+    icon: <Trophy className="h-3.5 w-3.5" />,
+    tagline: "La saison, en direct",
+    spotlight: "competitions",
+    children: [
+      { label: "Centre des matchs", href: "/matches",   icon: <Radio     className="h-3.5 w-3.5 text-live" /> },
+      { label: "Calendrier",        href: "/fixtures",  icon: <Calendar  className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Résultats",         href: "/results",   icon: <Star      className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Classement",        href: "/standings", icon: <Trophy    className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Statistiques",      href: "/stats",     icon: <BarChart2 className="h-3.5 w-3.5 text-accent" /> },
+      { label: "Archives de saison",href: "/history",   icon: <Landmark  className="h-3.5 w-3.5 text-accent" /> },
+    ],
   },
   {
     label: "Clubs",
     icon: <Shield className="h-3.5 w-3.5" />,
+    tagline: "17 institutions, un championnat",
+    spotlight: "clubs",
     children: [
-      { label: "Tous les clubs", href: "/clubs",     icon: <Shield        className="h-3.5 w-3.5 text-[#008751]" /> },
-      { label: "Joueurs",        href: "/players",   icon: <Star          className="h-3.5 w-3.5 text-[#008751]" /> },
-      { label: "Transferts",     href: "/transfers", icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#008751]" /> },
-      { label: "Blessures",      href: "/injuries",  icon: <Activity      className="h-3.5 w-3.5 text-[#008751]" /> },
-      { label: "Road to Lions",  href: "/lions",     icon: <Award         className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Tous les clubs",       href: "/clubs",           icon: <Shield         className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Centre des transferts",href: "/transfers",       icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Statistiques clubs",   href: "/stats?tab=clubs", icon: <BarChart2      className="h-3.5 w-3.5 text-[#008751]" /> },
     ],
   },
   {
-    label: "Actualités",
-    icon: <Newspaper className="h-3.5 w-3.5" />,
-    accent: true,
-    children: [
-      { label: "The League Journal", href: "/journal",        icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Toutes les actus",   href: "/news",            icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Espace éditeur",     href: "/editor",          icon: <Edit3     className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Story Builder (CMS)",href: "/journal/studio",  icon: <Edit3     className="h-3.5 w-3.5 text-[#FCD116]" /> },
-    ],
-  },
-  {
-    label: "Récompenses",
-    icon: <Award className="h-3.5 w-3.5" />,
-    children: [
-      { label: "Palmarès",          href: "/awards",              icon: <Award   className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Ballon d'Or",       href: "/awards/ballon-dor",   icon: <Trophy  className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Équipe de la sem.", href: "/awards/team-of-week", icon: <Circle  className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Voter maintenant",  href: "/awards/vote",         icon: <Vote    className="h-3.5 w-3.5 text-[#FCD116]" /> },
-    ],
-  },
-  {
-    label: "Communauté",
+    label: "Joueurs",
     icon: <Users className="h-3.5 w-3.5" />,
+    tagline: "Chaque carrière, documentée",
+    spotlight: "players",
     children: [
-      { label: "Young Talents",  href: "/talents",    icon: <Star          className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Musée & Archives", href: "/history",  icon: <Trophy        className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Hall of Fame",   href: "/halloffame", icon: <Award         className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Transferts",     href: "/transfers",  icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#FCD116]" /> },
-      { label: "Blessures",      href: "/injuries",   icon: <Activity      className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Tous les joueurs",        href: "/players",           icon: <Users     className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Passeport Football",      href: "/players",           icon: <BookOpen  className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Road to the Lions",       href: "/lions",             icon: <Crown     className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Young Talent Watch",      href: "/talents",           icon: <Sparkles  className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Transferts",              href: "/transfers",         icon: <ArrowLeftRight className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Centre médical",          href: "/injuries",          icon: <Activity  className="h-3.5 w-3.5 text-[#008751]" /> },
+      { label: "Meilleurs performeurs",   href: "/stats?tab=players", icon: <BarChart2 className="h-3.5 w-3.5 text-[#008751]" /> },
     ],
   },
-] as const;
+  {
+    label: "Découvrir",
+    icon: <Compass className="h-3.5 w-3.5" />,
+    tagline: "Le football, raconté",
+    accent: true,
+    spotlight: "discover",
+    children: [
+      { label: "The League Journal", href: "/journal",       icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Toutes les histoires", href: "/news",        icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Story Builder (CMS)", href: "/journal/studio", icon: <Edit3   className="h-3.5 w-3.5 text-[#FCD116]" />, roles: ["admin", "editor"] },
+    ],
+  },
+  {
+    label: "Héritage",
+    icon: <Landmark className="h-3.5 w-3.5" />,
+    tagline: "Le musée du football camerounais",
+    spotlight: "legacy",
+    children: [
+      { label: "Hall of Fame",          href: "/halloffame",         icon: <Award    className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Ballon d'Or Camerounais", href: "/awards/ballon-dor", icon: <Trophy   className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Palmarès & récompenses", href: "/awards",             icon: <Award    className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Équipe de la saison",    href: "/awards/team-of-week",icon: <Circle   className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Centre du patrimoine",   href: "/history",            icon: <Landmark className="h-3.5 w-3.5 text-[#FCD116]" /> },
+    ],
+  },
+  {
+    label: "Média",
+    icon: <Film className="h-3.5 w-3.5" />,
+    tagline: "Images, vidéos, archives visuelles",
+    spotlight: "media",
+    children: [
+      { label: "Galerie photo",     href: "/media?tab=gallery", icon: <Images className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Vidéos",            href: "/media?tab=videos",  icon: <Film   className="h-3.5 w-3.5 text-[#FCD116]" /> },
+      { label: "Toutes les actus",  href: "/news",              icon: <Newspaper className="h-3.5 w-3.5 text-[#FCD116]" /> },
+    ],
+  },
+];
 
 // ─── Live Ticker ──────────────────────────────────────────────────────────────
 const LiveTicker = () => {
@@ -118,8 +161,228 @@ const LiveTicker = () => {
   );
 };
 
-// ─── Desktop Dropdown ─────────────────────────────────────────────────────────
-const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
+// ─── Spotlight skeleton ───────────────────────────────────────────────────────
+const SpotlightSkeleton = () => (
+  <div className="animate-pulse rounded-2xl border border-white/8 bg-white/[0.03] p-5 h-[168px]">
+    <div className="h-2.5 w-24 rounded bg-white/10 mb-4" />
+    <div className="h-4 w-4/5 rounded bg-white/10 mb-2" />
+    <div className="h-4 w-3/5 rounded bg-white/8" />
+  </div>
+);
+
+const SpotlightShell = ({
+  eyebrow, to, onNavigate, children,
+}: { eyebrow: string; to: string; onNavigate: () => void; children: ReactNode }) => (
+  <Link
+    to={to}
+    onClick={onNavigate}
+    className="group block rounded-2xl border border-white/8 bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5 hover:border-accent/30 hover:from-white/[0.06] transition-all duration-200"
+  >
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-[9.5px] font-bold uppercase tracking-[.2em] text-accent/80">{eyebrow}</span>
+      <ArrowRight className="h-3.5 w-3.5 text-white/25 group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
+    </div>
+    {children}
+  </Link>
+);
+
+// ─── Spotlight: Compétitions (live / next match) ─────────────────────────────
+const CompetitionsSpotlight = ({ onNavigate }: { onNavigate: () => void }) => {
+  const { data: matchdays, isLoading } = useFixtures();
+  const allMatches = useMemo<Match[]>(() => (matchdays ?? []).flatMap((d) => d.matches), [matchdays]);
+  const live = allMatches.find((m) => m.status === "LIVE" || m.status === "HT");
+  const upcoming = allMatches.find((m) => m.status === "SCHEDULED");
+  const match = live ?? upcoming ?? allMatches[0];
+
+  if (isLoading) return <SpotlightSkeleton />;
+  if (!match) return null;
+
+  const { text, isLive } = statusLabel(match.status, match.liveMinute);
+
+  return (
+    <SpotlightShell eyebrow={isLive ? "En ce moment" : "Prochain match"} to={live ? `/matches/${match.id}` : "/fixtures"} onNavigate={onNavigate}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <ClubLogo club={match.homeClub} size={26} />
+          <span className="text-[12px] font-semibold text-white/85 truncate">{match.homeClub.short}</span>
+        </div>
+        <div className="flex flex-col items-center shrink-0 px-1">
+          {isLive ? (
+            <span className="font-display text-sm text-white">{match.homeScore} – {match.awayScore}</span>
+          ) : (
+            <span className="text-[10px] text-white/40">VS</span>
+          )}
+          <span className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 ${isLive ? "text-[#CE1126]" : "text-white/35"}`}>{text}</span>
+        </div>
+        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+          <span className="text-[12px] font-semibold text-white/85 truncate">{match.awayClub.short}</span>
+          <ClubLogo club={match.awayClub} size={26} />
+        </div>
+      </div>
+      <p className="mt-3 text-[11px] text-white/40 font-serif italic">Journée {match.round} · MTN Elite One</p>
+    </SpotlightShell>
+  );
+};
+
+// ─── Spotlight: Clubs (league leader) ─────────────────────────────────────────
+const ClubsSpotlight = ({ onNavigate }: { onNavigate: () => void }) => {
+  const { data: standings, isLoading } = useStandings();
+  const leader = useMemo(() => [...(standings ?? [])].sort((a, b) => a.position - b.position)[0], [standings]);
+
+  if (isLoading) return <SpotlightSkeleton />;
+  if (!leader) return null;
+
+  return (
+    <SpotlightShell eyebrow="Leader du championnat" to={`/clubs/${leader.club.id}`} onNavigate={onNavigate}>
+      <div className="flex items-center gap-3">
+        <ClubLogo club={leader.club} size={44} />
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-white truncate">{leader.club.name}</p>
+          <p className="text-[11px] text-white/45">{leader.club.city} · {leader.points} pts · {leader.played} J</p>
+        </div>
+      </div>
+      <p className="mt-3 text-[11px] text-white/40 font-serif italic">1ʳᵉ place · {leader.won}V {leader.drawn}N {leader.lost}D</p>
+    </SpotlightShell>
+  );
+};
+
+// ─── Spotlight: Joueurs (top scorer) ──────────────────────────────────────────
+const PlayersSpotlight = ({ onNavigate }: { onNavigate: () => void }) => {
+  const { data, isLoading } = useTopPerformers("goals", 1);
+  const top = data?.[0];
+
+  if (isLoading) return <SpotlightSkeleton />;
+  if (!top) return null;
+
+  return (
+    <SpotlightShell eyebrow="Meilleur buteur" to={`/players/${top.playerId}`} onNavigate={onNavigate}>
+      <div className="flex items-center gap-3">
+        {top.photoUrl ? (
+          <img src={top.photoUrl} alt={top.playerName} className="h-11 w-11 rounded-full object-cover border border-white/10" />
+        ) : (
+          <div className="h-11 w-11 rounded-full bg-white/8 grid place-items-center text-white/40 text-[10px] font-bold border border-white/10">
+            {top.playerName.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-white truncate">{top.playerName}</p>
+          <p className="text-[11px] text-white/45 truncate">{top.clubName}</p>
+        </div>
+      </div>
+      <p className="mt-3 text-[11px] text-white/40 font-serif italic">{top.value} buts cette saison</p>
+    </SpotlightShell>
+  );
+};
+
+// ─── Spotlight: Découvrir (featured story) ────────────────────────────────────
+const DiscoverSpotlight = ({ onNavigate }: { onNavigate: () => void }) => {
+  const { data, isLoading } = useFeatured();
+  const story = data?.[0];
+
+  if (isLoading) return <SpotlightSkeleton />;
+  if (!story) return null;
+
+  return (
+    <SpotlightShell eyebrow="À la une" to={`/news/${story.slug}`} onNavigate={onNavigate}>
+      <div className="flex gap-3">
+        {story.imageUrl && (
+          <img src={story.imageUrl} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0 border border-white/10" />
+        )}
+        <div className="min-w-0">
+          <p className="text-[13px] font-serif italic font-semibold text-white leading-snug line-clamp-2">{story.title}</p>
+          <p className="mt-1 text-[10.5px] text-white/40 uppercase tracking-wider">{story.category} · {story.readingTime} min</p>
+        </div>
+      </div>
+    </SpotlightShell>
+  );
+};
+
+// ─── Spotlight: Héritage (legend) ─────────────────────────────────────────────
+const LegacySpotlight = ({ onNavigate }: { onNavigate: () => void }) => {
+  const { data, isLoading } = useLegends();
+  const legend = useMemo(() => {
+    const list = (data ?? []) as Array<Record<string, unknown>>;
+    if (list.length === 0) return null;
+    // Deterministic pick derived from the dataset itself (pure — no Date/Math.random)
+    const seed = list.reduce((acc, l, i) => acc + String(l.name ?? i).length, 0);
+    return list[seed % list.length];
+  }, [data]);
+
+  if (isLoading) return <SpotlightSkeleton />;
+  if (!legend) return null;
+
+  const name = (legend.name as string) ?? "Légende";
+  const era = (legend.era as string) ?? "";
+  const summary = (legend.career_summary as string) ?? (legend.achievement as string) ?? "";
+  const image = ((legend.images as string[])?.[0]) ?? (legend.imageUrl as string) ?? undefined;
+
+  return (
+    <SpotlightShell eyebrow="Légende du Hall of Fame" to="/halloffame" onNavigate={onNavigate}>
+      <div className="flex gap-3">
+        {image ? (
+          <img src={image} alt={name} className="h-16 w-16 rounded-xl object-cover shrink-0 border border-white/10" />
+        ) : (
+          <div className="h-16 w-16 rounded-xl bg-white/8 grid place-items-center shrink-0 border border-white/10">
+            <Crown className="h-6 w-6 text-[#FCD116]/60" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-white truncate">{name}</p>
+          {era && <p className="text-[10.5px] text-white/40 uppercase tracking-wider mb-1">{era}</p>}
+          {summary && <p className="text-[11px] text-white/45 line-clamp-2 font-serif italic">{summary}</p>}
+        </div>
+      </div>
+    </SpotlightShell>
+  );
+};
+
+// ─── Spotlight: Média (video / gallery article) ───────────────────────────────
+const MediaSpotlight = ({ onNavigate }: { onNavigate: () => void }) => {
+  const { data, isLoading } = useArticles({ limit: 12 });
+  const withMedia = useMemo(
+    () => (data ?? []).find((a) => a.videoUrl || (a.gallery && a.gallery.length > 0)),
+    [data],
+  );
+
+  if (isLoading) return <SpotlightSkeleton />;
+  if (!withMedia) return null;
+
+  const isVideo = !!withMedia.videoUrl;
+  const thumb = withMedia.videoThumbnail ?? withMedia.imageUrl ?? withMedia.gallery?.[0];
+
+  return (
+    <SpotlightShell eyebrow={isVideo ? "Vidéo en vedette" : "Galerie en vedette"} to={`/news/${withMedia.slug}`} onNavigate={onNavigate}>
+      <div className="relative rounded-xl overflow-hidden h-[104px] border border-white/10">
+        {thumb ? (
+          <img src={thumb} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="h-full w-full bg-white/8" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        {isVideo && (
+          <div className="absolute inset-0 grid place-items-center">
+            <div className="h-9 w-9 rounded-full bg-black/50 border border-white/30 grid place-items-center">
+              <Film className="h-4 w-4 text-white" />
+            </div>
+          </div>
+        )}
+        <p className="absolute bottom-2 left-3 right-3 text-[11.5px] font-semibold text-white line-clamp-1">{withMedia.title}</p>
+      </div>
+    </SpotlightShell>
+  );
+};
+
+const SPOTLIGHTS: Record<NonNullable<NavItem["spotlight"]>, (p: { onNavigate: () => void }) => ReactNode> = {
+  competitions: CompetitionsSpotlight,
+  clubs: ClubsSpotlight,
+  players: PlayersSpotlight,
+  discover: DiscoverSpotlight,
+  legacy: LegacySpotlight,
+  media: MediaSpotlight,
+};
+
+// ─── Desktop mega-menu item ───────────────────────────────────────────────────
+const NavMegaItem = ({ link, user }: { link: NavItem; user: StoredUser }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -134,16 +397,14 @@ const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  // Direct link (no children)
-  if (!("children" in link)) {
+  // Direct link — Home
+  if (!link.children) {
     const isActive = location.pathname === link.href;
     return (
       <Link
-        to={link.href}
+        to={link.href!}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 ${
-          isActive
-            ? "text-accent bg-accent/10"
-            : "text-white/60 hover:text-white hover:bg-white/6"
+          isActive ? "text-accent bg-accent/10" : "text-white/60 hover:text-white hover:bg-white/6"
         }`}
       >
         {link.icon}
@@ -153,55 +414,66 @@ const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
     );
   }
 
-  const isAccent = "accent" in link && link.accent;
+  const visibleChildren = link.children.filter(
+    (c) => !c.roles || (user?.role && c.roles.includes(user.role)),
+  );
+  const Spotlight = link.spotlight ? SPOTLIGHTS[link.spotlight] : null;
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150 ${
           open
             ? "text-white bg-white/8"
-            : isAccent
+            : link.accent
             ? "text-[#FCD116]/80 hover:text-[#FCD116] hover:bg-[#FCD116]/8"
             : "text-white/60 hover:text-white hover:bg-white/6"
         }`}
       >
         {link.icon}
         {link.label}
-        {isAccent && !open && (
-          <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[#FCD116] shrink-0" />
-        )}
-        <ChevronDown
-          className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
+        {link.accent && !open && <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[#FCD116] shrink-0" />}
+        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute top-full left-0 mt-2 min-w-[200px] bg-[#07190e]/96 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+            exit={{ opacity: 0, y: 6, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed left-0 right-0 top-[90px] z-50 flex justify-center px-4"
           >
-            {isAccent && (
-              <div className="h-[2px] bg-gradient-to-r from-[#FCD116] via-[#FCD116]/60 to-transparent" />
-            )}
-            {link.children.map((child, i) => (
-              <Link
-                key={i}
-                to={child.href}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-[12px] text-white/55 hover:text-white hover:bg-white/6 transition-all border-b border-white/5 last:border-0"
-              >
-                <span className="shrink-0 h-6 w-6 grid place-items-center rounded-lg bg-white/5">
-                  {child.icon}
-                </span>
-                {child.label}
-              </Link>
-            ))}
+            <div className="w-full max-w-3xl bg-[#07190e]/98 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.55)] overflow-hidden">
+              <div className="h-[2px] bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#CE1126]" />
+              <div className="grid md:grid-cols-[240px_1fr]">
+                <nav className="p-5 space-y-0.5 border-b md:border-b-0 md:border-r border-white/8">
+                  {link.tagline && (
+                    <p className="px-3 pb-3 text-[10px] font-serif italic text-white/35 uppercase tracking-wider">
+                      {link.tagline}
+                    </p>
+                  )}
+                  {visibleChildren.map((child, i) => (
+                    <Link
+                      key={i}
+                      to={child.href}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] text-white/60 hover:text-white hover:bg-white/6 transition-all"
+                    >
+                      <span className="shrink-0 h-7 w-7 grid place-items-center rounded-lg bg-white/5">{child.icon}</span>
+                      {child.label}
+                    </Link>
+                  ))}
+                </nav>
+                {Spotlight && (
+                  <div className="p-5">
+                    <Spotlight onNavigate={() => setOpen(false)} />
+                  </div>
+                )}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -211,21 +483,19 @@ const NavDropdown = ({ link }: { link: (typeof NAV_LINKS)[number] }) => {
 
 // ─── Mobile accordion item ────────────────────────────────────────────────────
 const MobileNavItem = ({
-  link, onClose,
-}: { link: (typeof NAV_LINKS)[number]; onClose: () => void }) => {
+  link, onClose, user,
+}: { link: NavItem; onClose: () => void; user: StoredUser }) => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  if (!("children" in link)) {
+  if (!link.children) {
     const isActive = location.pathname === link.href;
     return (
       <Link
-        to={link.href}
+        to={link.href!}
         onClick={onClose}
         className={`flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all ${
-          isActive
-            ? "bg-accent/10 text-accent"
-            : "text-white/65 hover:text-white hover:bg-white/5"
+          isActive ? "bg-accent/10 text-accent" : "text-white/65 hover:text-white hover:bg-white/5"
         }`}
       >
         <span className={`h-7 w-7 grid place-items-center rounded-lg shrink-0 ${isActive ? "bg-accent/15" : "bg-white/5"}`}>
@@ -237,23 +507,23 @@ const MobileNavItem = ({
     );
   }
 
-  const isAccent = "accent" in link && link.accent;
+  const visibleChildren = link.children.filter(
+    (c) => !c.roles || (user?.role && c.roles.includes(user.role)),
+  );
 
   return (
     <div>
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
           open ? "bg-white/6 text-white" : "text-white/65 hover:text-white hover:bg-white/5"
         }`}
       >
-        <span className={`h-7 w-7 grid place-items-center rounded-lg shrink-0 ${isAccent ? "bg-[#FCD116]/15" : "bg-white/5"}`}>
+        <span className={`h-7 w-7 grid place-items-center rounded-lg shrink-0 ${link.accent ? "bg-[#FCD116]/15" : "bg-white/5"}`}>
           {link.icon}
         </span>
-        <span className={`flex-1 text-sm text-left ${isAccent ? "text-[#FCD116]" : ""}`}>
-          {link.label}
-        </span>
-        {isAccent && !open && <span className="h-1.5 w-1.5 rounded-full bg-[#FCD116]" />}
+        <span className={`flex-1 text-sm text-left ${link.accent ? "text-[#FCD116]" : ""}`}>{link.label}</span>
+        {link.accent && !open && <span className="h-1.5 w-1.5 rounded-full bg-[#FCD116]" />}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -267,7 +537,7 @@ const MobileNavItem = ({
             className="overflow-hidden"
           >
             <div className="ml-10 border-l border-white/8 pl-4 py-1 space-y-0.5">
-              {link.children.map((child, i) => (
+              {visibleChildren.map((child, i) => (
                 <Link
                   key={i}
                   to={child.href}
@@ -380,7 +650,7 @@ const MobileMenu = ({ open, onClose, logo, user, onLogout }: { open: boolean; on
             {/* Nav items */}
             <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
               {NAV_LINKS.map((link, i) => (
-                <MobileNavItem key={i} link={link} onClose={onClose} />
+                <MobileNavItem key={i} link={link} onClose={onClose} user={user} />
               ))}
             </nav>
 
@@ -649,7 +919,7 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
           <div className="container mx-auto px-4">
             <nav className="flex items-center gap-0.5 h-10">
               {NAV_LINKS.map((link, i) => (
-                <NavDropdown key={i} link={link} />
+                <NavMegaItem key={i} link={link} user={user} />
               ))}
 
               {/* Matchday info — pushed right */}

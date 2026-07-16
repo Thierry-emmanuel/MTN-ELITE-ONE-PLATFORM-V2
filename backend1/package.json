@@ -20,7 +20,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts",
     "seed:pg": "psql $DATABASE_URL -f seed.postgres.sql",
-    "seed:mongo": "mongosh $MONGODB_URI seed.mongo.js"
+    "seed:mongo": "mongosh $MONGODB_URI seed.mongo.js",
+    "typeorm": "typeorm-ts-node-commonjs -d src/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert"
   },
   "dependencies": {
     "@nestjs/bull": "^11.0.4",

@@ -7,7 +7,7 @@ export interface Match {
   awayClubId: string;
   homeScore?: number;
   awayScore?: number;
-  status?: 'SCHEDULED' | 'LIVE' | 'HT' | 'FT' | 'POSTPONED' | 'CANCELLED';
+  status?: 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'POSTPONED' | 'CANCELLED';
   round: number;
   scheduledAt: string; // ISO timestamp on the wire; datetime-local string while editing
   venue?: string;
@@ -49,8 +49,7 @@ export const matchesConfig: EntityConfig<Match> = {
       options: [
         { value: 'SCHEDULED', label: 'Programmé' },
         { value: 'LIVE', label: 'LIVE' },
-        { value: 'HT', label: 'Mi-temps' },
-        { value: 'FT', label: 'Terminé' },
+        { value: 'FINISHED', label: 'Terminé' },
         { value: 'POSTPONED', label: 'Reporté' },
         { value: 'CANCELLED', label: 'Annulé' },
       ],

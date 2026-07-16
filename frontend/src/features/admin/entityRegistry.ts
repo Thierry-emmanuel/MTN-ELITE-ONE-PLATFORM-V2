@@ -11,6 +11,8 @@ import { seasonsConfig } from './configs/seasons.config';
 import { matchesConfig } from './configs/matches.config';
 import { coachesConfig } from './configs/coaches.config';
 import { awardsConfig } from './configs/awards.config';
+import { competitionsConfig } from './configs/competitions.config';
+import { sponsorPlacementsConfig } from './configs/sponsorPlacements.config';
 import type { EntityConfig } from './engine/entityConfig.types';
 
 export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
@@ -28,6 +30,8 @@ export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   matches: matchesConfig,
   coaches: coachesConfig,
   awards: awardsConfig,
+  competitions: competitionsConfig,
+  'sponsor-placements': sponsorPlacementsConfig,
 };
 
 export type EntityRegistryKey = keyof typeof ENTITY_REGISTRY;

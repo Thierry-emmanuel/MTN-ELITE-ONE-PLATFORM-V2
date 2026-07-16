@@ -36,7 +36,7 @@ export function MatchPreviewCard({
   const away = clubs.find((c) => c.id === data.awayClubId);
   const season = seasons.find((s) => s.id === data.seasonId);
   const status = data.status || 'SCHEDULED';
-  const isLive = status === 'LIVE' || status === 'HT';
+  const isLive = status === 'LIVE';
   const hasScore = data.homeScore != null || data.awayScore != null;
 
   return (

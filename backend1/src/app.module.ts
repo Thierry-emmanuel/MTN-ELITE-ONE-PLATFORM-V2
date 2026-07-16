@@ -35,6 +35,8 @@ import { TransfersModule }   from './transfers/transfers.module';
 import { InjuriesModule }    from './injuries/injuries.module';
 import { SelectionsModule }  from './selections/selections.module';
 import { BigMomentsModule }  from './big-moments/big-moments.module';
+import { CompetitionsModule } from './competitions/competitions.module';
+import { SponsorsModule } from './sponsors/sponsors.module';
 import { APP_GUARD }         from '@nestjs/core';
 import { ThrottlerGuard }    from '@nestjs/throttler';
 
@@ -125,6 +127,8 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     InjuriesModule,
     SelectionsModule,
     BigMomentsModule,
+    CompetitionsModule,
+    SponsorsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

@@ -329,6 +329,20 @@ export function usePlayerStats(seasonId: string, filters?: Omit<PlayerStatsFilte
   });
 }
 
+// ─── useTopPerformers ─────────────────────────────────────────────────────────
+/** Top N performers for a stat category (e.g. season top scorer for nav spotlight). */
+export function useTopPerformers(category: Parameters<typeof footballApi.getTopPerformers>[1] = 'goals', limit = 1) {
+  return useQuery({
+    queryKey: QK.topPerformers(SEASON_ID, category),
+    queryFn: () => footballApi.getTopPerformers(SEASON_ID, category, limit),
+    staleTime: 120_000,
+    retry: (count, err) => {
+      if (err instanceof ApiError && err.status < 500) return false;
+      return count < 1;
+    },
+  });
+}
+
 // ─── useClubStats ─────────────────────────────────────────────────────────────
 export function useClubStats(seasonId: string, filters?: Omit<ClubStatsFilter, 'seasonId'>) {
   return useQuery({

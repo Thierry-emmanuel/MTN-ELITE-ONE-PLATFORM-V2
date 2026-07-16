@@ -83,11 +83,14 @@ interface VotingPanelProps {
   votedNomineeId: string | null;
 }
 
+const DEFAULT_META = { label: 'Récompense', shortLabel: 'Prix', icon: '🏅', type: 'PLAYER' as const, color: 'text-white/50', bg: 'bg-white/[0.06] border-white/10' };
+const getMeta = (category: string) => (AWARD_META as Record<string, typeof DEFAULT_META>)[category] ?? DEFAULT_META;
+
 export const VotingPanel = memo(({
   award, onVote, isVoting, hasVoted, votedNomineeId,
 }: VotingPanelProps) => {
   const [showSuccess, setShowSuccess] = useState(false);
-  const meta      = AWARD_META[award.category];
+  const meta      = getMeta(award.category);
   const results   = award.voteResults?.results ?? [];
   const canVote   = award.votingStatus === 'OPEN' && !hasVoted;
   const total     = award.voteResults?.totalVotes ?? 0;

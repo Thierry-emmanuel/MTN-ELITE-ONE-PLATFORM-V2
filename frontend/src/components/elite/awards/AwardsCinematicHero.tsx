@@ -114,7 +114,8 @@ export function FeaturedWinner({ edition, votedNomineeId }: FeaturedWinnerProps)
   const sectionRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, margin: '-100px' });
 
-  const winner = edition.winner as PlayerNominee & { description?: string };
+  const winner = edition.winner as PlayerNominee & { description?: string } | undefined;
+  if (!winner) return null;
   const isVoted = votedNomineeId === winner.id;
   const closing = timeUntil(edition.votingDeadline);
 

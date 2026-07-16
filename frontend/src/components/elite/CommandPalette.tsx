@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, ArrowRight, Trophy, Users, Calendar, Newspaper, Star } from "lucide-react";
-import { clubs, scorers, assistLeaders, news, fixtures } from "./data";
+import { useClubs, usePlayers, useFixtures } from "@/hooks/useFootball";
+import { useArticles } from "@/hooks/useNews";
+import type { Match, PlayerStat } from "@/types/football.types";
 
 // ─── Search item types ────────────────────────────────────────────────────────
 type SearchItem = {
@@ -14,34 +16,74 @@ type SearchItem = {
   accent?: string;
 };
 
-// ─── Static index built from data ─────────────────────────────────────────────
-const buildIndex = (): SearchItem[] => {
-  const items: SearchItem[] = [];
+/**
+ * Live search index, drawn from real backend data already cached by React Query
+ * elsewhere in the app (clubs, players, fixtures), plus a debounced server-side
+ * search against the /articles endpoint for stories.
+ */
+function useSearchIndex(query: string) {
+  const { data: clubs } = useClubs();
+  const { data: players } = usePlayers();
+  const { data: matchdays } = useFixtures();
 
-  // Clubs
-  Object.values(clubs).forEach(c =>
-    items.push({ id: `club-${c.id}`, type: "club", label: c.name, sublabel: c.city, href: `/clubs/${c.id}`, accent: c.color })
+  // Debounce the query before it hits the network-backed article search
+  const [debounced, setDebounced] = useState(query);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query), 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const { data: articles, isFetching: articlesLoading } = useArticles(
+    { search: debounced.trim(), limit: 6 },
+    { enabled: debounced.trim().length > 0 },
   );
 
-  // Players
-  [...scorers, ...assistLeaders].forEach(p =>
-    items.push({ id: `player-${p.name}`, type: "player", label: p.name, sublabel: p.club.name, href: `/players/${p.imgKey || 'p1'}` })
-  );
+  const baseIndex = useMemo<SearchItem[]>(() => {
+    const items: SearchItem[] = [];
 
-  // Matches / Fixtures
-  fixtures.forEach((f, i) =>
-    items.push({ id: `match-${i}`, type: "match", label: `${f.home.name} vs ${f.away.name}`, sublabel: `${f.date} · ${f.time}`, href: `/fixtures` })
-  );
+    (clubs ?? []).forEach((c) =>
+      items.push({ id: `club-${c.id}`, type: "club", label: c.name, sublabel: c.city, href: `/clubs/${c.id}`, accent: c.color }),
+    );
 
-  // News
-  news.forEach(n =>
-    items.push({ id: `news-${n.id}`, type: "news", label: n.title, sublabel: n.tag, href: `/news/${n.id}` })
-  );
+    (players ?? []).forEach((p: PlayerStat) =>
+      items.push({ id: `player-${p.playerId}`, type: "player", label: p.playerName, sublabel: p.clubName, href: `/players/${p.playerId}` }),
+    );
 
-  return items;
-};
+    const allMatches: Match[] = (matchdays ?? []).flatMap((d) => d.matches);
+    allMatches.forEach((m) =>
+      items.push({
+        id: `match-${m.id}`,
+        type: "match",
+        label: `${m.homeClub.name} vs ${m.awayClub.name}`,
+        sublabel: `Journée ${m.round}`,
+        href: `/matches/${m.id}`,
+      }),
+    );
 
-const ALL_ITEMS = buildIndex();
+    return items;
+  }, [clubs, players, matchdays]);
+
+  const results = useMemo<SearchItem[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+
+    const local = baseIndex.filter(
+      (item) => item.label.toLowerCase().includes(q) || (item.sublabel ?? "").toLowerCase().includes(q),
+    );
+
+    const stories: SearchItem[] = (!q ? [] : articles ?? []).map((a) => ({
+      id: `news-${a.id}`,
+      type: "news",
+      label: a.title,
+      sublabel: a.category,
+      href: `/news/${a.slug}`,
+    }));
+
+    return [...local, ...stories].slice(0, 8);
+  }, [baseIndex, articles, query]);
+
+  return { results, isSearching: query.trim() ? articlesLoading : false };
+}
 
 const TYPE_META = {
   player: { icon: <Star className="h-3.5 w-3.5" />,    label: "Joueur",  color: "text-[#FCD116]" },
@@ -97,12 +139,7 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const results = query.trim()
-    ? ALL_ITEMS.filter(item =>
-        item.label.toLowerCase().includes(query.toLowerCase()) ||
-        (item.sublabel ?? "").toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8)
-    : [];
+  const { results, isSearching } = useSearchIndex(query);
 
   // Reset on open
   useEffect(() => {
@@ -210,6 +247,11 @@ export const CommandPalette = ({ open, onClose }: CommandPaletteProps) => {
                       />
                     ))}
                   </>
+                ) : query && isSearching ? (
+                  <div className="flex flex-col items-center gap-2 py-10 text-center">
+                    <Search className="h-8 w-8 text-white/15 animate-pulse" />
+                    <p className="text-sm text-white/30">Recherche en cours…</p>
+                  </div>
                 ) : query ? (
                   <div className="flex flex-col items-center gap-2 py-10 text-center">
                     <Search className="h-8 w-8 text-white/15" />

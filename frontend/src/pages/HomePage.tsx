@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/football';
 import { useFixtures, useStandings } from '@/hooks/useFootball';
 import { Hero } from '@/components/elite/Hero';
+import { TodaysFootball } from '@/components/elite/TodaysFootball';
+import { FeaturedStory } from '@/components/elite/FeaturedStory';
 import { HallOfFame } from '@/components/elite/HallOfFame';
 import { RoadToLions } from '@/components/elite/RoadToLions';
 import { layoutApi, HomepageLayout } from '@/services/layoutApi';
@@ -20,9 +22,14 @@ import type { Match, MatchDay } from '@/types/football.types';
 // ─── Default layout fallback (if backend unreachable) ──────────────────────────
 
 const DEFAULT_LAYOUT: HomepageLayout = {
-  section_order: ['hero', 'matches', 'standings', 'stats', 'explore', 'awards', 'halloffame', 'roadtolions'],
+  section_order: [
+    'hero', 'todaysfootball', 'featuredstory',
+    'matches', 'standings', 'stats', 'explore', 'awards', 'halloffame', 'roadtolions',
+  ],
   section_visibility: {
     hero: true,
+    todaysfootball: true,
+    featuredstory: true,
     matches: true,
     standings: true,
     stats: true,
@@ -322,7 +329,9 @@ AwardsPreview.displayName = 'AwardsPreview';
 //  Keeps HomePage.tsx DRY — adding new sections = just add an entry here.
 
 const SECTION_MAP: Record<string, React.ComponentType> = {
-  hero:       Hero,
+  hero:           Hero,
+  todaysfootball: TodaysFootball,
+  featuredstory:  FeaturedStory,
   matches:    MatchesSection,
   standings:  StandingsPreview,
   stats:      SeasonStats,

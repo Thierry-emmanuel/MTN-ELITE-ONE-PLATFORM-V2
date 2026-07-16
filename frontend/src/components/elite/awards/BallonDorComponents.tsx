@@ -632,7 +632,7 @@ export const PastWinnersGallery = memo(() => {
         <div className="relative h-[340px] mx-12">
           {MOCK_HISTORICAL.map((winner, i) => (
             <CarouselSlide
-              key={winner.year}
+              key={`${winner.year}-${winner.category}`}
               winner={winner}
               isActive={i === current}
               isPrev={i === prevIdx}
@@ -664,7 +664,7 @@ export const PastWinnersGallery = memo(() => {
         <div className="flex gap-2">
           {MOCK_HISTORICAL.map((w, i) => (
             <button
-              key={w.year}
+              key={`${w.year}-${w.category}`}
               onClick={() => goTo(i)}
               aria-label={`Aller à ${w.year}`}
               className="relative"
@@ -702,7 +702,7 @@ export const PastWinnersGallery = memo(() => {
       >
         {MOCK_HISTORICAL.map((w, i) => (
           <motion.button
-            key={w.year}
+            key={`${w.year}-${w.category}`}
             onClick={() => goTo(i)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

@@ -1,6 +1,6 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
-  OneToMany, CreateDateColumn, UpdateDateColumn,
+  OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn,
 } from 'typeorm';
 import { Match } from '../matches/match.entity';
 import { Standing } from '../standings/standing.entity';
@@ -31,6 +31,13 @@ export class Season {
 
   @OneToMany(() => Match, (match) => match.season)
   matches: Match[];
+
+  @Column({ name: 'competition_id', type: 'int', nullable: true })
+  competitionId: number | null;
+
+  @ManyToOne('Competition', 'seasons', { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'competition_id' })
+  competition: any;
 
   @OneToMany(() => Standing, (standing) => standing.season)
   standings: Standing[];

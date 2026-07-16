@@ -27,6 +27,10 @@ const GROUP_META: Record<AwardGroup, {
 
 // ALL_GROUP deleted to avoid unused variable warning
 
+// Fallback so unknown backend categories never crash the page
+const DEFAULT_META = { label: 'Récompense', shortLabel: 'Prix', icon: '🏅', type: 'PLAYER' as const, color: 'text-white/50', bg: 'bg-white/[0.06] border-white/10' };
+const getMeta = (category: string) => (AWARD_META as Record<string, typeof DEFAULT_META>)[category] ?? DEFAULT_META;
+
 // ─── Status badge ──────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }: { status: Award['votingStatus'] }) => {
   if (status === 'OPEN') return (
@@ -51,7 +55,7 @@ const AwardSidebarItem = ({
 }: {
   award: Award; isSelected: boolean; hasVoted: boolean; onClick: () => void;
 }) => {
-  const meta = AWARD_META[award.category];
+  const meta = getMeta(award.category);
   return (
     <button
       onClick={onClick}
@@ -108,7 +112,7 @@ const GroupChip = ({
 const WinnerShowcase = ({ award }: { award: Award }) => {
   const winner = award.winner ?? award.nominees[0];
   if (!winner) return null;
-  const meta = AWARD_META[award.category];
+  const meta = getMeta(award.category);
   const photoUrl = 'photoUrl' in winner ? (winner as any).photoUrl : ('logoUrl' in winner ? (winner as any).logoUrl : null);
   const subtitle = 'clubName' in winner ? (winner as any).clubName : ('city' in winner ? (winner as any).city : '');
 
@@ -187,9 +191,9 @@ const AwardContentPanel = ({
       <div className="space-y-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">{AWARD_META[award.category].icon}</span>
-            <p className={`text-[10px] font-black uppercase tracking-[.18em] ${AWARD_META[award.category].color}`}>
-              {AWARD_META[award.category].shortLabel}
+            <span className="text-xl">{getMeta(award.category).icon}</span>
+            <p className={`text-[10px] font-black uppercase tracking-[.18em] ${getMeta(award.category).color}`}>
+              {getMeta(award.category).shortLabel}
             </p>
             <StatusBadge status={award.votingStatus} />
           </div>
@@ -450,7 +454,7 @@ export default function VotePage() {
                   {Object.entries(votedMap).map(([awardId, nomineeId]) => {
                     const award = allAwards.find(a => a.id === awardId);
                     if (!award || !nomineeId) return null;
-                    const meta = AWARD_META[award.category];
+                    const meta = getMeta(award.category);
                     const nominee = award.nominees.find(n => n.id === nomineeId);
                     return (
                       <div key={awardId} className="flex items-center gap-2 p-2 rounded-lg bg-[#10B981]/[0.05] border border-[#10B981]/15">

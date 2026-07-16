@@ -908,10 +908,10 @@ export default function AdminPage() {
 
           {/* Filter bar */}
           <div className="flex items-center gap-3">
-            {['', 'SCHEDULED', 'LIVE', 'HT', 'FT', 'POSTPONED'].map(s => (
+            {['', 'SCHEDULED', 'LIVE', 'FINISHED', 'POSTPONED'].map(s => (
               <button key={s} onClick={() => { setMatchStatus(s); setMatchPage(1); }}
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${matchStatus === s ? 'bg-accent text-black' : 'bg-white/5 border border-white/8 text-white/40 hover:text-white'}`}>
-                {s || 'Tous'}
+                {s === 'FINISHED' ? 'Terminé' : (s || 'Tous')}
               </button>
             ))}
           </div>
@@ -928,7 +928,7 @@ export default function AdminPage() {
                   <FormField label="Score Extérieur" type="number" value={editingMatch.awayScore ?? ''} onChange={v => setEditingMatch(p => ({ ...p, awayScore: v }))} />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <FormField label="Statut" type="select" value={editingMatch.status || 'SCHEDULED'} onChange={v => setEditingMatch(p => ({ ...p, status: v as any }))} options={[{value:'SCHEDULED',label:'Programmé'},{value:'LIVE',label:'LIVE'},{value:'HT',label:'Mi-temps'},{value:'FT',label:'Terminé'},{value:'POSTPONED',label:'Reporté'},{value:'CANCELLED',label:'Annulé'}]} />
+                  <FormField label="Statut" type="select" value={editingMatch.status || 'SCHEDULED'} onChange={v => setEditingMatch(p => ({ ...p, status: v as any }))} options={[{value:'SCHEDULED',label:'Programmé'},{value:'LIVE',label:'LIVE'},{value:'FINISHED',label:'Terminé'},{value:'POSTPONED',label:'Reporté'},{value:'CANCELLED',label:'Annulé'}]} />
                   <FormField label="Journée" type="number" value={editingMatch.round || 1} onChange={v => setEditingMatch(p => ({ ...p, round: v }))} />
                   <FormField label="Coup d'envoi" type="datetime-local" value={(editingMatch.kickoff || '').replace('Z','').slice(0,16)} onChange={v => setEditingMatch(p => ({ ...p, kickoff: new Date(v).toISOString() }))} />
                 </div>
