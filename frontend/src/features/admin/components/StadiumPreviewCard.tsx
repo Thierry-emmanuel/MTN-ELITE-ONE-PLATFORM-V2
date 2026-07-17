@@ -14,7 +14,7 @@ export function StadiumPreviewCard({ data, clubOptions = [] }: { data: Partial<S
   const status = data.status || 'ACTIVE';
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-white/8 bg-gradient-to-b from-[#111820] to-[#0B0F16]">
+    <div className="rounded-2xl overflow-hidden border border-white/8 bg-gradient-to-b from-os-surface-2 to-os-surface-3">
       <div className="h-32 bg-white/[0.03] relative">
         {data.photoUrl ? (
           <img src={data.photoUrl} alt={data.name} className="h-full w-full object-cover" />

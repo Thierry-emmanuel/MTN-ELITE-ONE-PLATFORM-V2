@@ -33,9 +33,53 @@
   --color-loss:                hsl(var(--loss));
   --color-primary-glow:        hsl(var(--primary-glow));
 
+  /*
+   * ── FootballOS "Operating System" surface tokens (Phase 0.5, Part 1) ──
+   * The admin/Builder/Command-Center surfaces already use a deliberately
+   * different, neutral near-black chrome (distinct from the public site's
+   * Cameroon-green branded palette above) — that's a reasonable choice for
+   * a calm, professional "OS" tone and is left as-is. What wasn't there was
+   * a *name* for it: seven near-identical near-black hex literals were
+   * hand-typed independently across 8 files (MatchCommandCenter.tsx,
+   * GuidedBuilderEngine.tsx, ClubPreviewCard.tsx, PlayerPreviewCard.tsx,
+   * CoachPreviewCard.tsx, StadiumPreviewCard.tsx, AdminPage.tsx,
+   * renderField.tsx). These four tokens are exactly those existing values,
+   * renamed — no new colors invented, nothing restyled:
+   */
+  --color-os-bg:        #0A0E14;  /* was hand-typed in GuidedBuilderEngine.tsx           */
+  --color-os-surface:   #0D1219;  /* was hand-typed in GuidedBuilderEngine.tsx           */
+  --color-os-surface-2: #111820;  /* the most-repeated value — 6 occurrences across 5 files */
+  --color-os-surface-3: #0B0F16;  /* 5 occurrences across 4 files                         */
+  /* MatchCommandCenter's live-match "cinema mode" uses its own, even
+     darker cluster — kept distinct rather than merged into the set above,
+     since collapsing two intentionally-different depths into one token
+     would be a visual change, not just a rename: */
+  --color-os-focus-void:   #070B0F;
+  --color-os-focus-void-2: #080D13;
+  --color-os-focus-void-3: #0B1016;
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  /*
+   * ── Typography scale (Phase 0.5, Part 1) ──
+   * Requested scale: Display XL/L, Heading XL/L/M, Body L/M/S, Caption,
+   * Label, Mono. Implemented as `.text-*` utility classes below (in
+   * @layer utilities) rather than redefining Tailwind's own `--text-*`
+   * tokens, so this is purely additive: every existing `text-sm`/`text-lg`/
+   * etc. call site keeps working unchanged. `font-mono` already exists as a
+   * default Tailwind utility (ui-monospace stack) and is reused as-is.
+   *
+   * Separately, this scale is what future micro-text should use instead of
+   * hand-typed arbitrary sizes: `text-[10px]`, `text-[9px]`, `text-[11px]`
+   * and `text-[8px]` currently appear 90 / 40 / 39 / 10 times respectively
+   * across the admin engine alone — almost always meaning "Caption" or
+   * "Label" in context, just typed as raw pixels each time instead of a
+   * shared name. Migrating those call sites is a separate, mechanical
+   * follow-up (they're already fully enumerated by that grep) — not
+   * bundled into this token-definition pass.
+   */
 
   /* ── Animations ── */
   --animate-pulse-live:  pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -175,6 +219,22 @@
 
 /* ─── Utilities ──────────────────────────────────────────────────────────── */
 @layer utilities {
+
+  /* ── Typography scale (Phase 0.5, Part 1 — see @theme comment above) ──
+     Editorial scale for headings/body copy, independent of Tailwind's own
+     text-xs..9xl utilities so nothing existing has to change. Use these for
+     new UI; treat them as the canonical names in docs/design-system.md. */
+  .text-display-xl { font-family: var(--font-display); font-size: clamp(2.75rem, 2rem + 3vw, 4.5rem); line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase; }
+  .text-display-l  { font-family: var(--font-display); font-size: clamp(2.25rem, 1.7rem + 2.2vw, 3.5rem); line-height: 1.08; letter-spacing: -0.01em; text-transform: uppercase; }
+  .text-heading-xl { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.005em; }
+  .text-heading-l  { font-family: var(--font-display); font-size: 1.375rem; line-height: 1.25; }
+  .text-heading-m  { font-family: var(--font-display); font-size: 1.125rem; line-height: 1.3; }
+  .text-body-l     { font-family: var(--font-sans); font-size: 1.0625rem; line-height: 1.6; }
+  .text-body-m     { font-family: var(--font-sans); font-size: 0.9375rem; line-height: 1.55; }
+  .text-body-s     { font-family: var(--font-sans); font-size: 0.8125rem; line-height: 1.5; }
+  .text-caption    { font-family: var(--font-sans); font-size: 0.75rem; line-height: 1.4; color: hsl(var(--muted-foreground)); }
+  .text-label      { font-family: var(--font-sans); font-size: 0.6875rem; line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
+
 
   /* ── Container — consistent max-width + padding ── */
   /* Override Tailwind's .container with explicit breakpoints */
