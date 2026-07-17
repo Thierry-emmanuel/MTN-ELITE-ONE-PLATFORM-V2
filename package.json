@@ -1,13 +1,16 @@
 {
-  "dependencies": {
-    "@tiptap/extension-image": "^3.27.1",
-    "@tiptap/extension-link": "^3.27.1",
-    "@tiptap/extension-placeholder": "^3.27.1",
-    "@tiptap/react": "^3.27.1",
-    "@tiptap/starter-kit": "^3.27.1",
-    "cache-manager-redis-yet": "^5.1.5"
-  },
-  "devDependencies": {
-    "uuid": "^14.0.0"
+  "name": "MTN-ELITE-ONE-PLATFORM",
+  "private": true,
+  "description": "FootballOS monorepo workspace root. `frontend` and `backend1` are independent npm projects with their own dependencies/scripts; this root only orchestrates them for local dev/CI so a single `npm run build`/`npm run dev` at the repo root works.",
+  "workspaces": [
+    "frontend",
+    "backend1"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "npm run start:dev --workspace=backend1 & npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend1",
+    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend1",
+    "test": "npm run test --workspace=backend1"
   }
 }

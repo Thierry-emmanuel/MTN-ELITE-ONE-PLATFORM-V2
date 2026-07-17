@@ -73,6 +73,78 @@ export interface BuilderStepDef<T> {
   fieldKeys: (keyof T)[];   // which fields (in order) render in this step
 }
 
+/**
+ * FootballOS Phase 0 / Part 1 — Entity Registry additions.
+ *
+ * These fields make EntityConfig<T> the single place every future engine
+ * (Workflow — Part 4, Relation — Part 5, Automation — Part 6, Preview —
+ * Part 7, Validation — Part 8, Search — Part 9) reads from, instead of each
+ * engine inventing its own per-entity wiring. Added additively — every
+ * existing config file still compiles unchanged, since every new field is
+ * optional.
+ *
+ * ENFORCEMENT STATUS (so this doesn't quietly become another dead field like
+ * `lookups` used to be — that field existed in this file for a long time but
+ * nothing ever read it; every admin tab hand-rolled its own options instead.
+ * useEntityLookups() below fixes that specific case):
+ *   - `permissions`     — schema only. Not yet enforced by EntityCrudEngine.
+ *                         Enforcement is Phase 0 Part 13 (Security).
+ *   - `workflow`        — schema only. No Workflow Engine exists yet (Part 4).
+ *   - `relations`       — schema only. No Relation Engine exists yet (Part 5).
+ *                         Declaring these now lets Part 5 be built by reading
+ *                         existing configs instead of re-auditing every entity.
+ *   - `statistics`      — schema only. No statistics/automation engine yet (Part 6).
+ *   - `seo`             — schema only. No Preview/SEO engine yet (Part 7).
+ *   - `automationHooks` — schema only (named event identifiers). No
+ *                         Automation Engine exists yet to dispatch them (Part 6).
+ *   - `icon`, `navGroup`— consumed today by CommandPalette/AdminPage nav.
+ *   - `lookups`         — now consumed by useEntityLookups() (this phase).
+ */
+
+export interface EntityPermissions {
+  view?: string[];
+  create?: string[];
+  update?: string[];
+  delete?: string[];
+  publish?: string[];
+}
+
+export type WorkflowStatus =
+  | 'draft' | 'in_review' | 'needs_changes' | 'approved' | 'scheduled' | 'published' | 'archived';
+
+export interface EntityWorkflow<T> {
+  /** Key on T that holds the current WorkflowStatus. */
+  statusField: keyof T;
+  initialStatus: WorkflowStatus;
+  /** Allowed status → status transitions, enforced by the future Workflow Engine (Part 4). */
+  transitions: Partial<Record<WorkflowStatus, WorkflowStatus[]>>;
+}
+
+export interface EntityRelation<T> {
+  /** Field on T holding the foreign reference, e.g. 'clubId' or 'relatedClubIds'. */
+  key: keyof T;
+  /** ENTITY_REGISTRY key of the target entity, e.g. 'clubs'. */
+  targetEntity: string;
+  cardinality: 'one' | 'many';
+  required?: boolean;
+  /** What should happen to this entity if the target record is deleted, enforced by the future Relation Engine (Part 5). */
+  onDeleteOfTarget?: 'block' | 'null' | 'cascade';
+}
+
+export interface EntityStatistic<T> {
+  key: string;
+  label: string;
+  compute: 'count' | 'sum' | 'avg' | 'max' | 'min';
+  /** Field to aggregate for sum/avg/max/min; ignored for 'count'. */
+  sourceField?: keyof T;
+}
+
+export interface EntitySeo {
+  titleField?: string;
+  descriptionField?: string;
+  imageField?: string;
+}
+
 export interface EntityConfig<T extends { id?: string; _id?: string }> {
   name: string;            // 'transfers'
   labelSingular: string;   // 'Transfert'
@@ -81,6 +153,7 @@ export interface EntityConfig<T extends { id?: string; _id?: string }> {
   idField: 'id' | '_id';
   columns: ColumnDef<T>[];
   fields: FieldDef<T>[];
+  /** Dynamic select options (e.g. clubs, players) resolved by useEntityLookups(). */
   lookups?: LookupSource[];
   emptyRecord: () => Partial<T>;
   searchableKeys?: (keyof T)[];
@@ -96,4 +169,15 @@ export interface EntityConfig<T extends { id?: string; _id?: string }> {
   beforeSave?: (payload: Partial<T>) => Partial<T>;
  
   publishOverrides?: Partial<T>;
+
+  // ── Phase 0 / Part 1 registry surface (see enforcement-status note above) ──
+  icon?: string;                     // lucide-react icon name, used in nav/command palette
+  navGroup?: string;                 // command-palette grouping label, e.g. 'Médias'
+  permissions?: EntityPermissions;
+  workflow?: EntityWorkflow<T>;
+  relations?: EntityRelation<T>[];
+  statistics?: EntityStatistic<T>[];
+  seo?: EntitySeo;
+  /** Named automation events this entity's lifecycle should fire, e.g. ['recalculateStandings']. */
+  automationHooks?: { onCreate?: string[]; onUpdate?: string[]; onDelete?: string[] };
 }

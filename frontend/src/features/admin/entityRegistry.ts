@@ -15,6 +15,7 @@ import { staffConfig } from './configs/staff.config';
 import { awardsConfig } from './configs/awards.config';
 import { competitionsConfig } from './configs/competitions.config';
 import { sponsorPlacementsConfig } from './configs/sponsorPlacements.config';
+import { talentsConfig } from './configs/talents.config';
 import type { EntityConfig } from './engine/entityConfig.types';
 
 export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
@@ -36,6 +37,7 @@ export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   awards: awardsConfig,
   competitions: competitionsConfig,
   'sponsor-placements': sponsorPlacementsConfig,
+  talents: talentsConfig,
 };
 
 export type EntityRegistryKey = keyof typeof ENTITY_REGISTRY;
