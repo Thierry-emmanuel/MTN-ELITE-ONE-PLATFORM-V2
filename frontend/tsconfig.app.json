@@ -15,9 +15,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Path aliases */
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
+    /* Path aliases — relative to this tsconfig (no baseUrl needed since TS 5.5;
+       also avoids the TS 6 baseUrl deprecation, so no ignoreDeprecations flag
+       and the config works whichever workspace TypeScript gets hoisted) */
     "paths": {
       "@/*": ["./src/*"]
     },
@@ -25,7 +25,6 @@
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"]

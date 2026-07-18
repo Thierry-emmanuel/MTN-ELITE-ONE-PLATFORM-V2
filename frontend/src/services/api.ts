@@ -43,8 +43,9 @@ const createClient = (): AxiosInstance => {
   client.interceptors.request.use((config) => {
     const token = localStorage.getItem('mtn_token');
     if (token) {
-      config.headers = config.headers ?? {};
-      config.headers.Authorization = `Bearer ${token}`;
+      // AxiosHeaders instance in axios ≥1.x — use set() instead of assigning
+      // a bare object, which fails under stricter TS 5.x narrowing.
+      config.headers.set('Authorization', `Bearer ${token}`);
     }
     return config;
   });
