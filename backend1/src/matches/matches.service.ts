@@ -3,6 +3,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { MatchEvent, MatchEventType } from './match-event.entity';
+import { AddEventDto } from './dto/add-event.dto';
 import { Match, MatchStatus } from './match.entity';
 import { MatchLineup } from './match-lineup.entity';
 import { CreateMatchDto }      from './dto/create-match.dto';
@@ -67,6 +69,9 @@ export class MatchesService {
 
     @InjectRepository(MatchLineup)
     private readonly lineupRepo: Repository<MatchLineup>,
+
+    @InjectRepository(MatchEvent)
+    private readonly eventRepo: Repository<MatchEvent>,
 
     // WHY: injected here (not inside StandingsModule) to trigger
     // recalculation automatically when a match finishes.
@@ -437,4 +442,101 @@ export class MatchesService {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, matches]) => ({ date, matches }));
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EVENTS — Phase 3 (Match Builder). The service is the single business
+  // authority: goals move the score, KICKOFF opens the match, FULL_TIME
+  // closes it through finishMatch() (which already recalculates standings).
+  // The frontend only ever declares WHAT happened; never HOW it counts.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private static readonly PLAYER_EVENTS: MatchEventType[] = [
+    MatchEventType.GOAL, MatchEventType.OWN_GOAL, MatchEventType.PENALTY_GOAL,
+    MatchEventType.YELLOW_CARD, MatchEventType.RED_CARD, MatchEventType.SECOND_YELLOW,
+    MatchEventType.SUBSTITUTION_IN, MatchEventType.SUBSTITUTION_OUT,
+    MatchEventType.INJURY,
+  ];
+
+  async addEvent(id: number, dto: AddEventDto): Promise<Match> {
+    const match = await this.findOne(id);
+
+    if (match.status === MatchStatus.FINISHED)
+      throw new BadRequestException('Match is finished — no further events can be recorded');
+    if (match.status === MatchStatus.CANCELLED || match.status === MatchStatus.POSTPONED)
+      throw new BadRequestException(`Cannot record events on a ${match.status.toLowerCase()} match`);
+
+    const needsPlayer = MatchesService.PLAYER_EVENTS.includes(dto.type);
+    if (needsPlayer && (dto.playerId == null || dto.clubId == null))
+      throw new BadRequestException(`${dto.type} requires playerId and clubId`);
+    if (dto.clubId != null && dto.clubId !== match.homeClubId && dto.clubId !== match.awayClubId)
+      throw new BadRequestException('clubId must be the home or away club of this match');
+    if (dto.type !== MatchEventType.KICKOFF && match.status !== MatchStatus.LIVE)
+      throw new BadRequestException('Record KICKOFF first — events require a LIVE match');
+
+    // ── Side effects (business rules live HERE, never in the frontend) ───────
+    switch (dto.type) {
+      case MatchEventType.KICKOFF:
+        match.status    = MatchStatus.LIVE;
+        match.homeScore = match.homeScore ?? 0;
+        match.awayScore = match.awayScore ?? 0;
+        break;
+      case MatchEventType.GOAL:
+      case MatchEventType.PENALTY_GOAL:
+        if (dto.clubId === match.homeClubId) match.homeScore = (match.homeScore ?? 0) + 1;
+        else                                 match.awayScore = (match.awayScore ?? 0) + 1;
+        break;
+      case MatchEventType.OWN_GOAL:
+        // credited to the OPPOSING side of the player's club
+        if (dto.clubId === match.homeClubId) match.awayScore = (match.awayScore ?? 0) + 1;
+        else                                 match.homeScore = (match.homeScore ?? 0) + 1;
+        break;
+      default:
+        break; // cards, subs, injury, VAR, half-time: recorded, no score impact
+    }
+
+    await this.eventRepo.save(this.eventRepo.create({
+      matchId:   id,
+      type:      dto.type,
+      minute:    dto.minute,
+      extraTime: dto.extraTime ?? 0,
+      playerId:  dto.playerId ?? null,
+      clubId:    dto.clubId ?? null,
+    }));
+    await this.matchRepo.save(match);
+
+    // FULL_TIME delegates to the existing finish pipeline (status FINISHED
+    // + standings recalculation) so there is exactly one way to end a match.
+    if (dto.type === MatchEventType.FULL_TIME) return this.finishMatch(id);
+
+    return this.findOne(id);
+  }
+
+  async removeEvent(id: number, eventId: number): Promise<Match> {
+    const match = await this.findOne(id);
+    if (match.status === MatchStatus.FINISHED)
+      throw new BadRequestException('Cannot amend events of a finished match');
+
+    const event = await this.eventRepo.findOne({ where: { id: eventId, matchId: id } });
+    if (!event) throw new NotFoundException(`Event "${eventId}" not found on match "${id}"`);
+
+    // Reverse the score effect symmetrically to addEvent().
+    switch (event.type) {
+      case MatchEventType.GOAL:
+      case MatchEventType.PENALTY_GOAL:
+        if (event.clubId === match.homeClubId) match.homeScore = Math.max(0, (match.homeScore ?? 0) - 1);
+        else                                   match.awayScore = Math.max(0, (match.awayScore ?? 0) - 1);
+        break;
+      case MatchEventType.OWN_GOAL:
+        if (event.clubId === match.homeClubId) match.awayScore = Math.max(0, (match.awayScore ?? 0) - 1);
+        else                                   match.homeScore = Math.max(0, (match.homeScore ?? 0) - 1);
+        break;
+      default:
+        break;
+    }
+
+    await this.eventRepo.remove(event);
+    await this.matchRepo.save(match);
+    return this.findOne(id);
+  }
+
 }

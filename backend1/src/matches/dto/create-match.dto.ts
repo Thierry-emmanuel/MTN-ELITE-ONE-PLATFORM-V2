@@ -44,4 +44,11 @@ export class CreateMatchDto {
   @IsString()
   @MaxLength(100)
   city?: string;
+
+  // Officials — Phase 3 (Match Builder). Column existed on the entity
+  // since AddRefereeToMatches; the DTO simply never exposed it.
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  referee?: string;
 }

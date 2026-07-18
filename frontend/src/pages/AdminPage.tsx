@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Users, Star, CalendarDays, FileText, Plus, Edit3,
@@ -29,10 +30,8 @@ import { bigMomentsConfig, type BigMoment } from '@/features/admin/configs/bigMo
 import { stadiumsConfig, type Stadium } from '@/features/admin/configs/stadiums.config';
 import { equipmentsConfig, type Equipment } from '@/features/admin/configs/equipments.config';
 import { sponsorsConfig, type Sponsor } from '@/features/admin/configs/sponsors.config';
-import { matchesConfig } from '@/features/admin/configs/matches.config';
 import { PlayerPreviewCard } from '@/features/admin/components/PlayerPreviewCard';
 import { CommandPalette } from '@/features/admin/components/CommandPalette';
-import { MatchCommandCenter } from '@/features/admin/components/MatchCommandCenter';
 import { AwardsStudio } from '@/features/admin/components/AwardsStudio';
 import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
 import { AnimatePresence } from 'framer-motion';
@@ -230,8 +229,9 @@ export default function AdminPage() {
   const [transferBuilderRecord, setTransferBuilderRecord] = useState<Partial<Transfer> | null>(null);
   const [injuryBuilderRecord, setInjuryBuilderRecord] = useState<Partial<Injury> | null>(null);
   const [selectionBuilderRecord, setSelectionBuilderRecord] = useState<Partial<Selection> | null>(null);
-  const [matchBuilderRecord, setMatchBuilderRecord] = useState<Partial<Match> | null>(null);
-  const [matchesRefreshKey, setMatchesRefreshKey] = useState(0);
+  const navigate = useNavigate();
+  // Match editing now lives in the FootballOS Match Builder (/os) — the
+  // single source of truth for football events. MatchCommandCenter deleted.
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
@@ -354,7 +354,7 @@ export default function AdminPage() {
     layoutApi.getMatches({ page: matchPage, limit: 20, ...(matchStatus ? { status: matchStatus } : {}) })
       .then(res => { setMatches(res.data ?? res); setMatchTotal(res.total ?? res.length ?? 0); })
       .catch(console.error);
-  }, [activeTab, matchPage, matchStatus, matchesRefreshKey]);
+  }, [activeTab, matchPage, matchStatus]);
 
   /* ─── Load Articles ───────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -860,7 +860,7 @@ export default function AdminPage() {
                   onImport={importMatches}
                   importLoading={importingMatches}
                 />
-                <AdminButton onClick={() => setMatchBuilderRecord(matchesConfig.emptyRecord())}>
+                <AdminButton onClick={() => navigate('/os/builders/admin/matches/new')}>
                   <Plus className="h-3.5 w-3.5" /> Planifier un Match
                 </AdminButton>
               </div>
@@ -913,7 +913,7 @@ export default function AdminPage() {
                       >✓ Terminer</button>
                     )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); setMatchBuilderRecord(r); }}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/os/builders/admin/matches/${r.id}`); }}
                       className="px-2 py-1 rounded-lg bg-white/[0.05] border border-white/[0.08] text-white/50 text-[9px] font-bold hover:text-white hover:bg-white/10 transition-all"
                     >Gérer</button>
                   </div>
@@ -921,7 +921,7 @@ export default function AdminPage() {
               ]}
               data={matches}
               keyField="id"
-              onEdit={r => setMatchBuilderRecord(r)}
+              onEdit={r => navigate(`/os/builders/admin/matches/${r.id}`)}
               onDelete={r => deleteMatch(r.id!)}
             />
             <div className="px-4 pb-4"><Paginator page={matchPage} total={matchTotal} limit={20} onChange={setMatchPage} /></div>
@@ -2267,36 +2267,6 @@ export default function AdminPage() {
       />
     )}
 
-    {/* ── Match Command Center overlay ─────────────────────────────────────── */}
-    <AnimatePresence>
-      {matchBuilderRecord && (
-        <MatchCommandCenter
-          match={matchBuilderRecord}
-          seasons={seasons}
-          clubs={clubs}
-          players={players}
-          currentSeasonId={currentSeasonId}
-          showToast={showToast}
-          onSaved={(updated) => {
-            setMatches(prev => {
-              const exists = prev.some(m => m.id === updated.id);
-              return exists
-                ? prev.map(m => m.id === updated.id ? updated : m)
-                : [updated, ...prev];
-            });
-          }}
-          onClose={() => {
-            setMatchBuilderRecord(null);
-            setMatchesRefreshKey((k) => k + 1);
-            // Reload match list to reflect any status/score changes
-            layoutApi.getMatches({ page: matchPage, limit: 20, status: matchStatus || undefined })
-              .then(r => { setMatches(r.data ?? r); setMatchTotal(r.total ?? r.length ?? 0); })
-              .catch(() => {});
-          }}
-        />
-      )}
-    </AnimatePresence>
-
     {/* ── League Studio: Big Moment Builder overlay ─────────────────────── */}
     {bigMomentBuilderRecord && (
       <GuidedBuilderEngine
@@ -2319,7 +2289,7 @@ export default function AdminPage() {
         setActiveTab('seasons');
         setPaletteOpen(false);
       }}
-      onCreateMatch={() => setMatchBuilderRecord(matchesConfig.emptyRecord())}
+      onCreateMatch={() => navigate('/os/builders/admin/matches/new')}
       onCreateCoach={() => setCoachBuilderRecord(coachesConfig.emptyRecord())}
       onCreateStadium={() => setStadiumBuilderRecord(stadiumsConfig.emptyRecord())}
       onCreateReferee={() => setRefereeBuilderRecord(ENTITY_REGISTRY.referees.emptyRecord())}

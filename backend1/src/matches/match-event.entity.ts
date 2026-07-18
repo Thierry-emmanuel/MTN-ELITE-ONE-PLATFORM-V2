@@ -15,6 +15,12 @@ export enum MatchEventType {
   SECOND_YELLOW   = 'SECOND_YELLOW',
   SUBSTITUTION_IN  = 'SUBSTITUTION_IN',
   SUBSTITUTION_OUT = 'SUBSTITUTION_OUT',
+  // ── Phase 3 (Match Builder): operational events ────────────────────────
+  INJURY           = 'INJURY',
+  VAR              = 'VAR',
+  KICKOFF          = 'KICKOFF',
+  HALF_TIME        = 'HALF_TIME',
+  FULL_TIME        = 'FULL_TIME',
 }
 
 @Entity('match_events')
@@ -35,11 +41,11 @@ export class MatchEvent {
   @Column({ name: 'match_id' })
   matchId: number;
 
-  @Column({ name: 'player_id' })
-  playerId: number;
+  @Column({ name: 'player_id', nullable: true })
+  playerId: number | null;
 
-  @Column({ name: 'club_id' })
-  clubId: number;
+  @Column({ name: 'club_id', nullable: true })
+  clubId: number | null;
 
   // ── Relations ────────────────────────────────────────────────────────────
   @ManyToOne(() => Match, (match) => match.events, { onDelete: 'CASCADE' })

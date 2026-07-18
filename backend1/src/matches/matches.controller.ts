@@ -14,6 +14,7 @@ import {
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { SetLineupsDto }  from './dto/set-lineup.dto';
+import { AddEventDto }     from './dto/add-event.dto';
 import { PaginationDto }  from '../common/dto/pagination.dto';
 import { Match, MatchStatus } from './match.entity';
 import { IsInt, IsOptional, Min } from 'class-validator';
@@ -188,4 +189,33 @@ export class MatchesController {
   remove(@Param('id', ParseIntPipe) id: number): Promise<{ message: string }> {
     return this.matchesService.remove(id);
   }
+
+  // POST /matches/:id/events — Phase 3 (Match Builder). One endpoint for the
+  // whole timeline; business consequences (score, status, standings) are
+  // decided by the service. Returns the full authoritative match.
+  @Post(':id/events')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Record a match event (goal, card, sub, kickoff, full-time…) (admin)' })
+  addEvent(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AddEventDto,
+  ): Promise<Match> {
+    return this.matchesService.addEvent(id, dto);
+  }
+
+  // DELETE /matches/:id/events/:eventId — undo before full-time; score effects reversed.
+  @Delete(':id/events/:eventId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Remove a match event and reverse its effects (admin)' })
+  removeEvent(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('eventId', ParseIntPipe) eventId: number,
+  ): Promise<Match> {
+    return this.matchesService.removeEvent(id, eventId);
+  }
+
 }
