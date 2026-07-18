@@ -21,10 +21,15 @@ export interface Award {
   category: string;
   periodStart: string;
   periodEnd: string;
-  status: 'OPEN' | 'CLOSED' | 'ANNOUNCED';
-  seasonId: string;
+  /** Backend defaults to OPEN on create — optional on the wire */
+  status?: 'OPEN' | 'CLOSED' | 'ANNOUNCED';
+  /** Sent as number by AwardsStudio, stored as string by older callers */
+  seasonId: string | number;
   winnerId?: string | null;
   nominations?: any[];
+  description?: string;
+  votingWeights?: { fans: number; media: number; coaches: number; captains: number };
+  revealMetadata?: { speech?: string; trophyBlur?: boolean; socialTemplate?: string };
 }
 
 export interface Match {

@@ -30,7 +30,6 @@ import { stadiumsConfig, type Stadium } from '@/features/admin/configs/stadiums.
 import { equipmentsConfig, type Equipment } from '@/features/admin/configs/equipments.config';
 import { sponsorsConfig, type Sponsor } from '@/features/admin/configs/sponsors.config';
 import { matchesConfig } from '@/features/admin/configs/matches.config';
-import { MatchPreviewCard } from '@/features/admin/components/MatchPreviewCard';
 import { PlayerPreviewCard } from '@/features/admin/components/PlayerPreviewCard';
 import { CommandPalette } from '@/features/admin/components/CommandPalette';
 import { MatchCommandCenter } from '@/features/admin/components/MatchCommandCenter';
@@ -38,15 +37,6 @@ import { AwardsStudio } from '@/features/admin/components/AwardsStudio';
 import { useAwardLiveVotes } from '@/hooks/useAwardLiveVotes';
 import { AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
-
-// BF-06.1 — the three MVP award categories. Kept as plain strings (matches
-// the existing `category: string` column, no migration needed) but
-// constrained to a select here instead of free text.
-const AWARD_CATEGORIES = [
-  { value: "Joueur de la Semaine", label: "Joueur de la Semaine" },
-  { value: "Joueur du Mois", label: "Joueur du Mois" },
-  { value: "Ballon d'Or", label: "Ballon d'Or" },
-];
 
 /* ─── Types ─────────────────────────────────────────────────────────────────── */
 type ToastState = { msg: string; type: 'success' | 'error' | 'info' };
@@ -236,6 +226,7 @@ export default function AdminPage() {
   const [equipmentBuilderRecord, setEquipmentBuilderRecord] = useState<Partial<Equipment> | null>(null);
   const [sponsorBuilderRecord, setSponsorBuilderRecord] = useState<Partial<Sponsor> | null>(null);
   const [actionBuilderRecord, setActionBuilderRecord] = useState<Partial<BigMoment> | null>(null);
+  const [bigMomentBuilderRecord, setBigMomentBuilderRecord] = useState<Partial<BigMoment> | null>(null);
   const [transferBuilderRecord, setTransferBuilderRecord] = useState<Partial<Transfer> | null>(null);
   const [injuryBuilderRecord, setInjuryBuilderRecord] = useState<Partial<Injury> | null>(null);
   const [selectionBuilderRecord, setSelectionBuilderRecord] = useState<Partial<Selection> | null>(null);
@@ -281,12 +272,10 @@ export default function AdminPage() {
   const [matchPage, setMatchPage] = useState(1);
   const [matchTotal, setMatchTotal] = useState(0);
   const [matchStatus, setMatchStatus] = useState('');
-  const [editingMatch, setEditingMatch] = useState<Partial<Match> | null>(null);
   const [importingMatches, setImportingMatches] = useState(false);
 
   /* Awards */
   const [awards, setAwards] = useState<AwardType[]>([]);
-  const [editingAward, setEditingAward] = useState<Partial<AwardType> | null>(null);
   const [selectedAward, setSelectedAward] = useState<AwardType | null>(null);
   const [nomineePlayerId, setNomineePlayerId] = useState('');
   const [importingAwards, setImportingAwards] = useState(false);
@@ -454,31 +443,7 @@ export default function AdminPage() {
     setImportingBanners(false);
   };
 
-  /* ─── Match Handlers ──────────────────────────────────────────────────────── */
-  const saveMatch = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
-    const p = {
-      homeClubId: String(editingMatch!.homeClubId!),
-      awayClubId: String(editingMatch!.awayClubId!),
-      homeScore:  (editingMatch!.homeScore !== undefined && String(editingMatch!.homeScore) !== '') ? Number(editingMatch!.homeScore) : undefined,
-      awayScore:  (editingMatch!.awayScore !== undefined && String(editingMatch!.awayScore) !== '') ? Number(editingMatch!.awayScore) : undefined,
-      status:     editingMatch!.status || 'SCHEDULED',
-      round:      Number(editingMatch!.round || 1),
-      // Backend expects scheduledAt; kickoff is the legacy local state key
-      scheduledAt: editingMatch!.kickoff || (editingMatch as any).scheduledAt || new Date().toISOString(),
-      venue:      editingMatch!.venue || '',
-      seasonId:   String(editingMatch!.seasonId || currentSeasonId),
-    };
-    if (editingMatch!.id) {
-      const r = await layoutApi.updateMatch(editingMatch!.id, p);
-      setMatches(prev => prev.map(m => m.id === r.id ? r : m));
-    } else {
-      const r = await layoutApi.createMatch(p);
-      setMatches(prev => [r, ...prev]);
-    }
-    setEditingMatch(null);
-    showToast(editingMatch?.id ? 'Match mis à jour.' : 'Match programmé.');
-    apiClient.get('/admin/dashboard-stats').then(r => setStats(r.data)).catch(() => {});
-  }); };
+  /* ─── Match Handlers (create/edit now live in MatchCommandCenter) ─────────── */
 
   const deleteMatch = (id: string) => { if (!confirm('Supprimer ce match ?')) return; withLoading(async () => {
     await layoutApi.deleteMatch(id);
@@ -494,6 +459,7 @@ export default function AdminPage() {
         await layoutApi.createMatch({
           homeClubId: row.homeClubId, awayClubId: row.awayClubId,
           status: row.status || 'SCHEDULED', round: Number(row.round || 1),
+          scheduledAt: row.kickoff || row.scheduledAt || new Date().toISOString(),
           kickoff: row.kickoff, venue: row.venue, seasonId: row.seasonId || currentSeasonId,
           homeScore: row.homeScore !== undefined ? Number(row.homeScore) : undefined,
           awayScore: row.awayScore !== undefined ? Number(row.awayScore) : undefined,
@@ -506,25 +472,6 @@ export default function AdminPage() {
   };
 
   /* ─── Award Handlers ──────────────────────────────────────────────────────── */
-  const saveAward = (e: React.FormEvent) => { e.preventDefault(); withLoading(async () => {
-    const p = {
-      category:    editingAward!.category!,
-      periodStart: editingAward!.periodStart || new Date().toISOString(),
-      periodEnd:   editingAward!.periodEnd   || new Date().toISOString(),
-      status:      editingAward!.status      || 'CLOSED',
-      seasonId:    String(editingAward!.seasonId || currentSeasonId),
-      winnerId:    editingAward!.winnerId ? String(editingAward!.winnerId) : null,
-    };
-    if (editingAward!.id) {
-      const r = await layoutApi.updateAward(editingAward!.id, p as any);
-      setAwards(prev => prev.map(a => a.id === r.id ? r : a));
-    } else {
-      const r = await layoutApi.createAward(p as any);
-      setAwards(prev => [...prev, r]);
-    }
-    setEditingAward(null);
-    showToast(editingAward?.id ? 'Award mis à jour.' : 'Award créé.');
-  }); };
 
   const deleteAward = (id: string) => { if (!confirm('Supprimer cet award ?')) return; withLoading(async () => {
     await layoutApi.deleteAward(id);
@@ -942,7 +889,7 @@ export default function AdminPage() {
                 )},
                 { key: 'away', label: 'Extérieur', render: r => <span className="font-semibold text-white/80">{r.awayClub?.name || '—'}</span> },
                 { key: 'status', label: 'Statut', render: r => <StatusBadge status={r.status} /> },
-                { key: 'kickoff', label: 'Date', render: r => <span className="text-white/40 text-[10px]">{(r.scheduledAt || r.kickoff) ? new Date(r.scheduledAt || r.kickoff).toLocaleDateString('fr-FR') : '—'}</span> },
+                { key: 'kickoff', label: 'Date', render: r => { const d = r.scheduledAt || r.kickoff; return <span className="text-white/40 text-[10px]">{d ? new Date(d).toLocaleDateString('fr-FR') : '—'}</span>; } },
                 { key: 'actions', label: '', align: 'center', render: r => (
                   <div className="flex items-center gap-1 justify-end">
                     {r.status === 'SCHEDULED' && (
@@ -1070,7 +1017,7 @@ export default function AdminPage() {
                         )}
                       </div>
                     </div>
-                    <StatusBadge status={a.status} />
+                    <StatusBadge status={a.status ?? 'OPEN'} />
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-white/[0.05] flex-wrap">
                     {a.status === 'CLOSED' && (
@@ -2351,12 +2298,12 @@ export default function AdminPage() {
     </AnimatePresence>
 
     {/* ── League Studio: Big Moment Builder overlay ─────────────────────── */}
-    {actionBuilderRecord && (
+    {bigMomentBuilderRecord && (
       <GuidedBuilderEngine
         config={bigMomentsConfig}
-        record={actionBuilderRecord}
+        record={bigMomentBuilderRecord}
         showToast={showToast}
-        onClose={() => setActionBuilderRecord(null)}
+        onClose={() => setBigMomentBuilderRecord(null)}
       />
     )}
 
@@ -2377,7 +2324,7 @@ export default function AdminPage() {
       onCreateStadium={() => setStadiumBuilderRecord(stadiumsConfig.emptyRecord())}
       onCreateReferee={() => setRefereeBuilderRecord(ENTITY_REGISTRY.referees.emptyRecord())}
       onCreateStaff={() => setStaffBuilderRecord(ENTITY_REGISTRY.staff.emptyRecord())}
-      onCreateAward={() => setEditingAward({ category: 'Joueur de la Semaine', periodStart: new Date().toISOString(), periodEnd: new Date().toISOString(), status: 'CLOSED', seasonId: Number(currentSeasonId) as any })}
+      onCreateAward={() => setAwardsStudioRecord({})}
     />
     </>
   );

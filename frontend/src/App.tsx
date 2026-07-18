@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 const HomePage         = lazy(() => import("./pages/HomePage"));
 const AuthPage        = lazy(() => import("./pages/AuthPage").then(m => ({ default: m.AuthPage })));
 const NotFound        = lazy(() => import("./pages/NotFound"));
+const ShellApp        = lazy(() => import("./shell/ShellApp"));  // FootballOS — League Studio Shell
 const FixturesPage    = lazy(() => import("./pages/FixturesPage"));
 const ResultsPage     = lazy(() => import("./pages/ResultsPage"));
 const MatchesPage     = lazy(() => import("./pages/MatchesPage"));
@@ -60,6 +61,9 @@ const App = () => (
       <Routes>
         {/* Homepage — manages its own layout for the hero flush effect */}
         <Route path="/"  element={<HomePage />} />
+
+        {/* FootballOS — League Studio Shell (own chrome, no PageLayout) */}
+        <Route path="/os/*" element={<ShellApp />} />
 
         {/* Auth pages — no footer */}
         <Route path="/login"    element={<AuthPage />} />

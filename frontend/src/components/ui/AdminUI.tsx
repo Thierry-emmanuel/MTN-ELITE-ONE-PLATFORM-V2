@@ -57,9 +57,11 @@ interface FormFieldProps {
   error?: string;
   required?: boolean;
   hint?: string;
+  /** min attribute for number/date inputs */
+  min?: number | string;
 }
 
-export const FormField = memo(({ label, type = 'text', placeholder, value, onChange, options, error, required, hint }: FormFieldProps) => (
+export const FormField = memo(({ label, type = 'text', placeholder, value, onChange, options, error, required, hint, min }: FormFieldProps) => (
   <div className="flex flex-col gap-1.5 w-full">
     <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40 flex items-center gap-1">
       {label}{required && <span className="text-accent">*</span>}
@@ -87,6 +89,7 @@ export const FormField = memo(({ label, type = 'text', placeholder, value, onCha
         type={type}
         placeholder={placeholder}
         value={value}
+        min={min}
         onChange={(e) => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}
         className="w-full rounded-xl bg-white/[0.04] border border-white/8 px-4 py-3 text-xs text-white placeholder:text-white/15 outline-none focus:border-accent/50 focus:bg-white/[0.06] transition-all"
       />

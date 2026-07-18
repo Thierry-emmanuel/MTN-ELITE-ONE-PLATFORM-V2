@@ -100,7 +100,15 @@ function EntityCrudEngineInner<T extends { id?: string; _id?: string }>({
             key: c.key as string,
             label: c.label,
             align: c.align,
-            render: c.render ? (r: T) => c.render!(r) : undefined,
+            render: c.render
+              ? (r: T) => c.render!(r)
+              : c.optionsKey
+                ? (r: T) => {
+                    const v = (r as Record<string, unknown>)[c.key as string];
+                    const opt = lookupOptions[c.optionsKey!]?.find((o) => String(o.value) === String(v));
+                    return opt?.label ?? String(v ?? '—');
+                  }
+                : undefined,
           }))}
           data={data}
           keyField={config.idField}

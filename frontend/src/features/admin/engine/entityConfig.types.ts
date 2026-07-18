@@ -49,6 +49,8 @@ export interface ColumnDef<T> {
   label: string;
   align?: 'left' | 'center' | 'right';
   render?: (row: T) => string;
+  /** Resolve the cell value against a LookupSource (e.g. show club name for clubId) */
+  optionsKey?: string;
 }
 
 export interface LookupSource {

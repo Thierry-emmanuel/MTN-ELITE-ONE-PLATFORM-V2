@@ -1,0 +1,88 @@
+import { usePreferences } from '../stores/preferences.store';
+
+const fr = {
+  'domain.command': 'Command Center',
+  'domain.workspace': 'Workspace',
+  'domain.builders': 'Builders',
+  'domain.operations': 'Opérations',
+  'domain.intelligence': 'Intelligence',
+  'domain.settings': 'Paramètres',
+  'nav.favorites': 'Favoris',
+  'nav.recents': 'Récents',
+  'nav.drafts': 'Brouillons',
+  'bar.search': 'Rechercher ou naviguer…',
+  'bar.create': 'Créer',
+  'palette.placeholder': 'Tapez pour naviguer — “>” commandes, “+” créer, “?” aide',
+  'palette.empty': 'Aucun résultat. Essayez un autre terme.',
+  'notifications.title': 'Notifications',
+  'notifications.markAll': 'Tout marquer comme lu',
+  'notifications.all': 'Tout',
+  'notifications.mentions': 'Mentions',
+  'notifications.system': 'Système',
+  'help.title': 'Centre d’aide',
+  'help.shortcuts': 'Raccourcis clavier',
+  'empty.default': 'Rien ici pour le moment.',
+  'error.default': 'Une erreur est survenue.',
+  'error.retry': 'Réessayer',
+  'workspace.edit': 'Personnaliser',
+  'workspace.done': 'Terminé',
+  'workspace.reset': 'Réinitialiser le modèle',
+  'workspace.addWidget': 'Ajouter un widget',
+  'builder.publish': 'Publier',
+  'builder.preview': 'Aperçu',
+  'builder.history': 'Historique',
+  'builder.saved': 'Enregistré',
+  'builder.draft': 'Brouillon',
+  'status.draft': 'Brouillon',
+  'status.published': 'Publié',
+  'status.archived': 'Archivé',
+  'status.scheduled': 'Programmé',
+} as const;
+
+const en: Record<keyof typeof fr, string> = {
+  'domain.command': 'Command Center',
+  'domain.workspace': 'Workspace',
+  'domain.builders': 'Builders',
+  'domain.operations': 'Operations',
+  'domain.intelligence': 'Intelligence',
+  'domain.settings': 'Settings',
+  'nav.favorites': 'Favorites',
+  'nav.recents': 'Recents',
+  'nav.drafts': 'Drafts',
+  'bar.search': 'Search or jump to…',
+  'bar.create': 'Create',
+  'palette.placeholder': 'Type to jump — “>” commands, “+” create, “?” help',
+  'palette.empty': 'No results. Try another term.',
+  'notifications.title': 'Notifications',
+  'notifications.markAll': 'Mark all as read',
+  'notifications.all': 'All',
+  'notifications.mentions': 'Mentions',
+  'notifications.system': 'System',
+  'help.title': 'Help Center',
+  'help.shortcuts': 'Keyboard shortcuts',
+  'empty.default': 'Nothing here yet.',
+  'error.default': 'Something went wrong.',
+  'error.retry': 'Retry',
+  'workspace.edit': 'Customize',
+  'workspace.done': 'Done',
+  'workspace.reset': 'Reset to template',
+  'workspace.addWidget': 'Add a widget',
+  'builder.publish': 'Publish',
+  'builder.preview': 'Preview',
+  'builder.history': 'History',
+  'builder.saved': 'Saved',
+  'builder.draft': 'Draft',
+  'status.draft': 'Draft',
+  'status.published': 'Published',
+  'status.archived': 'Archived',
+  'status.scheduled': 'Scheduled',
+};
+
+export type I18nKey = keyof typeof fr;
+const catalogs = { fr, en };
+
+/** Reactive translation hook — all chrome strings are keys from day one. */
+export function useT() {
+  const language = usePreferences((s) => s.language);
+  return (key: I18nKey): string => catalogs[language][key] ?? key;
+}

@@ -18,6 +18,8 @@ interface Props {
   onCreateMatch: () => void;
   onCreateCoach: () => void;
   onCreateStadium: () => void;
+  onCreateReferee: () => void;
+  onCreateStaff: () => void;
   onCreateAward: () => void;
 }
 
@@ -46,7 +48,7 @@ const NAV_ITEMS = [
 
 const GROUP_ORDER = ['Compétition', 'Personnes', 'Héritage', 'Médias', 'Éditorial', 'Administration'];
 
-export function CommandPalette({ open, onOpenChange, onNavigate, onCreatePlayer, onCreateClub, onCreateSeason, onCreateMatch, onCreateCoach, onCreateStadium, onCreateAward }: Props) {
+export function CommandPalette({ open, onOpenChange, onNavigate, onCreatePlayer, onCreateClub, onCreateSeason, onCreateMatch, onCreateCoach, onCreateStadium, onCreateReferee, onCreateStaff, onCreateAward }: Props) {
   const run = (fn: () => void) => {
     fn();
     onOpenChange(false);
@@ -82,6 +84,14 @@ export function CommandPalette({ open, onOpenChange, onNavigate, onCreatePlayer,
           <CommandItem onSelect={() => run(onCreateStadium)}>
             <MapPin className="mr-2 h-4 w-4" />
             <span>Nouveau stade — Builder guidé</span>
+          </CommandItem>
+          <CommandItem onSelect={() => run(onCreateReferee)}>
+            <Flag className="mr-2 h-4 w-4" />
+            <span>Nouvel arbitre — Builder guidé</span>
+          </CommandItem>
+          <CommandItem onSelect={() => run(onCreateStaff)}>
+            <UserCog className="mr-2 h-4 w-4" />
+            <span>Nouveau membre du staff — Builder guidé</span>
           </CommandItem>
           <CommandItem onSelect={() => run(onCreateAward)}>
             <Trophy className="mr-2 h-4 w-4" />

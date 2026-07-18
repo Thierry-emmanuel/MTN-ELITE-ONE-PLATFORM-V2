@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Trophy, Calendar, Award, Users, Percent, HelpCircle,
-  Sparkles, Check, ChevronRight, X, UserCheck, Flame, Shield, Play
+  Trophy, Calendar, Users, Percent,
+  Sparkles, ChevronRight, X, Flame, Play
 } from 'lucide-react';
 import { layoutApi } from '@/services/layoutApi';
-import { apiClient } from '@/services/api';
-import { FormField, AdminButton, AdminCard } from '@/components/ui/AdminUI';
+import { FormField, AdminButton } from '@/components/ui/AdminUI';
 import { PreviewSelect } from './MatchCommandCenter';
 
 interface Props {
@@ -35,8 +34,7 @@ const OFFICIAL_CATEGORIES = [
   { value: 'BEST_SUPPORTERS', label: 'Meilleurs Supporters (Public)', group: 'Collectif', desc: 'Club avec la meilleure ambiance et fair-play' },
 ];
 
-export function AwardsStudio({ award, seasons, players, clubs, coaches, onClose, onSaved, showToast }: Props) {
-  const isNew = !award || !award.id;
+export function AwardsStudio({ award, seasons, players, onClose, onSaved, showToast }: Props) {
   const [activeStep, setActiveStep] = useState<StepId>('setup');
   const [saving, setSaving] = useState(false);
 
@@ -70,7 +68,7 @@ export function AwardsStudio({ award, seasons, players, clubs, coaches, onClose,
 
   // ── Step 5: Reveal Cinematic Setup ──
   const [speech, setSpeech] = useState(award?.revealMetadata?.speech || '');
-  const [trophyBlur, setTrophyBlur] = useState(award?.revealMetadata?.trophyBlur !== false);
+  const [trophyBlur] = useState(award?.revealMetadata?.trophyBlur !== false);
   const [socialTemplate, setSocialTemplate] = useState(award?.revealMetadata?.socialTemplate || '');
 
   // Fetch AI suggestions based on category selection
@@ -188,7 +186,7 @@ export function AwardsStudio({ award, seasons, players, clubs, coaches, onClose,
             { id: 'nominees', label: '3. Nommés', icon: Users },
             { id: 'voting', label: '4. Moteur de Vote', icon: Percent },
             { id: 'reveal', label: '5. Cérémonie', icon: Play },
-          ].map((s, idx) => {
+          ].map((s) => {
             const isActive = activeStep === s.id;
             return (
               <button

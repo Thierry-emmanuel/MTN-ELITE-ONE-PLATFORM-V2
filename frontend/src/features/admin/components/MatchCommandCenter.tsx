@@ -14,19 +14,19 @@
  *  7. PRE-PUBLISH VALIDATION: Real-time rules checking (lineup counts, GK presence, suspended players, invalid subs).
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, Save, CheckCircle, Clock, AlertTriangle, Ban,
-  Plus, Minus, Trash2, ChevronLeft, ChevronRight,
-  Users, BarChart2, Calendar, Swords, Target, Flag,
-  ShieldCheck, RefreshCw, Loader2, Sparkles, Send,
-  Tv, CloudSun, Eye, Compass, RotateCcw, AlertOctagon,
+  X, Save, CheckCircle, AlertTriangle,
+  Plus, Trash2, ChevronLeft, ChevronRight,
+  Users, Calendar, Swords,
+  ShieldCheck, Loader2, Sparkles,
+  Tv, RotateCcw, AlertOctagon,
   Copy, Award, Check
 } from 'lucide-react';
 import { layoutApi, Match } from '@/services/layoutApi';
 import { apiClient } from '@/services/api';
-import { FormField, AdminButton, SwitchToggle } from '@/components/ui/AdminUI';
+import { FormField } from '@/components/ui/AdminUI';
 
 /* ── PreviewSelect Component for Dropdowns with Image Previews ── */
 interface PreviewOption {
@@ -237,7 +237,6 @@ const EVENT_TYPES = [
 ];
 
 export function MatchCommandCenter({ match, seasons, clubs, players, currentSeasonId, onClose, onSaved, showToast }: Props) {
-  const isNew = !match.id;
   const [activeStep, setActiveStep] = useState<StepId>('metadata');
   const [saving, setSaving] = useState(false);
   const [undoStack, setUndoStack] = useState<any[]>([]);
@@ -271,8 +270,6 @@ export function MatchCommandCenter({ match, seasons, clubs, players, currentSeas
   const [awayBench, setAwayBench] = useState<string[]>([]);
   const [homeCaptainId, setHomeCaptainId] = useState('');
   const [awayCaptainId, setAwayCaptainId] = useState('');
-  const [homeViceCaptainId, setHomeViceCaptainId] = useState('');
-  const [awayViceCaptainId, setAwayViceCaptainId] = useState('');
   const [homeCoachId, setHomeCoachId] = useState('');
   const [awayCoachId, setAwayCoachId] = useState('');
   const [dbCoaches, setDbCoaches] = useState<any[]>([]);
@@ -765,7 +762,7 @@ export function MatchCommandCenter({ match, seasons, clubs, players, currentSeas
                       <div className="pt-4 border-t border-white/[0.05]">
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-white/40 mb-2">Statut opérationnel du match</label>
                         <div className="flex flex-wrap gap-2">
-                          {['SCHEDULED', 'LIVE', 'FINISHED', 'POSTPONED', 'CANCELLED'].map(s => (
+                          {(['SCHEDULED', 'LIVE', 'FINISHED', 'POSTPONED', 'CANCELLED'] as const).map(s => (
                             <button
                               key={s}
                               onClick={() => setMetadata(p => ({ ...p, status: s }))}
