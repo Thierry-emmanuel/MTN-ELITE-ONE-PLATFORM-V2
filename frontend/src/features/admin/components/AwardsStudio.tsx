@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { layoutApi } from '@/services/layoutApi';
 import { FormField, AdminButton } from '@/components/ui/AdminUI';
-import { PreviewSelect } from './MatchCommandCenter';
+import { PreviewSelect } from './PreviewSelect';
 
 interface Props {
   award?: any;

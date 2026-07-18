@@ -33,6 +33,12 @@ type AnyRecord = { id?: string; _id?: string };
 /** Optional per-entity refinements on top of the generic factory. */
 export interface BuilderOptions<T extends AnyRecord> {
   titleOf?: (draft: Partial<T>) => string;
+  /** Replace the generic form canvas with a bespoke one (e.g. Match Builder).
+   *  The bespoke canvas STILL runs inside BuilderHost — header, inspector,
+   *  history, publishing and shortcuts remain framework-owned. */
+  Canvas?: ComponentType<CanvasProps<Partial<T>>>;
+  /** Replace the builderSteps-derived section list. */
+  sections?: (draft: Partial<T>) => BuilderSection[];
   /** Public-preview descriptor — which fields compose the supporter-facing card. */
   preview?: {
     imageKey?: keyof T;
@@ -44,6 +50,40 @@ export interface BuilderOptions<T extends AnyRecord> {
 
 const filled = (v: unknown) =>
   v !== undefined && v !== null && String(v).trim() !== '' && !(Array.isArray(v) && v.length === 0);
+
+// ── Shared field grid (also used by bespoke canvases like the Match Builder) ─
+export function ConfigFieldsGrid<T extends AnyRecord>({ config, fieldKeys, draft, onChange, onSelect }: {
+  config: EntityConfig<T>;
+  /** Subset + order of fields to render; defaults to every config field. */
+  fieldKeys?: (keyof T)[];
+  draft: Partial<T>;
+  onChange: (next: Partial<T>) => void;
+  onSelect?: (sel: { kind: string; ref: string; label: string }) => void;
+}) {
+  const lookupOptions = useEntityLookups(config);
+  const fields: FieldDef<T>[] = (fieldKeys ?? config.fields.map((f) => f.key))
+    .map((k) => config.fields.find((f) => f.key === k))
+    .filter((f): f is FieldDef<T> => !!f);
+  return (
+    <div className="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
+      {fields.map((field) => (
+        <div
+          key={String(field.key)}
+          className={field.span === 1 ? 'md:col-span-1' : 'md:col-span-2'}
+          onFocusCapture={() => onSelect?.({ kind: 'field', ref: String(field.key), label: field.label })}
+        >
+          {renderEntityField(
+            field,
+            draft[field.key],
+            (v) => onChange({ ...draft, [field.key]: v }),
+            lookupOptions,
+            'w-full',
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ── Canvas ──────────────────────────────────────────────────────────────────
 function makeCanvas<T extends AnyRecord>(config: EntityConfig<T>): ComponentType<CanvasProps<Partial<T>>> {
@@ -203,8 +243,8 @@ export function builderFromConfig<T extends AnyRecord>(
     icon,
     emptyDraft: () => config.emptyRecord(),
     titleOf: opts.titleOf,
-    sections,
-    Canvas: makeCanvas(config),
+    sections: opts.sections ?? sections,
+    Canvas: opts.Canvas ?? makeCanvas(config),
     inspectorTabs: [
       {
         id: 'properties',

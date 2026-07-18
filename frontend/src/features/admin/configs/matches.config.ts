@@ -1,3 +1,4 @@
+import { clubsLookup, seasonsLookup } from '../lookups/sharedLookups';
 import type { EntityConfig } from '../engine/entityConfig.types';
 
 // Mirrors the DTO built by AdminPage's saveMatch().
@@ -11,6 +12,7 @@ export interface Match {
   round: number;
   scheduledAt: string; // ISO timestamp on the wire; datetime-local string while editing
   venue?: string;
+  referee?: string;
   seasonId: string;
 }
 
@@ -28,6 +30,7 @@ export const matchesConfig: EntityConfig<Match> = {
   labelPlural: 'Matchs',
   apiBasePath: '/matches',
   idField: 'id',
+  lookups: [clubsLookup, seasonsLookup],
 
   columns: [
     { key: 'round', label: 'J.' },
@@ -44,6 +47,7 @@ export const matchesConfig: EntityConfig<Match> = {
     { key: 'round', label: 'Journée', type: 'number', required: true, span: 1 },
     { key: 'scheduledAt', label: "Coup d'envoi", type: 'datetime-local', required: true, span: 1 },
     { key: 'venue', label: 'Stade / Lieu', type: 'text', span: 2 },
+    { key: 'referee', label: 'Arbitre central (officiels)', type: 'text', span: 2, hint: 'Nom complet — ex. « Alioum Néant »' },
     {
       key: 'status', label: 'Statut', type: 'select', span: 2,
       options: [

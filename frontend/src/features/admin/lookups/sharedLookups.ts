@@ -43,3 +43,14 @@ export const playersLookup: LookupSource = {
     }));
   },
 };
+
+export const seasonsLookup: LookupSource = {
+  key: 'seasons',
+  queryKey: ['lookups', 'seasons'],
+  fetch: async () => {
+    const { apiClient } = await import('@/services/api');
+    const res = await apiClient.get('/seasons');
+    const rows = Array.isArray(res.data) ? res.data : res.data.data;
+    return rows.map((s: { id: number | string; name: string }) => ({ value: String(s.id), label: s.name }));
+  },
+};
