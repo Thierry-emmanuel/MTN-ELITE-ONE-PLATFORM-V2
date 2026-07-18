@@ -65,8 +65,8 @@ const SystemStatus = () => (
     {[
       { label: 'Shell FootballOS', state: 'Opérationnel', ok: true },
       { label: 'Registre des modules', state: 'Actif', ok: true },
-      { label: 'Builders métier', state: 'Phase 2', ok: false },
-      { label: 'Temps réel (socket.io)', state: 'Phase 2', ok: false },
+      { label: 'Builders métier (backend réel)', state: 'Opérationnel', ok: true },
+      { label: 'Temps réel (socket.io)', state: 'Phase 3', ok: false },
     ].map((row) => (
       <li key={row.label} className="flex items-center justify-between rounded-lg border border-zinc-800/70 px-3 py-2">
         <span className="flex items-center gap-2 text-[13px] text-zinc-300">

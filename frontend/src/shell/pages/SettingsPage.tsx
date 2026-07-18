@@ -48,7 +48,7 @@ const PreferencesSection = () => {
     <div className="space-y-3">
       <SectionCard title="Thème">
         <Choice value={theme} onSelect={setTheme}
-          options={[{ id: 'dark', label: 'Sombre' }, { id: 'light', label: 'Clair (Phase 2)' }]} />
+          options={[{ id: 'dark', label: 'Sombre' }, { id: 'light', label: 'Clair (à venir)' }]} />
       </SectionCard>
       <SectionCard title="Langue">
         <Choice value={language} onSelect={setLanguage}

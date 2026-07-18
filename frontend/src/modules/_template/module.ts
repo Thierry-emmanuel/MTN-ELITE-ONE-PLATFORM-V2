@@ -1,41 +1,103 @@
 /**
- * MODULE TEMPLATE — copy this folder to create a FootballOS module.
- * ------------------------------------------------------------------
- * A module = a folder + ONE registerModule() call + ONE import line
- * in shell/modulesBootstrap.ts. The shell gives it for free:
- *   sidebar entry · command palette · quick create · global search ·
- *   recents / favorites / drafts · widget slots · builder framework.
+ * admin-legacy — the existing admin engine registered as FootballOS
+ * tenant module #1, now with REAL builders (Phase 2).
  *
- * Rules (from the Phase-1 spec):
- *   1. Import ONLY from '@/shell' (never from another module).
- *   2. Everything you expose is an OSEntity.
- *   3. Your builder provides a Canvas — the framework owns the rest.
- *   4. contractVersion is checked at registration; the six domains,
- *      OSEntity, the layouts and the builder regions never change.
+ * Nothing is duplicated: labels come from ENTITY_REGISTRY, forms from
+ * renderEntityField, data from createEntityApi (real NestJS endpoints),
+ * steps from each config's builderSteps. builderFromConfig() assembles
+ * these into the universal Builder Framework — the five foundational
+ * entities (Competition, Season, Club, Player, Stadium) get curated
+ * titles and public previews on top of the generic factory.
  */
-import { Box } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  ArrowLeftRight, Award, Box, Briefcase, Building2, CalendarDays, Camera,
+  Flag, Handshake, HeartPulse, ListChecks, Megaphone, Shield, Shirt,
+  Sparkles, Trophy, UserRound, Users,
+} from 'lucide-react';
 import { registerModule } from '@/shell/registry/module.registry';
+import { builderFromConfig, type BuilderOptions } from '@/shell/builder-framework/configBuilder';
+import type { BuilderDefinition, EntityTypeDefinition } from '@/shell/registry/types';
+import { ENTITY_REGISTRY } from '@/features/admin/entityRegistry';
+import type { Competition } from '@/features/admin/configs/competitions.config';
+import type { Season } from '@/features/admin/configs/seasons.config';
+import type { Club } from '@/features/admin/configs/clubs.config';
+import type { Player } from '@/features/admin/configs/players.config';
+import type { Stadium } from '@/features/admin/configs/stadiums.config';
 
-export function registerTemplateModule() {
-  registerModule({
-    slug: 'template',                    // unique, kebab-case
-    label: 'Module modèle',              // sidebar + palette label
-    icon: Box,
-    domain: 'builders',                  // one of the six domains
-    contractVersion: 1,
-    entities: [
-      // {
-      //   type: 'thing',
-      //   moduleSlug: 'template',
-      //   icon: Box,
-      //   labelSingular: 'Objet',
-      //   labelPlural: 'Objets',
-      //   creatable: true,               // appears in ＋ and "+..." palette
-      // },
-    ],
-    // builders: [...]                   // BuilderDefinition per entity type
-    // widgets: [...]                    // workspace widgets
-    // commands: [...]                   // palette commands
-    // searchProvider: async (q) => []   // feed global search
-  });
-}
+const ICONS: Record<string, LucideIcon> = {
+  transfers: ArrowLeftRight,
+  injuries: HeartPulse,
+  selections: ListChecks,
+  'big-moments': Sparkles,
+  actions: Camera,
+  clubs: Shield,
+  players: UserRound,
+  stadiums: Building2,
+  equipments: Shirt,
+  sponsors: Handshake,
+  seasons: CalendarDays,
+  matches: Trophy,
+  coaches: Megaphone,
+  referees: Flag,
+  staff: Briefcase,
+  awards: Award,
+  competitions: Trophy,
+  'sponsor-placements': Megaphone,
+  talents: Users,
+};
+
+const iconFor = (slug: string): LucideIcon => ICONS[slug] ?? Box;
+
+/**
+ * Curated refinements for the five foundational builders. Everything not
+ * listed here still gets a fully functional generic builder — same
+ * factory, default preview.
+ */
+const CURATED: Record<string, BuilderOptions<any>> = {
+  competitions: {
+    titleOf: (d: Partial<Competition>) => d.name ?? '',
+    preview: { imageKey: 'logoUrl', titleKeys: ['name'], subtitleKeys: ['country'], badgeKeys: ['type', 'tier'] },
+  } satisfies BuilderOptions<Competition>,
+  seasons: {
+    titleOf: (d: Partial<Season>) => d.name ?? '',
+    preview: { titleKeys: ['name'], subtitleKeys: ['startDate', 'endDate'], badgeKeys: ['status'] },
+  } satisfies BuilderOptions<Season>,
+  clubs: {
+    titleOf: (d: Partial<Club>) => d.name ?? '',
+    preview: { imageKey: 'logoUrl', titleKeys: ['name'], subtitleKeys: ['city', 'stadium'], badgeKeys: ['nickname'] },
+  } satisfies BuilderOptions<Club>,
+  players: {
+    titleOf: (d: Partial<Player>) => [d.firstName, d.lastName].filter(Boolean).join(' '),
+    preview: { imageKey: 'photoUrl', titleKeys: ['firstName', 'lastName'], subtitleKeys: ['nationality'], badgeKeys: ['position', 'jerseyNumber'] },
+  } satisfies BuilderOptions<Player>,
+  stadiums: {
+    titleOf: (d: Partial<Stadium>) => d.name ?? '',
+    preview: { imageKey: 'photoUrl', titleKeys: ['name'], subtitleKeys: ['city'], badgeKeys: ['capacity', 'surface'] },
+  } satisfies BuilderOptions<Stadium>,
+};
+
+const entities: EntityTypeDefinition[] = Object.entries(ENTITY_REGISTRY).map(
+  ([slug, config]) => ({
+    type: slug,
+    moduleSlug: 'admin',
+    icon: iconFor(slug),
+    labelSingular: config.labelSingular ?? slug,
+    labelPlural: config.labelPlural ?? slug,
+    creatable: true,
+  }),
+);
+
+const builders: BuilderDefinition<any>[] = Object.entries(ENTITY_REGISTRY).map(
+  ([slug, config]) => builderFromConfig(config, iconFor(slug), CURATED[slug]),
+);
+
+registerModule({
+  slug: 'admin',
+  label: 'Données de la ligue',
+  icon: Box,
+  domain: 'builders',
+  contractVersion: 1,
+  entities,
+  builders,
+});

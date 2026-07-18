@@ -32,7 +32,7 @@ export default function IntelligencePage() {
       charts={
         <>
           <div className="col-span-12 flex h-[260px] items-center justify-center rounded-xl border border-dashed border-zinc-800 lg:col-span-8">
-            <p className="text-[12px] text-zinc-600">Emplacement graphique — les modules Intelligence brancheront recharts ici (Phase 2+).</p>
+            <p className="text-[12px] text-zinc-600">Emplacement graphique — les modules Intelligence brancheront recharts ici (Phase 3).</p>
           </div>
           <div className="col-span-12 flex h-[260px] items-center justify-center rounded-xl border border-dashed border-zinc-800 lg:col-span-4">
             <p className="text-[12px] text-zinc-600">Emplacement graphique</p>

@@ -30,14 +30,28 @@ interface Version<T> { at: string; snapshot: T }
  * history, selection routing, preview mode, the publish pipeline,
  * and builder-scoped keyboard shortcuts.
  */
-export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; entity: OSEntity }) {
+export function BuilderHost<T>({ def, entity, initialDraft, serverId = null, onPublished }: {
+  def: BuilderDefinition<T>;
+  entity: OSEntity;
+  /** Record loaded from the backend when editing an existing entity. */
+  initialDraft?: T;
+  /** Real backend id (null while the record only exists as a local draft). */
+  serverId?: string | null;
+  /** Fired after persistence.publish succeeds (navigate, invalidate caches…). */
+  onPublished?: (id: string) => void;
+}) {
   const t = useT();
-  const [draft, setDraft] = useState<T>(() => def.emptyDraft());
+  const [draft, setDraft] = useState<T>(() => initialDraft ?? def.emptyDraft());
   const [status, setStatus] = useState<EntityStatus>(entity.status ?? 'draft');
+  const [publishing, setPublishing] = useState(false);
+  const [serverIssues, setServerIssues] = useState<string[]>([]);
+  const [remoteSaved, setRemoteSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [selection, setSelection] = useState<BuilderSelection | null>(null);
-  const [activeSection, setActiveSection] = useState(def.sections[0]?.id ?? '');
+  const [activeSection, setActiveSection] = useState(
+    (typeof def.sections === 'function' ? def.sections(initialDraft ?? def.emptyDraft()) : def.sections)[0]?.id ?? '',
+  );
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
@@ -47,13 +61,26 @@ export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; ent
   const setInspectorOpen = useInspector((s) => s.setOpen);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const sections = typeof def.sections === 'function' ? def.sections(draft) : def.sections;
+  const relations = typeof def.relations === 'function' ? def.relations(draft) : def.relations;
+  const liveTitle = def.titleOf?.(draft)?.trim() || entity.title;
+
   // ── ⑦ framework-owned autosave (debounced 800ms) + history versions ──────
   const save = useCallback((snapshot: T) => {
     setVersions((v) => [{ at: new Date().toISOString(), snapshot }, ...v].slice(0, 20));
     setSavedAt(new Date());
     setDirty(false);
-    upsertDraft({ ...entity, status: 'draft', updatedAt: new Date().toISOString() });
-  }, [entity, upsertDraft]);
+    if (serverId && def.persistence?.saveDraft) {
+      // Existing record → autosave straight to the backend (best-effort:
+      // an invalid intermediate state must never block typing).
+      def.persistence.saveDraft(serverId, snapshot)
+        .then(() => setRemoteSaved(true))
+        .catch(() => setRemoteSaved(false));
+    } else {
+      // Not created server-side yet → the draft lives in the shell.
+      upsertDraft({ ...entity, status: 'draft', updatedAt: new Date().toISOString() });
+    }
+  }, [entity, upsertDraft, serverId, def.persistence]);
 
   const onChange = useCallback((next: T) => {
     setDraft(next);
@@ -68,12 +95,12 @@ export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; ent
       ...def.inspectorTabs.map((tab) => ({
         id: tab.id, label: tab.label, content: tab.render(draft, selection),
       })),
-      ...(def.relations?.length
+      ...(relations?.length
         ? [{
             id: '__relations', label: 'Relations',
             content: (
               <div className="space-y-4">
-                {def.relations.map((r) => (
+                {relations.map((r) => (
                   <div key={r.label}>
                     <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-500">{r.label}</p>
                     <div className="flex flex-wrap gap-1.5">
@@ -97,10 +124,31 @@ export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; ent
 
   // ── ⑧ publish pipeline: validate → confirm → action → toast ─────────────
   const validation = useMemo(() => def.publishing.validate(draft), [def, draft]);
-  const publish = () => {
-    setStatus('published');
-    setPublishOpen(false);
-    toast.success('Publié', { description: `${entity.title} est maintenant publié.` });
+
+  const publish = async () => {
+    if (!def.persistence) {
+      // No backend wired (template/demo builders) — local status flip only.
+      setStatus('published');
+      setPublishOpen(false);
+      toast.success('Publié', { description: `${liveTitle} est maintenant publié.` });
+      return;
+    }
+    setPublishing(true);
+    setServerIssues([]);
+    try {
+      const { id } = await def.persistence.publish(serverId, draft);
+      setStatus('published');
+      setPublishOpen(false);
+      toast.success('Publié', { description: `${liveTitle} est enregistré dans le backend.` });
+      onPublished?.(id);
+    } catch (err) {
+      // NestJS ValidationPipe → 400 { message: string[] | string }
+      const data = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data;
+      const msgs = Array.isArray(data?.message) ? data.message : data?.message ? [data.message] : ['Erreur serveur — réessayez.'];
+      setServerIssues(msgs);
+    } finally {
+      setPublishing(false);
+    }
   };
 
   // ── builder-scoped shortcuts (framework-owned) ──────────────────────────
@@ -126,11 +174,15 @@ export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; ent
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="truncate font-sans text-[14px] font-bold tracking-tight text-zinc-100">{entity.title}</h1>
+            <h1 className="truncate font-sans text-[14px] font-bold tracking-tight text-zinc-100">{liveTitle}</h1>
             <StatusBadge status={status} />
           </div>
           <p className="text-[11px] text-zinc-600" aria-live="polite">
-            {dirty ? 'Modifications en cours…' : savedAt ? `${t('builder.saved')} · ${savedAt.toLocaleTimeString()}` : t('builder.draft')}
+            {dirty
+              ? 'Modifications en cours…'
+              : savedAt
+                ? `${t('builder.saved')}${serverId ? (remoteSaved ? ' (serveur)' : ' (local)') : ''} · ${savedAt.toLocaleTimeString()}`
+                : serverId ? 'Synchronisé avec le backend' : t('builder.draft')}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -174,7 +226,7 @@ export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; ent
         {/* ② BUILDER SIDEBAR — outline of THIS entity */}
         <aside className="hidden w-[200px] shrink-0 border-r border-zinc-800/70 p-2 lg:block" aria-label="Sections">
           <nav className="space-y-0.5">
-            {def.sections.map((s) => (
+            {sections.map((s) => (
               <button key={s.id} onClick={() => setActiveSection(s.id)}
                 className={cn('flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px]',
                   activeSection === s.id ? 'bg-zinc-900 font-medium text-zinc-100' : 'text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-300')}>
@@ -249,6 +301,14 @@ export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; ent
             <DialogTitle className="text-[14px]">Publier « {entity.title} »</DialogTitle>
             <DialogDescription className="text-[12px] text-zinc-500">Rapport de validation avant publication.</DialogDescription>
           </DialogHeader>
+          {serverIssues.length > 0 && (
+            <ul className="space-y-1 rounded-lg border border-red-950 bg-red-950/20 px-3 py-2">
+              <li className="text-[11px] font-semibold uppercase tracking-widest text-red-500">Validation backend</li>
+              {serverIssues.map((m) => (
+                <li key={m} className="text-[13px] text-red-400">{m}</li>
+              ))}
+            </ul>
+          )}
           {validation.ok ? (
             <p className="flex items-center gap-2 rounded-lg border border-emerald-900 bg-emerald-950/40 px-3 py-2 text-[13px] text-emerald-400">
               <CircleCheck className="size-4" /> Prêt à publier — aucune erreur détectée.
@@ -264,8 +324,8 @@ export function BuilderHost<T>({ def, entity }: { def: BuilderDefinition<T>; ent
           )}
           <DialogFooter>
             <Button variant="ghost" size="sm" onClick={() => setPublishOpen(false)} className="text-zinc-400 hover:bg-zinc-900">Annuler</Button>
-            <Button size="sm" disabled={!validation.ok} onClick={publish} className="bg-emerald-600 text-white hover:bg-emerald-500">
-              {t('builder.publish')}
+            <Button size="sm" disabled={!validation.ok || publishing} onClick={publish} className="bg-emerald-600 text-white hover:bg-emerald-500">
+              {publishing ? 'Publication…' : t('builder.publish')}
             </Button>
           </DialogFooter>
         </DialogContent>

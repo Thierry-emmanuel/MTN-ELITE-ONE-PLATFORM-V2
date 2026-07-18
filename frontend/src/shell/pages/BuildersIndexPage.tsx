@@ -21,8 +21,9 @@ export default function BuildersIndexPage() {
           <h1 className="font-sans text-xl font-bold tracking-tight text-zinc-100">Builders</h1>
           <p className="mt-1 text-[13px] leading-relaxed text-zinc-500">
             Chaque surface de production hérite du Builder Framework : en-tête, plan, canevas,
-            inspecteur, relations, aperçu, historique et publication. Les Builders métier
-            (Joueur, Match, Club) arrivent en Phase 2 — le cadre est déjà prêt.
+            inspecteur, relations, aperçu, historique et publication. Les enregistrements sont
+            lus et écrits directement dans le backend NestJS — brouillon local jusqu'à la
+            première publication, autosave serveur ensuite.
           </p>
         </div>
       }

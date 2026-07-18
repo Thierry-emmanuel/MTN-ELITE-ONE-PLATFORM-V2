@@ -29,9 +29,9 @@ const seed: OSNotification[] = [
   },
   {
     id: 'n2', kind: 'system', read: false, at: new Date().toISOString(),
-    title: 'Phase 1 — Shell uniquement',
-    body: 'Les Builders métier (Joueur, Match, Club) arrivent en Phase 2.',
-    route: '/os/builders',
+    title: 'Builders connectés au backend',
+    body: 'Compétitions, saisons, clubs, joueurs et stades sont éditables avec données réelles.',
+    route: '/os/builders/admin',
   },
 ];
 

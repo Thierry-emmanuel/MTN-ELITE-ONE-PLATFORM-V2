@@ -114,15 +114,35 @@ export interface ValidationIssue { field: string; message: string }
 export interface ValidationResult { ok: boolean; issues: ValidationIssue[] }
 export interface PublishAction { id: string; label: string; run: () => Promise<void> | void }
 
+/**
+ * Real-backend persistence contract (Phase 2). The framework owns WHEN
+ * these run (autosave debounce, publish pipeline); the module owns HOW
+ * (which API). Drafts of not-yet-created records stay client-side; once a
+ * record exists server-side, autosave PATCHes it.
+ */
+export interface BuilderPersistence<T> {
+  /** Fetch the record for /builders/:module/:type/:id (id ≠ 'new'). */
+  load: (id: string) => Promise<T>;
+  /** Autosave an EXISTING record (framework only calls this with a server id). */
+  saveDraft?: (id: string, draft: T) => Promise<void>;
+  /** Create (id null) or update, applying any publish overrides. Returns the server id. */
+  publish: (id: string | null, draft: T) => Promise<{ id: string }>;
+}
+
 export interface BuilderDefinition<T = unknown> {
   entityType: string;
   icon: LucideIcon;
-  sections: BuilderSection[];
+  /** Static, or derived from the draft (live per-section completeness). */
+  sections: BuilderSection[] | ((draft: T) => BuilderSection[]);
   Canvas: ComponentType<CanvasProps<T>>;
   inspectorTabs: InspectorTab<T>[];
-  relations?: RelationDef[];
+  /** Static, or derived from the draft (live linked entities). */
+  relations?: RelationDef[] | ((draft: T) => RelationDef[]);
   previews?: PreviewMode<T>[];
   publishing: { validate: (draft: T) => ValidationResult; actions?: PublishAction[] };
+  persistence?: BuilderPersistence<T>;
+  /** Live document title derived from the draft (e.g. player full name). */
+  titleOf?: (draft: T) => string;
   commands?: PaletteCommand[];
   shortcuts?: ScopedShortcut[];
   emptyDraft: () => T;
