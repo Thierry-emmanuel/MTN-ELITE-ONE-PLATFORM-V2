@@ -1,4 +1,5 @@
 import type { EntityConfig } from '../engine/entityConfig.types';
+import { clubsLookup, playersLookup } from '../lookups/sharedLookups';
 
 export interface Transfer {
   id?: string;
@@ -19,6 +20,7 @@ export const transfersConfig: EntityConfig<Transfer> = {
   labelPlural: 'Transferts',
   apiBasePath: '/transfers',
   idField: 'id',
+  lookups: [playersLookup, clubsLookup],
   columns: [
     { key: 'playerName', label: 'Joueur' },
     { key: 'toClubId', label: 'Vers' },

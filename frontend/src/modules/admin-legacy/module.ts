@@ -26,6 +26,10 @@ import type { Player } from '@/features/admin/configs/players.config';
 import type { Stadium } from '@/features/admin/configs/stadiums.config';
 import type { Match } from '@/features/admin/configs/matches.config';
 import { MatchBuilderCanvas } from '@/shell/builder-framework/match/MatchBuilderCanvas';
+import { StoryCanvas } from '@/shell/builder-framework/story/StoryCanvas';
+import type { Article } from '@/features/admin/configs/articles.config';
+import type { MediaAsset } from '@/features/admin/configs/media.config';
+import type { Legend } from '@/features/admin/configs/hallOfFame.config';
 
 const ICONS: Record<string, LucideIcon> = {
   transfers: ArrowLeftRight,
@@ -47,6 +51,9 @@ const ICONS: Record<string, LucideIcon> = {
   competitions: Trophy,
   'sponsor-placements': Megaphone,
   talents: Users,
+  articles: Megaphone,
+  media: Camera,
+  'hall-of-fame': Award,
 };
 
 const iconFor = (slug: string): LucideIcon => ICONS[slug] ?? Box;
@@ -100,6 +107,20 @@ const CURATED: Record<string, BuilderOptions<any>> = {
     },
     preview: { titleKeys: ['round'], subtitleKeys: ['venue', 'scheduledAt'], badgeKeys: ['status'] },
   } satisfies BuilderOptions<Match>,
+  /** Story Builder — Phase 4. Bespoke canvas: auto-population from the linked
+   *  match (the Match Builder is the source of truth for every report). */
+  articles: {
+    titleOf: (d: Partial<Article>) => d.title?.fr ?? '',
+    Canvas: StoryCanvas,
+  } satisfies BuilderOptions<Article>,
+  media: {
+    titleOf: (d: Partial<MediaAsset>) => d.title ?? '',
+    preview: { imageKey: 'url', titleKeys: ['title'], subtitleKeys: ['credit'], badgeKeys: ['type'] },
+  } satisfies BuilderOptions<MediaAsset>,
+  'hall-of-fame': {
+    titleOf: (d: Partial<Legend>) => d.name ?? '',
+    preview: { titleKeys: ['name'], subtitleKeys: ['era', 'career_summary'], badgeKeys: ['inducted_year'] },
+  } satisfies BuilderOptions<Legend>,
 };
 
 const entities: EntityTypeDefinition[] = Object.entries(ENTITY_REGISTRY).map(

@@ -54,3 +54,17 @@ export const seasonsLookup: LookupSource = {
     return rows.map((s: { id: number | string; name: string }) => ({ value: String(s.id), label: s.name }));
   },
 };
+
+export const matchesLookup: LookupSource = {
+  key: 'matches',
+  queryKey: ['lookups', 'matches'],
+  fetch: async () => {
+    const { apiClient } = await import('@/services/api');
+    const res = await apiClient.get('/matches', { params: { limit: 100 } });
+    const rows = Array.isArray(res.data) ? res.data : res.data.data;
+    return rows.map((m: { id: number | string; round?: number; homeClub?: { name?: string }; awayClub?: { name?: string }; scheduledAt?: string }) => ({
+      value: String(m.id),
+      label: `J${m.round ?? '?'} — ${m.homeClub?.name ?? '?'} vs ${m.awayClub?.name ?? '?'}`,
+    }));
+  },
+};

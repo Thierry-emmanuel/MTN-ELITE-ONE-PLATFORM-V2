@@ -25,10 +25,16 @@ export function createEntityApi<T extends { id?: string; _id?: string }>(
   /** Keys that are safe to send to the backend (defined in config.fields). */
   const allowedKeys = new Set<string>(config.fields.map((f) => String(f.key)));
 
-  /** Strip everything that isn't a declared form field. */
+  /**
+   * Shape then strip: config.beforeSave (slug generation, type coercion,
+   * nested assembly) runs first — it was declared in the contract since
+   * Phase 0 but never applied anywhere until Phase 4. Then everything that
+   * isn't a declared form field is removed.
+   */
   function sanitise(payload: Partial<T>): Record<string, unknown> {
+    const shaped = config.beforeSave ? config.beforeSave(payload) : payload;
     return Object.fromEntries(
-      Object.entries(payload as Record<string, unknown>).filter(([k]) => allowedKeys.has(k)),
+      Object.entries(shaped as Record<string, unknown>).filter(([k]) => allowedKeys.has(k)),
     );
   }
 

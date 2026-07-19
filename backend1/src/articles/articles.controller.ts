@@ -66,6 +66,14 @@ export class ArticlesController {
    * GET /articles/:slug
    * Slug lookup — increments view count.
    */
+  // Phase 4 (Story Builder) — load by Mongo id for the OS builder;
+  // must precede @Get(':slug') or the slug route swallows it.
+  @Get('by-id/:id')
+  @ApiOperation({ summary: 'Get one article by id' })
+  findById(@Param('id') id: string) {
+    return this.articlesService.findById(id);
+  }
+
   @Get(':slug')
   @ApiOperation({ summary: 'Get single article by slug and increment views' })
   @ApiParam({ name: 'slug' })

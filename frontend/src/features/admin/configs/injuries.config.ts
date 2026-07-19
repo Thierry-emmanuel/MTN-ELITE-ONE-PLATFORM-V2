@@ -1,4 +1,5 @@
 import type { EntityConfig } from '../engine/entityConfig.types';
+import { clubsLookup, playersLookup } from '../lookups/sharedLookups';
 
 export interface Injury {
   id?: string;
@@ -18,6 +19,7 @@ export const injuriesConfig: EntityConfig<Injury> = {
   labelPlural: 'Blessures',
   apiBasePath: '/injuries',
   idField: 'id',
+  lookups: [playersLookup, clubsLookup],
   columns: [
     { key: 'playerName', label: 'Joueur' },
     { key: 'type', label: 'Blessure' },

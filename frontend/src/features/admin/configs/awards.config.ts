@@ -1,4 +1,5 @@
 import type { EntityConfig } from '../engine/entityConfig.types';
+import { playersLookup, seasonsLookup } from '../lookups/sharedLookups';
 
 // Mirrors the DTO built by AdminPage's saveAward().
 export interface Award {
@@ -23,6 +24,7 @@ export const awardsConfig: EntityConfig<Award> = {
   labelPlural: 'Awards',
   apiBasePath: '/awards',
   idField: 'id',
+  lookups: [playersLookup, seasonsLookup],
 
   columns: [
     { key: 'category', label: 'Catégorie' },
