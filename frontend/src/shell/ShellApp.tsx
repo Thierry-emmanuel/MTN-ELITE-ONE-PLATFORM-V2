@@ -15,6 +15,9 @@ const BuilderModulePage = lazy(() => import('./pages/BuilderModulePage'));
 const BuilderShellPage = lazy(() => import('./pages/BuilderShellPage'));
 const OperationsPage = lazy(() => import('./pages/OperationsPage'));
 const IntelligencePage = lazy(() => import('./pages/IntelligencePage'));
+const CompetitionIntelligencePage = lazy(() => import('./pages/intelligence/CompetitionIntelligencePage'));
+const ClubIntelligencePage = lazy(() => import('./pages/intelligence/ClubIntelligencePage'));
+const PlayerIntelligencePage = lazy(() => import('./pages/intelligence/PlayerIntelligencePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const NotFoundShell = lazy(() => import('./pages/NotFoundShell'));
 
@@ -35,6 +38,9 @@ export default function ShellApp() {
         <Route path="builders/:module/:type/:id" element={<S><BuilderShellPage /></S>} />
         <Route path="operations" element={<S><OperationsPage /></S>} />
         <Route path="intelligence" element={<S><IntelligencePage /></S>} />
+        <Route path="intelligence/competition" element={<S><CompetitionIntelligencePage /></S>} />
+        <Route path="intelligence/clubs" element={<S><ClubIntelligencePage /></S>} />
+        <Route path="intelligence/players" element={<S><PlayerIntelligencePage /></S>} />
         <Route path="settings/*" element={<S><SettingsPage /></S>} />
         <Route path="*" element={<S><NotFoundShell /></S>} />
       </Route>
