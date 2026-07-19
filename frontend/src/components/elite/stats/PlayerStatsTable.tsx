@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, memo } from 'react';
+import { csvDownload } from '@/features/presentation/engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronUp, ChevronDown, ChevronsUpDown,
@@ -203,13 +204,8 @@ function exportCsv(players: PlayerStat[], per90: boolean) {
     (p.xG ?? 0).toFixed(1), p.yellowCards, p.redCards,
   ]);
 
-  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = `stats-joueurs${per90 ? '-par90' : ''}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  // Consolidated onto the universal Export Engine (Presentation & Export phase).
+  csvDownload(`stats-joueurs${per90 ? '-par90' : ''}.csv`, header, rows);
 }
 
 // ─── Table row ────────────────────────────────────────────────────────────────

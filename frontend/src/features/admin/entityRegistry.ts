@@ -19,12 +19,14 @@ import { talentsConfig } from './configs/talents.config';
 import { articlesConfig } from './configs/articles.config';
 import { mediaConfig } from './configs/media.config';
 import { hallOfFameConfig } from './configs/hallOfFame.config';
+import { BUSINESS_CONFIGS } from '@/features/business/business.configs';
 import type { EntityConfig } from './engine/entityConfig.types';
 
 export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   articles: articlesConfig,
   media: mediaConfig,
   'hall-of-fame': hallOfFameConfig,
+  ...BUSINESS_CONFIGS,
   transfers: transfersConfig,
   injuries: injuriesConfig,
   selections: selectionsConfig,

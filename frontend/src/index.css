@@ -378,3 +378,9 @@
     background-repeat: no-repeat;
   }
 }
+/* Presentation Engine — print pipeline: only #print-surface prints. */
+@media print {
+  body * { visibility: hidden !important; }
+  #print-surface, #print-surface * { visibility: visible !important; }
+  #print-surface { position: absolute !important; inset: 0 !important; width: 100% !important; }
+}

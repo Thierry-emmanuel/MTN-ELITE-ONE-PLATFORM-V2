@@ -4,3 +4,4 @@
  * never changes.
  */
 import '@/modules/admin-legacy/module';
+import '@/modules/business/module';

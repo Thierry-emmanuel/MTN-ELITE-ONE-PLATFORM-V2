@@ -19,6 +19,8 @@ import { StandingsModule }   from './standings/standings.module';
 import { StatsModule }       from './stats/stats.module';
 import { AwardsModule }      from './awards/awards.module';
 import { ArticlesModule }    from './articles/articles.module';
+import { MediaModule }       from './media/media.module';
+import { BusinessModule }    from './business/business.module';
 import { HeroBannersModule } from './hero-banners/hero-banners.module';
 import { AdminModule }       from './admin/admin.module';
 import { WebsocketModule }   from './websocket/websocket.module';
@@ -115,6 +117,8 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     StatsModule,
     AwardsModule,
     ArticlesModule,
+    MediaModule,
+    BusinessModule,
     HeroBannersModule,
     AdminModule,
     WebsocketModule,

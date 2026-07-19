@@ -1,4 +1,5 @@
 import { useState, useCallback, memo } from 'react';
+import { csvDownload } from '@/features/presentation/engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Download, Swords } from 'lucide-react';
 import {
@@ -107,13 +108,8 @@ function exportCsv(clubs: ClubStat[]) {
     c.shots, c.shotsOnTarget, c.cleanSheets,
     c.yellowCards, c.redCards, c.points,
   ]);
-  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = 'stats-clubs.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+  // Consolidated onto the universal Export Engine (Presentation & Export phase).
+  csvDownload('stats-clubs.csv', header, rows);
 }
 
 // ─── Club row ─────────────────────────────────────────────────────────────────
