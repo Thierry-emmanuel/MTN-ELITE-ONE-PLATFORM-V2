@@ -57,6 +57,11 @@ const NAV_LINKS: NavItem[] = [
     href: "/",
   },
   {
+    label: "Découvrir",
+    icon: <Sparkles className="h-3.5 w-3.5" />,
+    href: "/discover",
+  },
+  {
     label: "Compétitions",
     icon: <Trophy className="h-3.5 w-3.5" />,
     tagline: "La saison, en direct",

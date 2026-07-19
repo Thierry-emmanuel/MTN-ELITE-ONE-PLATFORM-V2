@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ExploreRail } from '@/components/elite/ExploreRail';
 import {
   Shield, ArrowLeft, User, BarChart2, History, Trophy, Repeat, TrendingUp, Images, Newspaper,
   BookMarked, Compass, BookOpen, Flag, Archive, Dna, Map, Crown,
@@ -214,6 +215,7 @@ export default function PlayerDetailPage() {
       <GallerySection player={player} />
       {passport && <LegacySection player={player} legacy={passport.legacy} />}
       <RelatedNewsSection player={player} articles={relatedArticles} relatedPlayers={relatedPlayers} />
+      <ExploreRail entity={{ playerId: Number(id) }} />
     </PageLayout>
   );
 }

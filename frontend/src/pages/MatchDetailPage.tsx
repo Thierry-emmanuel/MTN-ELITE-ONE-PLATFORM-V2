@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ExploreRail } from '@/components/elite/ExploreRail';
 import { ArrowLeft, Clock, MapPin, Activity, ShieldAlert, Goal, Users, BarChart3, Swords } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMatch, useMatchStats, useMatchLineups, useHeadToHead } from '@/hooks/useFootball';
@@ -272,6 +273,7 @@ export default function MatchDetailPage() {
           )}
         </AnimatePresence>
       </div>
+      <ExploreRail entity={{ matchId: Number(id) }} />
     </PageLayout>
   );
 }

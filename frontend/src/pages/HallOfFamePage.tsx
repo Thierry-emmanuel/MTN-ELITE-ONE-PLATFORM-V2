@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Quote } from 'lucide-react';
 import PageLayout from '@/layout/PageLayout';
-import { legends } from '@/components/elite/data';
+import { useLegends, type PublicLegend } from '@/features/public/publicExperience.api';
+import type { Legend } from '@/components/elite/data';
 import { LegendFeature } from '@/components/elite/LegendFeature';
 import { MuseumTimeline } from '@/components/elite/MuseumTimeline';
 import trophyArt from '@/assets/images/halloffame/ballon d\'or.png';
@@ -26,6 +27,22 @@ const eraToFilter = (era: string): string => {
 
 export default function HallOfFamePage() {
   const [activeEra, setActiveEra] = useState('all');
+  // Heritage Builder data — the Hall of Fame reads REAL inductees.
+  const { data: backendLegends = [], isLoading } = useLegends();
+  const legends: Legend[] = backendLegends.map((l: PublicLegend) => ({
+    id: l._id,
+    name: l.name,
+    era: l.era ?? (l.inducted_year ? `Intronisé ${l.inducted_year}` : ''),
+    achievement: (l.achievements ?? []).join(' · ') || l.career_summary || '',
+    position: '',
+    caps: 0,
+    goals: 0,
+    imgKey: l.images?.[0] ?? '',
+    club: l.clubs?.[0],
+    number: 0,
+    quote: l.quote ?? '',
+    quoteBy: l.name,
+  }));
   const filtered = activeEra === 'all' ? legends : legends.filter(l => eraToFilter(l.era) === activeEra);
 
   return (
@@ -101,6 +118,12 @@ export default function HallOfFamePage() {
           </div>
         </div>
 
+        {isLoading && <p className="py-12 text-center text-[13px] text-white/40">Chargement des légendes…</p>}
+        {!isLoading && legends.length === 0 && (
+          <p className="py-12 text-center text-[13px] text-white/40">
+            Aucune légende intronisée pour le moment — le Heritage Builder de FootballOS alimente cette salle.
+          </p>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeEra}

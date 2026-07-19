@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ExploreRail } from '@/components/elite/ExploreRail';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useClub, useClubSquad, useClubMatches, useClubCoaches, useStandings, useClubStats } from '@/hooks/useFootball';
 import { DEV_SEASON_ID } from '@/services/mockData';
@@ -162,6 +163,7 @@ export default function ClubDetailPage() {
           <ClubSocialBar club={club} />
         </div>
       </ClubSection>
+      <ExploreRail entity={{ clubId: Number(id) }} />
     </PageLayout>
   );
 }

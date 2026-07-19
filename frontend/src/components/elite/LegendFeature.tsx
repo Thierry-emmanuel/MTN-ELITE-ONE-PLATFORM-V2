@@ -32,14 +32,14 @@ export const LegendFeature = ({ legend, index }: Props) => {
       style={{ aspectRatio: "4/5" }}
     >
       <img
-        src={legendImgMap[legend.imgKey]}
+        src={legendImgMap[legend.imgKey] ?? legend.imgKey /* backend legends carry a URL */}
         alt={legend.name}
         loading="lazy"
         className="absolute inset-0 h-full w-full object-cover grayscale contrast-125 hover:grayscale-0 transition-all duration-700"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
       <div className="absolute top-4 left-4 font-serif italic text-[11px] text-[#FCD116]/90">
-        N˚ {String(legend.number).padStart(2, "0")}
+        {legend.number > 0 ? `N˚ ${String(legend.number).padStart(2, "0")}` : legend.era}
       </div>
       <CoverName name={legend.name.split(" ").pop() ?? legend.name} align={align} />
 
@@ -70,7 +70,7 @@ export const LegendFeature = ({ legend, index }: Props) => {
       <p className="text-sm sm:text-base text-white/70 leading-relaxed max-w-sm mb-6">{legend.achievement}</p>
       <div className={`flex gap-6 ${imageFirst ? "" : "sm:flex-row-reverse"}`}>
         <div>
-          <div className="font-display text-2xl text-white">{legend.caps}</div>
+          <div className="font-display text-2xl text-white">{legend.caps > 0 ? legend.caps : "—"}</div>
           <div className="text-[9px] text-white/40 uppercase tracking-widest">Sélections</div>
         </div>
         {legend.goals > 0 && (

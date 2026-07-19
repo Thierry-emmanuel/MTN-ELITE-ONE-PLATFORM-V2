@@ -16,6 +16,7 @@ const MatchesPage     = lazy(() => import("./pages/MatchesPage"));
 const StandingsPage   = lazy(() => import("./pages/StandingsPage"));
 const StatsPage       = lazy(() => import("./pages/StatsPage"));
 const NewsPage        = lazy(() => import("./pages/NewsPage"));
+const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
 const MediaPage       = lazy(() => import("./pages/MediaPage"));
 const ArticlePage     = lazy(() => import("./pages/ArticlePage"));
 const EditorPage      = lazy(() => import("./pages/EditorPage"));
@@ -78,7 +79,8 @@ const App = () => (
         <Route path="/standings"           element={<PageLayout><StandingsPage /></PageLayout>} />
         <Route path="/stats"               element={<PageLayout><StatsPage /></PageLayout>} />
         <Route path="/news"                element={<PageLayout><NewsPage /></PageLayout>} />
-        <Route path="/media"               element={<PageLayout><MediaPage /></PageLayout>} />
+        <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/media"               element={<PageLayout><MediaPage /></PageLayout>} />
         <Route path="/news/:slug"          element={<PageLayout><ArticlePage /></PageLayout>} />
         <Route path="/journal"             element={<PageLayout><JournalHomePage /></PageLayout>} />
         <Route path="/journal/studio"      element={<ProtectedRoute roles={['admin','editor']}><PageLayout><StoryBuilderPage /></PageLayout></ProtectedRoute>} />

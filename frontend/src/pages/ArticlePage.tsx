@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ExploreRail } from '@/components/elite/ExploreRail';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Clock, Eye, MessageCircle,
@@ -277,6 +278,12 @@ export default function ArticlePage() {
           </section>
         )}
       </div>
+      <ExploreRail entity={{
+        matchId: (article as { relatedMatchId?: string | number } | null)?.relatedMatchId != null
+          ? Number((article as { relatedMatchId?: string | number }).relatedMatchId) : undefined,
+        clubId: (article as { relatedClubIds?: (string | number)[] } | null)?.relatedClubIds?.[0] != null
+          ? Number((article as { relatedClubIds?: (string | number)[] }).relatedClubIds![0]) : undefined,
+      }} />
     </div>
   );
 }
