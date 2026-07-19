@@ -499,7 +499,7 @@ Paginator.displayName = 'Paginator';
 // ─── MediaUploader ─────────────────────────────────────────────────────────────
 interface MediaUploaderProps {
   label: string;
-  value: string;
+  value?: string | null;
   onChange: (url: string) => void;
   acceptType?: 'image' | 'video' | 'all';
   hint?: string;
@@ -510,6 +510,7 @@ export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all',
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const normalizedValue = typeof value === 'string' ? value : '';
 
   const handleUpload = async (file: File) => {
     setUploading(true);
@@ -565,7 +566,7 @@ export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all',
     }
   };
 
-  const isVideo = value.match(/\.(mp4|mov|avi|webm|mpeg)$/i) || value.includes('/video');
+  const isVideo = Boolean(normalizedValue && (normalizedValue.match(/\.(mp4|mov|avi|webm|mpeg)$/i) || normalizedValue.includes('/video')));
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
@@ -580,7 +581,7 @@ export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all',
         className={`relative rounded-xl border-2 border-dashed p-4 flex flex-col items-center justify-center gap-2 cursor-pointer min-h-[100px] transition-all duration-200 ${
           dragActive 
             ? 'border-accent bg-accent/5' 
-            : value 
+            : normalizedValue 
               ? 'border-white/10 bg-white/[0.02] hover:border-white/20' 
               : 'border-white/8 bg-white/[0.04] hover:border-white/12'
         }`}
@@ -599,15 +600,15 @@ export const MediaUploader = memo(({ label, value, onChange, acceptType = 'all',
             <div className="h-6 w-6 rounded-full border-2 border-accent border-t-transparent animate-spin" />
             <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">Téléchargement...</span>
           </div>
-        ) : value ? (
+        ) : normalizedValue ? (
           <div className="w-full flex flex-col items-center gap-2">
             {isVideo ? (
-              <video src={value} controls className="max-h-32 rounded-lg object-contain bg-black/40 w-full" onClick={e => e.stopPropagation()} />
+              <video src={normalizedValue} controls className="max-h-32 rounded-lg object-contain bg-black/40 w-full" onClick={e => e.stopPropagation()} />
             ) : (
-              <img src={value} alt="Preview" className="max-h-32 rounded-lg object-contain bg-white/5" />
+              <img src={normalizedValue} alt="Preview" className="max-h-32 rounded-lg object-contain bg-white/5" />
             )}
             <div className="text-center">
-              <p className="text-[9px] text-white/40 truncate max-w-[200px]">{value.split('/').pop()}</p>
+              <p className="text-[9px] text-white/40 truncate max-w-[200px]">{normalizedValue.split('/').pop()}</p>
               <p className="text-[9px] text-accent font-bold uppercase tracking-wider mt-1">Cliquez ou glissez pour remplacer</p>
             </div>
           </div>
