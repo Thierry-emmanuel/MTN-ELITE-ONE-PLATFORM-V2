@@ -9,6 +9,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 
 
+import { IamModule }         from './iam/iam.module';
 import { AuthModule }        from './auth/auth.module';
 import { UsersModule }       from './users/users.module';
 import { ClubsModule }       from './clubs/clubs.module';
@@ -107,6 +108,7 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
       },
     }),
 
+    IamModule,
     AuthModule,
     UsersModule,
     ClubsModule,

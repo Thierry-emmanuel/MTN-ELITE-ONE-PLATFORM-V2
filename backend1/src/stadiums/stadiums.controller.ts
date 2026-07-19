@@ -9,6 +9,7 @@ import { StadiumStatus } from './stadium.entity';
 import { CreateStadiumDto } from './dto/create-stadium.dto';
 import { UpdateStadiumDto } from './dto/update-stadium.dto';
 
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('stadiums')
 @ApiBearerAuth()
 @Controller('stadiums')
@@ -17,6 +18,7 @@ export class StadiumsController {
 
   // POST /stadiums
   @Post()
+  @Secured('stadiums.create')
   @ApiOperation({ summary: 'Create a new stadium' })
   create(@Body() dto: CreateStadiumDto) {
     return this.service.create(dto);
@@ -52,6 +54,7 @@ export class StadiumsController {
 
   // PATCH /stadiums/:id
   @Patch(':id')
+  @Secured('stadiums.update')
   @ApiOperation({ summary: 'Update a stadium' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStadiumDto) {
     return this.service.update(id, dto);
@@ -59,6 +62,7 @@ export class StadiumsController {
 
   // DELETE /stadiums/:id
   @Delete(':id')
+  @Secured('stadiums.delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a stadium' })
   remove(@Param('id', ParseIntPipe) id: number) {

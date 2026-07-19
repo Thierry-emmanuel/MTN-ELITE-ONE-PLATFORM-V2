@@ -21,7 +21,7 @@ import { JwtStrategy } from '../common/guards/jwt.strategy';
       useFactory: (cfg: ConfigService): import('@nestjs/jwt').JwtModuleOptions => ({
         secret: cfg.get<string>('JWT_SECRET') ?? 'change_me_in_production',
         signOptions: {
-          expiresIn: (cfg.get<string>('JWT_EXPIRES_IN') ?? '7d') as any,
+          expiresIn: (cfg.get<string>('JWT_EXPIRES_IN') ?? '15m') as any,
         },
       }),
     }),

@@ -9,6 +9,7 @@ import { RefereeLevel, RefereeStatus } from './referee.entity';
 import { CreateRefereeDto } from './dto/create-referee.dto';
 import { UpdateRefereeDto } from './dto/update-referee.dto';
 
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('referees')
 @ApiBearerAuth()
 @Controller('referees')
@@ -17,6 +18,7 @@ export class RefereesController {
 
   // POST /referees
   @Post()
+  @Secured('referees.create')
   @ApiOperation({ summary: 'Register a referee' })
   create(@Body() dto: CreateRefereeDto) {
     return this.service.create(dto);
@@ -55,6 +57,7 @@ export class RefereesController {
 
   // PATCH /referees/:id
   @Patch(':id')
+  @Secured('referees.update')
   @ApiOperation({ summary: 'Update referee info' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRefereeDto) {
     return this.service.update(id, dto);
@@ -62,6 +65,7 @@ export class RefereesController {
 
   // DELETE /referees/:id
   @Delete(':id')
+  @Secured('referees.delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete referee' })
   remove(@Param('id', ParseIntPipe) id: number) {

@@ -10,6 +10,8 @@ import { SeasonsService } from './seasons.service';
 import { CreateSeasonDto } from './dto/create-season.dto';
 import { UpdateSeasonDto } from './dto/update-season.dto';
 
+
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('seasons')
 @ApiBearerAuth()
 @Controller('seasons')
@@ -18,6 +20,7 @@ export class SeasonsController {
 
   // POST /seasons
   @Post()
+  @Secured('seasons.create')
   @ApiOperation({ summary: 'Create a new season' })
   @ApiResponse({ status: 201, description: 'Season created' })
   @ApiResponse({ status: 409, description: 'Season name already exists' })
@@ -50,6 +53,7 @@ export class SeasonsController {
 
   // PATCH /seasons/:id
   @Patch(':id')
+  @Secured('seasons.update')
   @ApiOperation({ summary: 'Update season details' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -60,6 +64,7 @@ export class SeasonsController {
 
   // PATCH /seasons/:id/activate
   @Patch(':id/activate')
+  @Secured('seasons.configure')
   @ApiOperation({ summary: 'Activate a season (sets status to ONGOING)' })
   @ApiResponse({ status: 200, description: 'Season activated' })
   activate(@Param('id', ParseIntPipe) id: number) {
@@ -68,6 +73,7 @@ export class SeasonsController {
 
   // PATCH /seasons/:id/close
   @Patch(':id/close')
+  @Secured('seasons.configure')
   @ApiOperation({ summary: 'Close the ongoing season (sets status to COMPLETED)' })
   close(@Param('id', ParseIntPipe) id: number) {
     return this.seasonsService.close(id);
@@ -75,6 +81,7 @@ export class SeasonsController {
 
   // POST /seasons/:id/initialize-standings
   @Post(':id/initialize-standings')
+  @Secured('seasons.configure')
   @ApiOperation({
     summary: 'Initialize standings for all active clubs in this season',
     description: 'Creates one standing row per active club. Run once at season start.',
@@ -86,6 +93,7 @@ export class SeasonsController {
 
   // DELETE /seasons/:id
   @Delete(':id')
+  @Secured('seasons.delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a season (only if not ongoing)' })
   remove(@Param('id', ParseIntPipe) id: number) {

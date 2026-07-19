@@ -9,6 +9,7 @@ import { StaffRole, StaffStatus } from './staff.entity';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('staff')
 @ApiBearerAuth()
 @Controller('staff')
@@ -17,6 +18,7 @@ export class StaffController {
 
   // POST /staff
   @Post()
+  @Secured('staff.create')
   @ApiOperation({ summary: 'Add a staff member' })
   create(@Body() dto: CreateStaffDto) {
     return this.service.create(dto);
@@ -55,6 +57,7 @@ export class StaffController {
 
   // PATCH /staff/:id
   @Patch(':id')
+  @Secured('staff.update')
   @ApiOperation({ summary: 'Update staff member' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStaffDto) {
     return this.service.update(id, dto);
@@ -62,6 +65,7 @@ export class StaffController {
 
   // PATCH /staff/:id/assign/:clubId
   @Patch(':id/assign/:clubId')
+  @Secured('staff.update')
   @ApiOperation({ summary: 'Assign staff member to a club' })
   assignToClub(
     @Param('id',     ParseIntPipe) id:     number,
@@ -72,6 +76,7 @@ export class StaffController {
 
   // DELETE /staff/:id
   @Delete(':id')
+  @Secured('staff.delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Remove staff member' })
   remove(@Param('id', ParseIntPipe) id: number) {

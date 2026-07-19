@@ -24,6 +24,9 @@ export interface UpdateUserAdminDto {
   isActive?: boolean;
   isVerified?: boolean;
   editorApproved?: boolean;
+  // IAM (Sprint 1)
+  roleKeys?: string[];
+  organizationId?: string | null;
   // Editor fields
   agency?: string;
   cniNumber?: string;
@@ -145,8 +148,52 @@ export class UsersService {
     if (!user) throw new NotFoundException(`Utilisateur introuvable`);
     if (newPassword.length < 8) throw new BadRequestException('Minimum 8 caractères');
     user.password = await bcrypt.hash(newPassword, 12);
+    // Admin-issued password → the user must choose their own at next login.
+    user.mustChangePassword = true;
     await this.usersRepo.save(user);
-    return { message: 'Mot de passe réinitialisé avec succès' };
+    return { message: 'Mot de passe réinitialisé — changement obligatoire à la prochaine connexion' };
+  }
+
+  /** Self-service password change (also clears the forced-change flag). */
+  async changeOwnPassword(id: number, currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`Utilisateur introuvable`);
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) throw new BadRequestException('Mot de passe actuel incorrect');
+    if (newPassword.length < 8) throw new BadRequestException('Minimum 8 caractères');
+    user.password = await bcrypt.hash(newPassword, 12);
+    user.mustChangePassword = false;
+    await this.usersRepo.save(user);
+    return { message: 'Mot de passe modifié' };
+  }
+
+  /** Toggle the forced-password-change flag without touching the password. */
+  async forcePasswordChange(id: number, value = true): Promise<Omit<User, 'password'>> {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`Utilisateur introuvable`);
+    user.mustChangePassword = value;
+    return this.sanitize(await this.usersRepo.save(user));
+  }
+
+  // ── IAM lifecycle (Sprint 1) ──────────────────────────────────
+  private async setStatus(id: number, status: User['status']): Promise<Omit<User, 'password'>> {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`Utilisateur introuvable`);
+    user.status = status;
+    user.isActive = status === 'active'; // keep the legacy flag coherent
+    return this.sanitize(await this.usersRepo.save(user));
+  }
+
+  suspend(id: number)  { return this.setStatus(id, 'suspended'); }
+  activate(id: number) { return this.setStatus(id, 'active'); }
+  archiveUser(id: number)  { return this.setStatus(id, 'archived'); }
+
+  /** Replace a user's IAM role keys (Role Builder assignment). */
+  async assignRoles(id: number, roleKeys: string[]): Promise<Omit<User, 'password'>> {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`Utilisateur introuvable`);
+    user.roleKeys = [...new Set(roleKeys)];
+    return this.sanitize(await this.usersRepo.save(user));
   }
 
   async toggleActive(id: number): Promise<Omit<User, 'password'>> {

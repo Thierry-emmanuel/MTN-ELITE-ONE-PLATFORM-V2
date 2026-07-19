@@ -7,6 +7,7 @@ import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam } from '@nestjs/s
 import { extname } from 'path';
 import { CloudinaryService } from './cloudinary.service';
 
+import { Secured } from '../iam/guards/permissions.guard';
 const ALLOWED_SCOPES: Record<string, string[]> = {
   'seasons/logo': ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
   'clubs/logo': ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
@@ -40,6 +41,7 @@ export class UploadsController {
 
   // ── Legacy flat endpoint, kept for backward compatibility (Evaluated first to avoid matching :entity/:field) ──
   @Post('file')
+  @Secured('uploads.create')
   @ApiOperation({ summary: '[Legacy] Upload an unscoped file (max 50MB)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -73,6 +75,7 @@ export class UploadsController {
 
   // ── Scoped endpoint ──
   @Post(':entity/:field')
+  @Secured('uploads.create')
   @ApiOperation({ summary: 'Upload a file scoped to an entity/field, e.g. clubs/logo' })
   @ApiParam({ name: 'entity', example: 'clubs' })
   @ApiParam({ name: 'field', example: 'logo' })
@@ -122,6 +125,7 @@ export class UploadsController {
   }
 
   @Delete(':entity/:field/:filename')
+  @Secured('uploads.delete')
   @ApiOperation({ summary: 'Delete a previously uploaded file' })
   async deleteScopedFile(
     @Param('entity') entity: string,

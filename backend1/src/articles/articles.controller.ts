@@ -1,12 +1,14 @@
 import {
   Controller, Get, Post, Patch, Delete, Body,
-  Param, Query, HttpCode, HttpStatus, NotFoundException,
+  Param, Query, Req, HttpCode, HttpStatus, NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 
+
+import { Secured, type RequestUser } from '../iam/guards/permissions.guard';
 // ─── Comment DTOs (inline — simple enough not to need separate files) ──────────
 class CreateCommentDto {
   authorName!: string;
@@ -22,9 +24,10 @@ export class ArticlesController {
   // ── Article CRUD ───────────────────────────────────────────────────────────
 
   @Post()
+  @Secured('articles.create')
   @ApiOperation({ summary: 'Create a new article' })
-  create(@Body() dto: CreateArticleDto) {
-    return this.articlesService.create(dto);
+  create(@Body() dto: CreateArticleDto, @Req() req: { user: RequestUser }) {
+    return this.articlesService.create(dto, req.user);
   }
 
   /**
@@ -82,22 +85,25 @@ export class ArticlesController {
   }
 
   @Patch(':id')
+  @Secured('articles.update')
   @ApiOperation({ summary: 'Update an article' })
-  update(@Param('id') id: string, @Body() dto: UpdateArticleDto) {
-    return this.articlesService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateArticleDto, @Req() req: { user: RequestUser }) {
+    return this.articlesService.update(id, dto, req.user);
   }
 
   @Patch(':id/publish')
+  @Secured('articles.publish')
   @ApiOperation({ summary: 'Publish a draft article' })
-  publish(@Param('id') id: string) {
-    return this.articlesService.publish(id);
+  publish(@Param('id') id: string, @Req() req: { user: RequestUser }) {
+    return this.articlesService.publish(id, req.user);
   }
 
   @Delete(':id')
+  @Secured('articles.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an article' })
-  remove(@Param('id') id: string) {
-    return this.articlesService.remove(id);
+  remove(@Param('id') id: string, @Req() req: { user: RequestUser }) {
+    return this.articlesService.remove(id, req.user);
   }
 
   // ── Comments ───────────────────────────────────────────────────────────────

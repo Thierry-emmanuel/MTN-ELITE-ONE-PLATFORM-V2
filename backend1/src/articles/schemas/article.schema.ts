@@ -89,6 +89,11 @@ export class Article {
   @Prop({ required: true })
   author: string;
 
+  /** Sprint 1 — record ownership: users.id of the creator. Journalists
+   *  with ":own"-scoped permissions may only touch their own articles. */
+  @Prop({ type: Number, index: true })
+  ownerId?: number;
+
   @Prop({ type: String, enum: ArticleStatus, default: ArticleStatus.DRAFT })
   status: ArticleStatus;
 

@@ -24,6 +24,8 @@ import { CreateClubDto } from './dto/create-club.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
+
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('clubs')
 @ApiBearerAuth()
 @Controller('clubs')
@@ -32,6 +34,7 @@ export class ClubsController {
 
   // POST /clubs
   @Post()
+  @Secured('clubs.create')
   @ApiOperation({ summary: 'Create a new club' })
   @ApiResponse({ status: 201, description: 'Club created successfully' })
   @ApiResponse({ status: 409, description: 'Club name already exists' })
@@ -71,6 +74,7 @@ export class ClubsController {
 
   // PATCH /clubs/:id
   @Patch(':id')
+  @Secured('clubs.update')
   @ApiOperation({ summary: 'Update a club' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateClubDto) {
     return this.clubsService.update(id, dto);
@@ -78,6 +82,7 @@ export class ClubsController {
 
   // DELETE /clubs/:id
   @Delete(':id')
+  @Secured('clubs.delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a club' })
   remove(@Param('id', ParseIntPipe) id: number) {

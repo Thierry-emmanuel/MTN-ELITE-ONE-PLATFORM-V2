@@ -8,6 +8,7 @@ import { CoachStatus } from './coach.entity';
 import { CreateCoachDto } from './dto/create-coach.dto';
 import { UpdateCoachDto } from './dto/update-coach.dto';
 
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('coaches')
 @ApiBearerAuth()
 @Controller('coaches')
@@ -16,6 +17,7 @@ export class CoachesController {
 
   // POST /coaches
   @Post()
+  @Secured('coaches.create')
   @ApiOperation({ summary: 'Register a new coach' })
   create(@Body() dto: CreateCoachDto) {
     return this.coachesService.create(dto);
@@ -51,6 +53,7 @@ export class CoachesController {
 
   // PATCH /coaches/:id
   @Patch(':id')
+  @Secured('coaches.update')
   @ApiOperation({ summary: 'Update coach info' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
     return this.coachesService.update(id, dto);
@@ -58,6 +61,7 @@ export class CoachesController {
 
   // PATCH /coaches/:id/assign/:clubId
   @Patch(':id/assign/:clubId')
+  @Secured('coaches.update')
   @ApiOperation({ summary: 'Assign coach to a club' })
   assignToClub(
     @Param('id', ParseIntPipe) id: number,
@@ -68,6 +72,7 @@ export class CoachesController {
 
   // PATCH /coaches/:id/unassign
   @Patch(':id/unassign')
+  @Secured('coaches.update')
   @ApiOperation({ summary: 'Remove coach from his club' })
   unassign(@Param('id', ParseIntPipe) id: number) {
     return this.coachesService.unassign(id);
@@ -75,6 +80,7 @@ export class CoachesController {
 
   // DELETE /coaches/:id
   @Delete(':id')
+  @Secured('coaches.delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a coach' })
   remove(@Param('id', ParseIntPipe) id: number) {

@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { HallOfFameService } from './hall-of-fame.service';
 import { CreateHallOfFameDto } from './dto/create-hall-of-fame.dto';
 
+
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('hall-of-fame')
 @ApiBearerAuth()
 @Controller('hall-of-fame')
@@ -10,6 +12,7 @@ export class HallOfFameController {
   constructor(private readonly hallOfFameService: HallOfFameService) {}
 
   @Post()
+  @Secured('hall-of-fame.create')
   @ApiOperation({ summary: 'Add a legend to the Hall of Fame' })
   @ApiBody({ type: CreateHallOfFameDto })
   create(@Body() createDto: CreateHallOfFameDto) {
@@ -29,6 +32,7 @@ export class HallOfFameController {
   }
 
   @Patch(':id')
+  @Secured('hall-of-fame.update')
   @ApiOperation({ summary: 'Update a legend' })
   @ApiBody({ type: CreateHallOfFameDto, required: false })
   update(@Param('id') id: string, @Body() updateDto: Partial<CreateHallOfFameDto>) {
@@ -36,6 +40,7 @@ export class HallOfFameController {
   }
 
   @Delete(':id')
+  @Secured('hall-of-fame.delete')
   @ApiOperation({ summary: 'Remove a legend from the Hall of Fame' })
   remove(@Param('id') id: string) {
     return this.hallOfFameService.remove(id);

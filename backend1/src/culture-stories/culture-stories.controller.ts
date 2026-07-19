@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs
 import { CultureStoriesService } from './culture-stories.service';
 import { CreateCultureStoryDto } from './dto/create-culture-story.dto';
 
+
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('culture-stories')
 @ApiBearerAuth()
 @Controller('culture-stories')
@@ -10,6 +12,7 @@ export class CultureStoriesController {
   constructor(private readonly cultureStoriesService: CultureStoriesService) {}
 
   @Post()
+  @Secured('articles.create')
   @ApiOperation({ summary: 'Create a culture story' })
   @ApiBody({ type: CreateCultureStoryDto })
   create(@Body() createDto: CreateCultureStoryDto) {
@@ -30,6 +33,7 @@ export class CultureStoriesController {
   }
 
   @Patch(':id')
+  @Secured('articles.update')
   @ApiOperation({ summary: 'Update a culture story' })
   @ApiBody({ type: CreateCultureStoryDto, required: false })
   update(@Param('id') id: string, @Body() updateDto: Partial<CreateCultureStoryDto>) {
@@ -37,6 +41,7 @@ export class CultureStoriesController {
   }
 
   @Delete(':id')
+  @Secured('articles.delete')
   @ApiOperation({ summary: 'Delete a culture story' })
   remove(@Param('id') id: string) {
     return this.cultureStoriesService.remove(id);

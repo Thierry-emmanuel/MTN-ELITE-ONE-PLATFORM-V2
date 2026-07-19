@@ -8,6 +8,8 @@ import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { FindPlayersDto } from './dto/find-players.dto';
 
+
+import { Secured } from '../iam/guards/permissions.guard';
 @ApiTags('players')
 @ApiBearerAuth()
 @Controller('players')
@@ -16,6 +18,7 @@ export class PlayersController {
 
   // POST /players
   @Post()
+  @Secured('players.create')
   @ApiOperation({ summary: 'Register a new player' })
   create(@Body() dto: CreatePlayerDto) {
     return this.playersService.create(dto);
@@ -48,6 +51,7 @@ export class PlayersController {
 
   // PATCH /players/:id
   @Patch(':id')
+  @Secured('players.update')
   @ApiOperation({ summary: 'Update player info' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -58,6 +62,7 @@ export class PlayersController {
 
   // PATCH /players/:id/transfer/:clubId
   @Patch(':id/transfer/:clubId')
+  @Secured('players.update')
   @ApiOperation({ summary: 'Transfer a player to another club' })
   @ApiParam({ name: 'id', description: 'Player ID' })
   @ApiParam({ name: 'clubId', description: 'Destination club ID' })
@@ -70,6 +75,7 @@ export class PlayersController {
 
   // DELETE /players/:id
   @Delete(':id')
+  @Secured('players.delete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a player' })
   remove(@Param('id', ParseIntPipe) id: number) {

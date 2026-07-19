@@ -6,6 +6,9 @@ import { Model, Types } from 'mongoose';
 import { Article, ArticleDocument, ArticleStatus } from './schemas/article.schema';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
+import { assertOwnership, type RequestUser } from '../iam/guards/permissions.guard';
+import { RolesService } from '../iam/roles.service';
+import { AuditService } from '../iam/audit.service';
 
 export interface ArticleFilters {
   status?:   string;
@@ -22,11 +25,13 @@ export class ArticlesService {
   constructor(
     @InjectModel(Article.name)
     private readonly articleModel: Model<ArticleDocument>,
+    private readonly roles: RolesService,
+    private readonly audit: AuditService,
   ) {}
 
   // ── CREATE ─────────────────────────────────────────────────────────────────
 
-  async create(dto: CreateArticleDto): Promise<Article> {
+  async create(dto: CreateArticleDto, actor?: RequestUser): Promise<Article> {
     const existing = await this.articleModel.findOne({ slug: dto.slug }).lean();
     if (existing) throw new BadRequestException(`Slug "${dto.slug}" already exists`);
 
@@ -38,6 +43,7 @@ export class ArticlesService {
 
     const article = new this.articleModel({
       ...dto,
+      ownerId:     actor?.id,
       read_time:   readTime,
       status,
       publishedAt: status === ArticleStatus.PUBLISHED ? new Date() : null,
@@ -113,8 +119,14 @@ export class ArticlesService {
 
   // ── UPDATE ────────────────────────────────────────────────────────────────
 
-  async update(id: string, dto: UpdateArticleDto): Promise<Article> {
+  async update(id: string, dto: UpdateArticleDto, actor?: RequestUser): Promise<Article> {
     const article = await this.findById(id);
+
+    // Sprint 1 — record ownership (":own"-scoped grants) + field-level policies
+    if (actor) {
+      assertOwnership(actor, article.ownerId);
+      dto = await this.roles.stripDeniedFields(actor.roleKeys, 'articles', dto as Record<string, unknown>) as UpdateArticleDto;
+    }
 
     // Recompute reading time if body changed
     if (dto.body) {
@@ -132,19 +144,27 @@ export class ArticlesService {
 
   // ── PUBLISH ───────────────────────────────────────────────────────────────
 
-  async publish(id: string): Promise<Article> {
+  async publish(id: string, actor?: RequestUser): Promise<Article> {
     const article = await this.findById(id);
+    if (actor) assertOwnership(actor, article.ownerId);
     article.status      = ArticleStatus.PUBLISHED;
     article.publishedAt = new Date();
-    return article.save();
+    const saved = await article.save();
+    if (actor) this.audit.log({ actorId: actor.id, actorEmail: actor.email, action: 'articles.publish', targetType: 'article', targetId: id });
+    return saved;
   }
 
   // ── DELETE ────────────────────────────────────────────────────────────────
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actor?: RequestUser): Promise<void> {
+    if (actor) {
+      const article = await this.findById(id);
+      assertOwnership(actor, article.ownerId);
+    }
     const result = await this.articleModel.deleteOne({ _id: id });
     if (result.deletedCount === 0)
       throw new NotFoundException(`Article "${id}" not found`);
+    if (actor) this.audit.log({ actorId: actor.id, actorEmail: actor.email, action: 'articles.delete', targetType: 'article', targetId: id });
   }
 
   // ── COMMENTS ──────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../../users/users.service';
+import { SessionsService } from '../../iam/sessions.service';
 import type { JwtPayload } from '../../auth/auth.service';
 
 /**
@@ -15,6 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     config: ConfigService,
     private readonly usersService: UsersService,
+    private readonly sessions: SessionsService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -26,10 +28,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   /** Called after signature is verified. Returns value becomes `req.user`. */
   async validate(payload: JwtPayload) {
     const user = await this.usersService.findById(payload.sub);
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.status !== 'active') {
       throw new UnauthorizedException('Session invalide ou compte désactivé');
     }
-    // Attach sanitized user + role to request object
-    return { id: user.id, email: user.email, role: user.role };
+    // Sprint 1 — a revoked session (logout / logout-all / admin revoke)
+    // invalidates its access tokens too, not just the refresh chain.
+    if (payload.sid) {
+      const alive = await this.sessions.isActive(payload.sid);
+      if (!alive) throw new UnauthorizedException('Session révoquée — reconnectez-vous');
+    }
+    // Attach sanitized user + IAM context to request object
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      roleKeys: user.roleKeys?.length ? user.roleKeys : [user.role],
+      sessionId: payload.sid,
+    };
   }
 }
