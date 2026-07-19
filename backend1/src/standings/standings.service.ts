@@ -6,6 +6,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Standing } from './standing.entity';
 import { Match, MatchStatus } from '../matches/match.entity';
 import { Club } from '../clubs/club.entity';
+import { Competition } from '../competitions/competition.entity';
 import { Season } from '../seasons/season.entity';
 
 // ─── Types used internally ────────────────────────────────────────────────────
@@ -33,6 +34,7 @@ export class StandingsService {
     @InjectRepository(Match)    private readonly matchRepo:    Repository<Match>,
     @InjectRepository(Club)     private readonly clubRepo:     Repository<Club>,
     @InjectRepository(Season)   private readonly seasonRepo:   Repository<Season>,
+    @InjectRepository(Competition) private readonly competitionRepo: Repository<Competition>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -108,11 +110,13 @@ export class StandingsService {
     // 3 — Build accumulator map: clubId → stats object
     const accMap = this.buildAccumulators(clubIds, matches);
 
-    // 4 — Sort clubs: pts DESC, GD DESC, GF DESC (standard football tiebreakers)
-    const sorted = this.sortStandings(Array.from(accMap.values()));
+    // 4 — Sort clubs with the COMPETITION's configured ranking rules
+    //     (points system + tie-breaker order; defaults = 3/1/0 · GD · GF)
+    const rules = await this.rankingRulesFor(seasonId);
+    const sorted = this.sortStandings(Array.from(accMap.values()), rules);
 
     // 5 — Persist inside a transaction — all rows or nothing
-    const saved = await this.persistStandings(seasonId, sorted);
+    const saved = await this.persistStandings(seasonId, sorted, rules);
 
     this.logger.log(`Standings updated — ${saved.length} clubs, season ${seasonId}`);
     return saved;
@@ -186,17 +190,22 @@ export class StandingsService {
    *   3. Goals for (desc)
    *   4. Club name alphabetical (stable tiebreaker)
    */
-  private sortStandings(accumulators: ClubAccumulator[]): ClubAccumulator[] {
+  private sortStandings(
+    accumulators: ClubAccumulator[],
+    rules: { win: number; draw: number; loss: number; tieBreakers: string[] },
+  ): ClubAccumulator[] {
+    const criteria: Record<string, (a: ClubAccumulator, b: ClubAccumulator) => number> = {
+      GOAL_DIFFERENCE: (a, b) => (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst),
+      GOALS_FOR:       (a, b) => b.goalsFor - a.goalsFor,
+      WINS:            (a, b) => b.won - a.won,
+    };
     return accumulators.sort((a, b) => {
-      const ptsDiff = this.points(b) - this.points(a);
+      const ptsDiff = this.points(b, rules) - this.points(a, rules);
       if (ptsDiff !== 0) return ptsDiff;
-
-      const gdDiff = (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst);
-      if (gdDiff !== 0) return gdDiff;
-
-      const gfDiff = b.goalsFor - a.goalsFor;
-      if (gfDiff !== 0) return gfDiff;
-
+      for (const key of rules.tieBreakers) {
+        const cmp = criteria[key]?.(a, b) ?? 0; // unknown keys (e.g. HEAD_TO_HEAD) skipped
+        if (cmp !== 0) return cmp;
+      }
       // Final tiebreaker: club id (stable and deterministic across recalculations)
       return a.clubId - b.clubId;
     });
@@ -208,7 +217,9 @@ export class StandingsService {
    */
   private async persistStandings(
     seasonId: number,
+    // rules threaded from recalculateForSeason — points must match the sort
     sorted: ClubAccumulator[],
+    rules: { win: number; draw: number; loss: number; tieBreakers: string[] },
   ): Promise<Standing[]> {
     return this.dataSource.transaction(async (em) => {
       const repo = em.getRepository(Standing);
@@ -236,7 +247,7 @@ export class StandingsService {
         standing.goalsFor      = acc.goalsFor;
         standing.goalsAgainst  = acc.goalsAgainst;
         standing.goalDifference= acc.goalsFor - acc.goalsAgainst;
-        standing.points        = this.points(acc);
+        standing.points        = this.points(acc, rules);
         standing.formGuide     = acc.recentResults.slice(-5); // last 5 only
 
         // Home / away split
@@ -254,8 +265,8 @@ export class StandingsService {
 
   // ── Utilities ────────────────────────────────────────────────────────────────
 
-  private points(acc: ClubAccumulator): number {
-    return acc.won * 3 + acc.drawn;
+  private points(acc: ClubAccumulator, rules: { win: number; draw: number; loss: number }): number {
+    return acc.won * rules.win + acc.drawn * rules.draw + acc.lost * rules.loss;
   }
 
   private emptyAccumulator(clubId: number): ClubAccumulator {
@@ -267,4 +278,34 @@ export class StandingsService {
       recentResults: [],
     };
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RANKING RULES — Phase 5. The points system and tie-breaker order come
+  // from the COMPETITION configuration (competitions.config.regulations),
+  // resolved through the season's competitionId. Defaults reproduce the
+  // historical behaviour exactly (3/1/0 · GD · GF · stable club id).
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private static readonly DEFAULT_RULES = {
+    win: 3, draw: 1, loss: 0,
+    tieBreakers: ['GOAL_DIFFERENCE', 'GOALS_FOR'] as string[],
+  };
+
+  private async rankingRulesFor(seasonId: number) {
+    const season = await this.seasonRepo.findOne({ where: { id: seasonId } });
+    if (!season?.competitionId) return StandingsService.DEFAULT_RULES;
+    const competition = await this.competitionRepo.findOne({ where: { id: season.competitionId } });
+    const reg = (competition?.config as any)?.regulations ?? {};
+    const ps = reg.pointsSystem ?? {};
+    const num = (v: unknown, d: number) => (Number.isFinite(Number(v)) ? Number(v) : d);
+    return {
+      win:  num(ps.win,  StandingsService.DEFAULT_RULES.win),
+      draw: num(ps.draw, StandingsService.DEFAULT_RULES.draw),
+      loss: num(ps.loss, StandingsService.DEFAULT_RULES.loss),
+      tieBreakers: Array.isArray(reg.tieBreakers) && reg.tieBreakers.length
+        ? reg.tieBreakers.filter((t: unknown) => typeof t === 'string')
+        : StandingsService.DEFAULT_RULES.tieBreakers,
+    };
+  }
+
 }

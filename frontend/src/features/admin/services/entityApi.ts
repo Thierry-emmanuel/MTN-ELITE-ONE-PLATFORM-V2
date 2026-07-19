@@ -23,7 +23,10 @@ export function createEntityApi<T extends { id?: string; _id?: string }>(
   const idOf = (row: T): string => String(config.idField === '_id' ? row._id! : row.id!);
 
   /** Keys that are safe to send to the backend (defined in config.fields). */
-  const allowedKeys = new Set<string>(config.fields.map((f) => String(f.key)));
+  const allowedKeys = new Set<string>([
+    ...config.fields.map((f) => String(f.key)),
+    ...(config.extraPersistKeys ?? []),
+  ]);
 
   /**
    * Shape then strip: config.beforeSave (slug generation, type coercion,

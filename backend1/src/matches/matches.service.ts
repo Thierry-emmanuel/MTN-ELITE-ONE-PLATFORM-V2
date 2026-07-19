@@ -473,6 +473,23 @@ export class MatchesService {
     if (dto.type !== MatchEventType.KICKOFF && match.status !== MatchStatus.LIVE)
       throw new BadRequestException('Record KICKOFF first — events require a LIVE match');
 
+    // ── Season match rules (Phase 5) — configuration, not hardcoding ────────
+    // seasons.config.matchRules: { maxSubstitutions?, varEnabled? }
+    const matchRules = ((match.season as any)?.config?.matchRules ?? {}) as {
+      maxSubstitutions?: number; varEnabled?: boolean;
+    };
+    if (dto.type === MatchEventType.VAR && matchRules.varEnabled === false)
+      throw new BadRequestException('VAR is disabled for this season (seasons.config.matchRules.varEnabled)');
+    if (dto.type === MatchEventType.SUBSTITUTION_IN && Number.isFinite(Number(matchRules.maxSubstitutions))) {
+      const used = await this.eventRepo.count({
+        where: { matchId: id, type: MatchEventType.SUBSTITUTION_IN, clubId: dto.clubId ?? undefined },
+      });
+      if (used >= Number(matchRules.maxSubstitutions))
+        throw new BadRequestException(
+          `Substitution limit reached (${matchRules.maxSubstitutions} per club for this season)`,
+        );
+    }
+
     // ── Side effects (business rules live HERE, never in the frontend) ───────
     switch (dto.type) {
       case MatchEventType.KICKOFF:

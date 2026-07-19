@@ -32,6 +32,11 @@ export class Season {
   @OneToMany(() => Match, (match) => match.season)
   matches: Match[];
 
+  /** Phase 5 — operational configuration of the season (calendar, match
+   *  rules, registration, budgets, awards, public experience). */
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  config: Record<string, any>;
+
   @Column({ name: 'competition_id', type: 'int', nullable: true })
   competitionId: number | null;
 

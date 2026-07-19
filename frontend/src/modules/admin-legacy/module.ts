@@ -27,6 +27,8 @@ import type { Stadium } from '@/features/admin/configs/stadiums.config';
 import type { Match } from '@/features/admin/configs/matches.config';
 import { MatchBuilderCanvas } from '@/shell/builder-framework/match/MatchBuilderCanvas';
 import { StoryCanvas } from '@/shell/builder-framework/story/StoryCanvas';
+import { CompetitionCanvas } from '@/shell/builder-framework/competition/CompetitionCanvas';
+import { SeasonCanvas } from '@/shell/builder-framework/season/SeasonCanvas';
 import type { Article } from '@/features/admin/configs/articles.config';
 import type { MediaAsset } from '@/features/admin/configs/media.config';
 import type { Legend } from '@/features/admin/configs/hallOfFame.config';
@@ -64,12 +66,42 @@ const iconFor = (slug: string): LucideIcon => ICONS[slug] ?? Box;
  * factory, default preview.
  */
 const CURATED: Record<string, BuilderOptions<any>> = {
+  /** Competition CONFIGURATION Builder — Phase 5. Not a CRUD form: the
+   *  regulations feed the backend standings engine, the branding feeds the
+   *  public site, the automation flags feed the pipelines. */
   competitions: {
     titleOf: (d: Partial<Competition>) => d.name ?? '',
+    Canvas: CompetitionCanvas,
+    sections: (d: Partial<Competition>) => [
+      { id: 'identity',    label: 'Identité',      complete: !!d.name },
+      { id: 'branding',    label: 'Image de marque', complete: !!(d.logoUrl || d.config?.branding?.heroUrl) },
+      { id: 'format',      label: 'Format',        complete: !!d.config?.format?.structure },
+      { id: 'regulations', label: 'Règlement',     complete: d.config?.regulations?.pointsSystem?.win != null },
+      { id: 'officials',   label: 'Officiels',     complete: !!d.config?.officials?.director },
+      { id: 'financial',   label: 'Finances',      complete: d.config?.financial?.prizePool != null },
+      { id: 'media',       label: 'Médias & SEO',  complete: !!d.config?.media?.seoTitle },
+      { id: 'automation',  label: 'Automatisations', complete: d.config?.automation != null },
+    ],
     preview: { imageKey: 'logoUrl', titleKeys: ['name'], subtitleKeys: ['country'], badgeKeys: ['type', 'tier'] },
   } satisfies BuilderOptions<Competition>,
+  /** Season CONFIGURATION Builder — Phase 5. Operational environment:
+   *  matchRules are ENFORCED by the backend match engine; clubs and
+   *  referees are picked from real records. */
   seasons: {
     titleOf: (d: Partial<Season>) => d.name ?? '',
+    Canvas: SeasonCanvas,
+    sections: (d: Partial<Season>) => [
+      { id: 'identity',     label: 'Identité',        complete: !!d.name },
+      { id: 'branding',     label: 'Image de marque', complete: !!d.config?.branding?.logoUrl },
+      { id: 'calendar',     label: 'Calendrier',      complete: !!d.startDate },
+      { id: 'matchconfig',  label: 'Config. matchs',  complete: d.config?.matchConfig?.clubsCount != null },
+      { id: 'registration', label: 'Clubs engagés',   complete: (d.config?.registration?.participatingClubIds?.length ?? 0) > 0 },
+      { id: 'officials',    label: 'Officiels',       complete: (d.config?.officials?.refereeIds?.length ?? 0) > 0 },
+      { id: 'financial',    label: 'Finances',        complete: d.config?.financial?.seasonBudget != null },
+      { id: 'matchrules',   label: 'Règles de match', complete: d.config?.matchRules?.duration != null },
+      { id: 'awards',       label: 'Récompenses',     complete: (d.config?.awards?.enabled?.length ?? 0) > 0 },
+      { id: 'public',       label: 'Expérience publique', complete: d.config?.publicExperience != null },
+    ],
     preview: { titleKeys: ['name'], subtitleKeys: ['startDate', 'endDate'], badgeKeys: ['status'] },
   } satisfies BuilderOptions<Season>,
   clubs: {

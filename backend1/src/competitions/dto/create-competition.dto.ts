@@ -1,5 +1,5 @@
 import {
-  IsString, IsEnum, IsOptional,
+  IsString, IsEnum, IsObject, IsOptional,
   MaxLength, MinLength, IsInt, Min, Max, IsUrl,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -34,4 +34,10 @@ export class CreateCompetitionDto {
   @IsOptional()
   @IsUrl()
   logoUrl?: string;
+
+  /** Phase 5 — OS configuration blob; structure owned by the frontend
+   *  builders, semantics enforced by the consuming engines. */
+  @IsOptional()
+  @IsObject()
+  config?: Record<string, unknown>;
 }

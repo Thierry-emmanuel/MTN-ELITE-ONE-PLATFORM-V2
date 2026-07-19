@@ -169,6 +169,10 @@ export interface EntityConfig<T extends { id?: string; _id?: string }> {
    * turning a `datetime-local` input's local string into an ISO timestamp.
    */
   beforeSave?: (payload: Partial<T>) => Partial<T>;
+  /** Phase 5 — extra top-level keys allowed through sanitise() even though
+   *  no FieldDef renders them (e.g. the `config` JSONB blob written by
+   *  bespoke configuration canvases). */
+  extraPersistKeys?: string[];
  
   publishOverrides?: Partial<T>;
 

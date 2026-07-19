@@ -29,6 +29,11 @@ export class Competition {
   @Column({ type: 'int', default: 1 })
   tier: number;
 
+  /** Phase 5 — OS configuration (branding, format, regulations, officials,
+   *  finances, media, automation). Readers normalize with defaults. */
+  @Column({ type: 'jsonb', default: () => "'{}'" })
+  config: Record<string, any>;
+
   @Column({ name: 'logo_url', type: 'varchar', length: 500, nullable: true })
   logoUrl: string | null;
 

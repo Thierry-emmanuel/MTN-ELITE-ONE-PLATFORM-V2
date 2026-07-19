@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   useMatchDetail, useMatchLineups, useMatchMutations, useClubPlayers,
-  playerName, type MatchEventType,
+  useSeasonRules, playerName, type MatchEventType,
 } from '@/features/matches/matchBuilder.api';
 import { PageSkeleton, ErrorState } from '../../components/SystemStates';
 
@@ -42,6 +42,7 @@ const PLAYER_EVENTS: MatchEventType[] = [
 export function TimelineSection({ matchId }: { matchId: string }) {
   const { data: match, isLoading, error, refetch } = useMatchDetail(matchId);
   const { data: lineups } = useMatchLineups(matchId);
+  const { data: rules } = useSeasonRules(match?.seasonId);
   const { addEvent, removeEvent } = useMatchMutations(matchId);
 
   const [minute, setMinute] = useState(1);
@@ -119,11 +120,11 @@ export function TimelineSection({ matchId }: { matchId: string }) {
           className="h-8 gap-1.5 bg-emerald-600 text-[13px] text-white hover:bg-emerald-500">
           <Play className="size-3.5" /> Coup d'envoi
         </Button>
-        <Button size="sm" variant="outline" onClick={() => control('HALF_TIME', 45)} disabled={!live || addEvent.isPending}
+        <Button size="sm" variant="outline" onClick={() => control('HALF_TIME', Math.round((rules?.duration ?? 90) / 2))} disabled={!live || addEvent.isPending}
           className="h-8 gap-1.5 border-zinc-800 bg-transparent text-[13px] text-zinc-300 hover:bg-zinc-900">
           <Timer className="size-3.5" /> Mi-temps
         </Button>
-        <Button size="sm" variant="outline" onClick={() => control('FULL_TIME', 90)} disabled={!live || addEvent.isPending}
+        <Button size="sm" variant="outline" onClick={() => control('FULL_TIME', rules?.duration ?? 90)} disabled={!live || addEvent.isPending}
           className="h-8 gap-1.5 border-emerald-900 bg-transparent text-[13px] text-emerald-400 hover:bg-emerald-950">
           <Flag className="size-3.5" /> Sifflet final
         </Button>
@@ -141,7 +142,9 @@ export function TimelineSection({ matchId }: { matchId: string }) {
             <label className="block">
               <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-zinc-500">Événement</span>
               <select value={type} onChange={(e) => setType(e.target.value as MatchEventType)} className={selectCls}>
-                {(['GOAL','PENALTY_GOAL','OWN_GOAL','YELLOW_CARD','SECOND_YELLOW','RED_CARD','SUBSTITUTION_IN','INJURY','VAR'] as MatchEventType[]).map((t) => (
+                {(['GOAL','PENALTY_GOAL','OWN_GOAL','YELLOW_CARD','SECOND_YELLOW','RED_CARD','SUBSTITUTION_IN','INJURY','VAR'] as MatchEventType[])
+                  .filter((t) => t !== 'VAR' || rules?.varEnabled !== false)
+                  .map((t) => (
                   <option key={t} value={t}>{t === 'SUBSTITUTION_IN' ? 'Remplacement' : EVENT_META[t].label}</option>
                 ))}
               </select>
@@ -149,7 +152,7 @@ export function TimelineSection({ matchId }: { matchId: string }) {
             <label className="block">
               <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-zinc-500">Minute · +arrêts</span>
               <div className="flex gap-1.5">
-                <input type="number" min={0} max={120} value={minute} onChange={(e) => setMinute(Number(e.target.value))} className={cn(selectCls, 'w-2/3')} />
+                <input type="number" min={0} max={(rules?.duration ?? 90) + (rules?.extraTime ? 30 : 0)} value={minute} onChange={(e) => setMinute(Number(e.target.value))} className={cn(selectCls, 'w-2/3')} />
                 <input type="number" min={0} max={15} value={extraTime} onChange={(e) => setExtraTime(Number(e.target.value))} className={cn(selectCls, 'w-1/3')} />
               </div>
             </label>
@@ -170,6 +173,10 @@ export function TimelineSection({ matchId }: { matchId: string }) {
               </label>
             ) : (
               <div className="col-span-2 grid grid-cols-2 gap-1.5 md:col-span-1 md:grid-cols-1">
+                <p className="col-span-full text-[10px] text-zinc-600">
+                  {(match.events ?? []).filter((e) => e.type === 'SUBSTITUTION_IN' && e.clubId === clubId).length}
+                  {' / '}{rules?.maxSubstitutions ?? 5} remplacements utilisés (limite de la saison, appliquée par le backend)
+                </p>
                 <select value={subOut} onChange={(e) => setSubOut(e.target.value)} className={selectCls}>
                   <option value="">Sortant (XI)…</option>
                   {clubPlayers.filter((p) => onPitchIds.has(p.id)).map((p) => <option key={p.id} value={p.id}>{playerName(p)}</option>)}

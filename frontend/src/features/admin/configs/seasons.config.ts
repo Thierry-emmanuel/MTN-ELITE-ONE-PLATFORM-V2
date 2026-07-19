@@ -1,12 +1,44 @@
 import type { EntityConfig } from '../engine/entityConfig.types';
 
 // Mirrors the DTO already used by SeasonsTab's bespoke save() call.
+
+/** Phase 5 — operational configuration persisted in seasons.config (JSONB).
+ *  matchRules is READ by the backend match engine (VAR gate, sub limit). */
+export interface SeasonConfig {
+  identity?: { code?: string; years?: string };
+  branding?: { logoUrl?: string; heroUrl?: string; theme?: string };
+  calendar?: {
+    registrationStart?: string; registrationEnd?: string;
+    transferWindows?: { label?: string; start?: string; end?: string }[];
+    fifaWindows?: { label?: string; start?: string; end?: string }[];
+    holidays?: { label?: string; start?: string; end?: string }[];
+    awardsCeremony?: string;
+  };
+  matchConfig?: {
+    clubsCount?: number; matchdays?: number;
+    fixtureStrategy?: 'DOUBLE_ROUND_ROBIN' | 'SINGLE_ROUND_ROBIN';
+    stadiumRotation?: boolean; defaultKickoff?: string; restDays?: number;
+    broadcastWindows?: string[];
+  };
+  registration?: { participatingClubIds?: string[]; reserveClubIds?: string[]; qualificationRules?: string };
+  officials?: { refereeIds?: string[]; assistantReferees?: string[]; commissioners?: string[]; medicalDelegates?: string[] };
+  financial?: { seasonBudget?: number; matchBudget?: number; officialsPayments?: { role?: string; amount?: number }[]; clubSubsidies?: number; awardsBudget?: number };
+  matchRules?: {
+    duration?: number; extraTime?: boolean; penaltyShootout?: boolean;
+    varEnabled?: boolean; maxSubstitutions?: number; coolingBreak?: boolean; replayRules?: string;
+  };
+  awards?: { enabled?: string[] };
+  publicExperience?: { publicVisible?: boolean; liveCenter?: boolean; statsVisible?: boolean; apiAvailable?: boolean };
+}
+
 export interface Season {
   id?: string;
   name: string;
   startDate: string;
   endDate: string;
   status?: 'UPCOMING' | 'ONGOING' | 'COMPLETED';
+  competitionId?: string;
+  config?: SeasonConfig;
 }
 
 export const seasonsConfig: EntityConfig<Season> = {
@@ -15,6 +47,7 @@ export const seasonsConfig: EntityConfig<Season> = {
   labelPlural: 'Saisons',
   apiBasePath: '/seasons',
   idField: 'id',
+  extraPersistKeys: ['config'],
   searchableKeys: ['name'],
 
   columns: [

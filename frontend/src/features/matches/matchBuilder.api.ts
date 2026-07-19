@@ -161,6 +161,46 @@ export function useUnavailablePlayers() {
   });
 }
 
+/**
+ * Season match rules — Phase 5. Read from seasons.config.matchRules with the
+ * league defaults; the backend match engine ENFORCES these (VAR gate, sub
+ * limit) — the UI only adapts affordances.
+ */
+export interface SeasonMatchRules {
+  duration: number;
+  extraTime: boolean;
+  penaltyShootout: boolean;
+  varEnabled: boolean;
+  maxSubstitutions: number;
+  coolingBreak: boolean;
+}
+
+const DEFAULT_RULES: SeasonMatchRules = {
+  duration: 90, extraTime: false, penaltyShootout: false,
+  varEnabled: true, maxSubstitutions: 5, coolingBreak: false,
+};
+
+export function useSeasonRules(seasonId?: number) {
+  return useQuery({
+    queryKey: ['seasons', 'rules', seasonId ?? 0],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ config?: { matchRules?: Partial<SeasonMatchRules> } }>(`/seasons/${seasonId}`);
+      const r = data.config?.matchRules ?? {};
+      return {
+        duration: Number.isFinite(Number(r.duration)) && Number(r.duration) > 0 ? Number(r.duration) : DEFAULT_RULES.duration,
+        extraTime: r.extraTime ?? DEFAULT_RULES.extraTime,
+        penaltyShootout: r.penaltyShootout ?? DEFAULT_RULES.penaltyShootout,
+        varEnabled: r.varEnabled ?? DEFAULT_RULES.varEnabled,
+        maxSubstitutions: Number.isFinite(Number(r.maxSubstitutions)) ? Number(r.maxSubstitutions) : DEFAULT_RULES.maxSubstitutions,
+        coolingBreak: r.coolingBreak ?? DEFAULT_RULES.coolingBreak,
+      } satisfies SeasonMatchRules;
+    },
+    enabled: !!seasonId,
+    staleTime: 60_000,
+    placeholderData: DEFAULT_RULES,
+  });
+}
+
 // ── Writes (every call hits the backend immediately) ────────────────────────
 export function useMatchMutations(id: string) {
   const qc = useQueryClient();

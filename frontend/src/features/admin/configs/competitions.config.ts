@@ -1,5 +1,27 @@
 import type { EntityConfig } from '../engine/entityConfig.types';
 
+
+/** Phase 5 — OS configuration persisted in competitions.config (JSONB). */
+export interface CompetitionConfig {
+  identity?: { shortName?: string; code?: string; slug?: string; description?: string; governingBody?: string };
+  branding?: { trophyUrl?: string; heroUrl?: string; primaryColor?: string; secondaryColor?: string; sponsors?: string[]; partners?: string[] };
+  format?: {
+    structure?: 'LEAGUE' | 'KNOCKOUT' | 'GROUPS' | 'HYBRID';
+    legs?: 'HOME_AWAY' | 'SINGLE';
+    aggregateRules?: string; playoffRules?: string; qualificationRules?: string;
+  };
+  regulations?: {
+    pointsSystem?: { win?: number; draw?: number; loss?: number };
+    tieBreakers?: string[];
+    yellowsForSuspension?: number; redCardBanMatches?: number;
+    squadMaxSize?: number; squadMaxForeign?: number; registrationRules?: string;
+  };
+  officials?: { director?: string; refereeCommittee?: string[]; commissioners?: string[]; varOfficials?: string[] };
+  financial?: { prizePool?: number; registrationFee?: number; tvRights?: number; sponsorshipTotal?: number; prizeDistribution?: { rank?: number; amount?: number }[] };
+  media?: { documents?: string[]; seoTitle?: string; seoDescription?: string; landingTheme?: string };
+  automation?: { autoStandings?: boolean; autoStatistics?: boolean; autoAwards?: boolean; autoPassports?: boolean; autoPublishing?: boolean };
+}
+
 export interface Competition {
   id?: string;
   name: string;
@@ -7,6 +29,7 @@ export interface Competition {
   country: string;
   tier: number;
   logoUrl?: string;
+  config?: CompetitionConfig;
 }
 
 export const competitionsConfig: EntityConfig<Competition> = {
@@ -15,6 +38,7 @@ export const competitionsConfig: EntityConfig<Competition> = {
   labelPlural: 'Compétitions',
   apiBasePath: '/competitions',
   idField: 'id',
+  extraPersistKeys: ['config'],
   searchableKeys: ['name'],
   columns: [
     { key: 'name', label: 'Nom' },

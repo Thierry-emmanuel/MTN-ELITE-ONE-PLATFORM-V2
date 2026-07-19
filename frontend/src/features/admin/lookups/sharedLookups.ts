@@ -68,3 +68,16 @@ export const matchesLookup: LookupSource = {
     }));
   },
 };
+
+export const refereesLookup: LookupSource = {
+  key: 'referees',
+  queryKey: ['lookups', 'referees'],
+  fetch: async () => {
+    const { apiClient } = await import('@/services/api');
+    const res = await apiClient.get('/referees');
+    const rows = Array.isArray(res.data) ? res.data : res.data.data;
+    return rows.map((r: { id: number | string; firstName?: string; lastName?: string }) => ({
+      value: String(r.id), label: [r.firstName, r.lastName].filter(Boolean).join(' ') || `#${r.id}`,
+    }));
+  },
+};

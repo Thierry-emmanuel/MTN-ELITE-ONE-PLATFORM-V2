@@ -1,6 +1,6 @@
 import {
   IsString, IsDateString, IsEnum,
-  IsOptional, MaxLength, MinLength,
+  IsObject, IsOptional, MaxLength, MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SeasonStatus } from '../season.entity';
@@ -24,4 +24,10 @@ export class CreateSeasonDto {
   @IsOptional()
   @IsEnum(SeasonStatus)
   status?: SeasonStatus;
+
+  /** Phase 5 — OS configuration blob; structure owned by the frontend
+   *  builders, semantics enforced by the consuming engines. */
+  @IsOptional()
+  @IsObject()
+  config?: Record<string, unknown>;
 }
