@@ -14,7 +14,7 @@ export class IamConfig {
   @Column({ type: 'jsonb', default: () => "'{}'" })
   value: Record<string, unknown>;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ name: 'updated_by', type: 'integer', nullable: true })
   updatedBy: number | null;
 
   @UpdateDateColumn({ name: 'updated_at' })
