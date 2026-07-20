@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Shield, LayoutDashboard, Layers, Image, Calendar,
@@ -6,7 +6,11 @@ import {
   ChevronRight, MapPin, Shirt, Handshake, Zap,
   Eye, Flag, Archive, Users, Search, UserCog, Sparkles,
   MessageCircle, Settings, ArrowLeftRight, Activity, ListChecks, Clapperboard,
+  ChevronsUpDown, Radio,
 } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -87,6 +91,8 @@ const NAV_GROUPS = [
 ];
 
 export default function AdminLayout({ children, activeTab, setActiveTab, onOpenPalette }: AdminLayoutProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-[#0A0E14] text-white flex overflow-hidden">
 
@@ -179,11 +185,34 @@ export default function AdminLayout({ children, activeTab, setActiveTab, onOpenP
 
         {/* Top Header */}
         <header className="h-16 border-b border-white/[0.05] bg-[#0D1219]/90 backdrop-blur-xl sticky top-0 z-30 px-8 flex items-center justify-between">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-white/25 font-medium">Studio</span>
+          {/* Dropdown switcher and breadcrumb */}
+          <div className="flex items-center gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300 hover:bg-white/[0.06] outline-none">
+                <LayoutDashboard className="size-3.5 text-amber-500" />
+                <span className="font-semibold">Dashboard</span>
+                <ChevronsUpDown className="size-3 text-zinc-500" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="border-zinc-800 bg-zinc-900 text-zinc-200 w-48">
+                <DropdownMenuItem
+                  className="text-[13px] gap-2 focus:bg-zinc-800 focus:text-zinc-100 cursor-pointer"
+                  onSelect={() => navigate('/os/workspace')}
+                >
+                   <Radio className="size-3.5 text-emerald-500" />
+                   Control Panel
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-[13px] gap-2 bg-zinc-800 text-zinc-100 font-medium cursor-pointer"
+                  onSelect={() => navigate('/admin')}
+                >
+                  <LayoutDashboard className="size-3.5 text-amber-500" />
+                  Dashboard
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <span className="text-white/15">/</span>
-            <span className="text-white/70 font-semibold capitalize">{activeTab}</span>
+            <span className="text-white/70 font-semibold capitalize text-xs">{activeTab}</span>
           </div>
 
           {/* Status & Actions */}

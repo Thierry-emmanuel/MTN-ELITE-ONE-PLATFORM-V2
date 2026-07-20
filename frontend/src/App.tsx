@@ -40,6 +40,7 @@ const JournalStoryPage = lazy(() => import("./pages/JournalStoryPage"));
 const StoryBuilderPage = lazy(() => import("./features/admin/journal/StoryBuilderPage"));
 const ContactPage      = lazy(() => import("./pages/ContactPage"));
 const DashboardPage    = lazy(() => import("./pages/DashboardPage"));
+const AdminPage        = lazy(() => import("./pages/AdminPage"));
 
 // ─── Route-level loading skeleton ─────────────────────────────────────────────
 const PageFallback = () => (
@@ -85,7 +86,7 @@ const App = () => (
         <Route path="/journal/studio"      element={<ProtectedRoute roles={['admin','editor']}><PageLayout><StoryBuilderPage /></PageLayout></ProtectedRoute>} />
         <Route path="/journal/:slug"       element={<PageLayout><JournalStoryPage /></PageLayout>} />
         <Route path="/editor" element={<ProtectedRoute roles={['admin','editor']}><PageLayout><EditorPage /></PageLayout></ProtectedRoute>} />
-        <Route path="/admin"  element={<Navigate to="/os" replace />} />
+        <Route path="/admin"  element={<ProtectedRoute roles={['admin','editor']}><AdminPage /></ProtectedRoute>} />
         <Route path="/awards"              element={<PageLayout><AwardsPage /></PageLayout>} />
         <Route path="/awards/ballon-dor"   element={<PageLayout><BallonDorPage /></PageLayout>} />
         <Route path="/awards/team-of-week" element={<PageLayout><TeamOfWeekPage /></PageLayout>} />

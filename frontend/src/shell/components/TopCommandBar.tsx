@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
-import { Bell, CircleHelp, Plus, Search, Zap } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bell, CircleHelp, Plus, Search, Zap, ChevronsUpDown, Radio, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+
 import { SHELL_BASE } from '../navigation/domains';
 import { usePaletteStore } from '../stores/palette.store';
 import { useNotifications, useUnreadCount } from '../stores/notifications.store';
@@ -11,9 +11,13 @@ import { QuickCreateMenu } from './QuickCreateMenu';
 import { ProfileMenu } from './ProfileMenu';
 import { ShortcutHint } from './ShortcutHint';
 import { useT } from '../i18n';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function TopCommandBar() {
   const t = useT();
+  const navigate = useNavigate();
   const openPalette = usePaletteStore((s) => s.setOpen);
   const setPanelOpen = useNotifications((s) => s.setPanelOpen);
   const unread = useUnreadCount();
@@ -21,15 +25,39 @@ export function TopCommandBar() {
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-800 bg-zinc-950 px-3">
-      {/* Product mark */}
-      <Link to={`${SHELL_BASE}/workspace`} className="flex items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-zinc-900">
-        <span className="grid size-6 place-items-center rounded-md bg-emerald-950 text-emerald-400">
-          <Zap className="size-3.5" />
-        </span>
-        <span className="hidden font-sans text-[13px] font-bold tracking-tight text-zinc-100 sm:block">
-          FootballOS
-        </span>
-      </Link>
+      {/* Product switcher dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-zinc-900 border border-transparent hover:border-zinc-800 text-left outline-none">
+          <span className="grid size-6 place-items-center rounded-md bg-emerald-950 text-emerald-400">
+            <Zap className="size-3.5" />
+          </span>
+          <div className="hidden sm:block">
+            <span className="block font-sans text-[12px] font-bold tracking-tight text-zinc-100 leading-none">
+              Control Panel
+            </span>
+            <span className="block text-[9px] text-zinc-500 font-semibold uppercase tracking-wider mt-0.5">
+              FootballOS
+            </span>
+          </div>
+          <ChevronsUpDown className="size-3 text-zinc-500 ml-1" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="border-zinc-800 bg-zinc-900 text-zinc-200 w-52">
+          <DropdownMenuItem
+            className="text-[13px] gap-2 bg-zinc-800 text-zinc-100 font-medium focus:bg-zinc-700 cursor-pointer"
+            onSelect={() => navigate(`${SHELL_BASE}/workspace`)}
+          >
+            <Radio className="size-3.5 text-emerald-500" />
+            Control Panel
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-[13px] gap-2 focus:bg-zinc-800 focus:text-zinc-100 cursor-pointer"
+            onSelect={() => navigate('/admin')}
+          >
+            <LayoutDashboard className="size-3.5 text-amber-500" />
+            Dashboard
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <ContextSwitcher />
 

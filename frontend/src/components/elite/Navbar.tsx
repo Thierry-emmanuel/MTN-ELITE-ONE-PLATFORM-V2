@@ -6,6 +6,7 @@ import {
   Activity, Star, Award, BarChart2, Newspaper, Edit3,
   Circle, Shield, Home as HomeIcon, Compass, Landmark,
   Film, BookOpen, Sparkles, Crown, Images, ArrowRight,
+  LayoutDashboard,
 } from "lucide-react";
 import { tickerItems } from "./data";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -663,12 +664,31 @@ const MobileMenu = ({ open, onClose, logo, user, onLogout }: { open: boolean; on
             <div className="px-4 pb-6 pt-3 border-t border-white/8 space-y-2.5">
               {user ? (
                 <>
-                  <button
-                    onClick={onDashboard}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-accent/30 bg-accent/5 text-sm text-accent font-bold hover:bg-accent/10 transition-all"
-                  >
-                    🏟️ Mon espace personnel
-                  </button>
+                  {user?.role === 'admin' ? (
+                    <>
+                      <button
+                        onClick={() => { navigate('/admin'); onClose(); }}
+                        className="flex items-center gap-2 w-full py-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 text-sm text-amber-300 font-bold hover:bg-amber-500/10 transition-all"
+                      >
+                        <LayoutDashboard className="h-4 w-4 shrink-0 ml-3" />
+                        Dashboard
+                      </button>
+                      <button
+                        onClick={() => { navigate('/os'); onClose(); }}
+                        className="flex items-center gap-2 w-full py-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 text-sm text-emerald-300 font-bold hover:bg-emerald-500/10 transition-all"
+                      >
+                        <Radio className="h-4 w-4 shrink-0 ml-3" />
+                        Control Panel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={onDashboard}
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-accent/30 bg-accent/5 text-sm text-accent font-bold hover:bg-accent/10 transition-all"
+                    >
+                      🏟️ Mon espace personnel
+                    </button>
+                  )}
                   {user?.role === 'editor' && (
                     <Link
                       to="/editor" onClick={onClose}
@@ -863,12 +883,33 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
                       transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
                       className="absolute right-0 mt-2 min-w-[180px] rounded-2xl border border-white/10 bg-[#07190e]/96 backdrop-blur-md shadow-2xl overflow-hidden z-50"
                     >
-                      <button
-                        onClick={handleDashboard}
-                        className="w-full text-left px-4 py-3 text-[12px] text-white/80 hover:bg-white/5 transition-colors"
-                      >
-                        {getDashboardLabel(user.role)}
-                      </button>
+                      {/* Dashboard / Control Panel split for admins */}
+                      {user.role === 'admin' ? (
+                        <>
+                          <button
+                            onClick={() => { setUserMenuOpen(false); navigate('/admin'); }}
+                            className="w-full text-left flex items-center gap-2.5 px-4 py-3 text-[12px] text-white/80 hover:bg-white/5 transition-colors"
+                          >
+                            <LayoutDashboard className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                            Dashboard
+                          </button>
+                          <button
+                            onClick={() => { setUserMenuOpen(false); navigate('/os'); }}
+                            className="w-full text-left flex items-center gap-2.5 px-4 py-3 text-[12px] text-white/80 hover:bg-white/5 transition-colors"
+                          >
+                            <Radio className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                            Control Panel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={handleDashboard}
+                          className="w-full text-left px-4 py-3 text-[12px] text-white/80 hover:bg-white/5 transition-colors"
+                        >
+                          {getDashboardLabel(user.role)}
+                        </button>
+                      )}
+                      <div className="mx-3 h-px bg-white/8" />
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-3 text-[12px] text-red-300 hover:bg-white/5 transition-colors"
