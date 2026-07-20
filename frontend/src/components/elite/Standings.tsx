@@ -2,13 +2,12 @@ import { useRef, useState, useEffect } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Trophy, AlertTriangle, ArrowRight } from "lucide-react";
 import { footballApi as api } from "@/services/api";
-import { MOCK_STANDINGS, DEV_SEASON_ID } from "@/services/mockData";
+import { resolveSeasonId } from "@/services/season";
 import { ClubLogo, FormIndicator, PositionChange, StandingRowSkeleton } from "@/components/ui/football";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
 import type { ApiStanding } from "@/types/football.types";
 
-const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
 const getZone = (pos: number, total: number) => {
   if (pos === 1)        return "champion";
@@ -47,9 +46,10 @@ export const Standings = () => {
   const [hovered,   setHovered]   = useState<string | null>(null);
 
   useEffect(() => {
-    api.getStandings(SEASON_ID)
-      .then((data: any) => setStandings(data.length > 0 ? data : MOCK_STANDINGS))
-      .catch(() => setStandings(MOCK_STANDINGS))
+    resolveSeasonId()
+      .then((sid) => api.getStandings(sid))
+      .then((data: any) => setStandings(Array.isArray(data) ? data : []))
+      .catch(() => setStandings([]))
       .finally(() => setLoading(false));
   }, []);
 

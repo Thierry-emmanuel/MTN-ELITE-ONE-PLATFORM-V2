@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Filter, RefreshCw, Target, TrendingUp, Home, Plane, Equal,
 } from 'lucide-react';
-import { MOCK_RESULTS } from '../services/mockData';
 import { filterMatchDays, extractRounds, extractClubs, calcResultsSummary } from '../utils/football.utils';
 import type { MatchDay } from '../types/football.types';
 import {
@@ -19,7 +18,7 @@ type OutcomeFilter = 'all' | 'home' | 'draw' | 'away';
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ResultsPage() {
   const { data: daysData, isLoading: loading, error, refetch } = useResults();
-  const days = daysData ?? MOCK_RESULTS;
+  const days = daysData ?? [];
 
   const [roundFilter,   setRoundFilter]   = useState<number | null>(null);
   const [clubFilter,    setClubFilter]    = useState<string | null>(null);

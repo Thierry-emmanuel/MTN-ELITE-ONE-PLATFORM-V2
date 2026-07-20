@@ -64,7 +64,7 @@ const App = () => (
         <Route path="/"  element={<HomePage />} />
 
         {/* FootballOS — League Studio Shell (own chrome, no PageLayout) */}
-        <Route path="/os/*" element={<ShellApp />} />
+        <Route path="/os/*" element={<ProtectedRoute roles={['admin','editor']}><ShellApp /></ProtectedRoute>} />
 
         {/* Auth pages — no footer */}
         <Route path="/login"    element={<AuthPage />} />

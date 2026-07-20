@@ -219,12 +219,13 @@ export const AuthPage = () => {
     if (!validateLogin()) return;
     setLoading(true); setServerError("");
     try {
-      const { data } = await apiClient.post<{ accessToken: string; user: any }>(
+      const { data } = await apiClient.post<{ accessToken: string; refreshToken?: string; user: any }>(
         '/auth/login',
         { email: loginEmail, password: loginPass },
       );
-      // Persist token so api.ts interceptor sends it on future requests
+      // Persist tokens so api.ts interceptor sends + silently rotates them
       localStorage.setItem('mtn_token', data.accessToken);
+      if (data.refreshToken) localStorage.setItem('mtn_refresh', data.refreshToken);
       // Store minimal user info for UI display
       localStorage.setItem('mtn_user', JSON.stringify({
         name: `${data.user.firstName} ${data.user.lastName}`,

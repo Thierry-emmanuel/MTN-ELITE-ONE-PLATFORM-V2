@@ -1,4 +1,5 @@
-import { LayoutGrid, Plus, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CloudUpload, LayoutGrid, Plus, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -8,6 +9,9 @@ import { WidgetFrame } from '../components/WidgetFrame';
 import { getWidget, getWidgets } from '../registry/widget.registry';
 import { useWorkspaceStore } from '../stores/workspace.store';
 import { resolveTemplate } from './templates';
+import { iamApi } from '@/features/iam/iam.api';
+import { usePermissions } from '../services/permissions';
+import type { PlacedWidget } from '../registry/types';
 import { useT } from '../i18n';
 
 /**
@@ -18,7 +22,35 @@ import { useT } from '../i18n';
 export function WorkspaceEngine({ roleTemplateId }: { roleTemplateId?: string }) {
   const t = useT();
   const { layout, editMode, setEditMode, setLayout, move, resize, removeAt, add, reset } = useWorkspaceStore();
-  const effective = layout ?? resolveTemplate(roleTemplateId).widgets;
+  const { can, roleKeys } = usePermissions();
+
+  // Sprint 1 — Workspace Builder: an admin-published role default sits
+  // between the personal layout and the static template.
+  // Resolution: user layout → role default (iam_config) → role template → default.
+  const roleKey = roleKeys[0];
+  const [roleDefault, setRoleDefault] = useState<PlacedWidget[] | null>(null);
+  const [publishState, setPublishState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  useEffect(() => {
+    if (!roleKey) return;
+    iamApi.config.get<{ widgets?: PlacedWidget[] }>(`os.workspace.${roleKey}`)
+      .then((v) => setRoleDefault(v.widgets?.length ? v.widgets : null))
+      .catch(() => setRoleDefault(null));
+  }, [roleKey]);
+
+  const effective = layout ?? roleDefault ?? resolveTemplate(roleTemplateId).widgets;
+
+  const publishRoleDefault = async () => {
+    if (!roleKey) return;
+    setPublishState('saving');
+    try {
+      await iamApi.config.set(`os.workspace.${roleKey}`, { widgets: effective });
+      setRoleDefault(effective);
+      setPublishState('saved');
+      setTimeout(() => setPublishState('idle'), 2000);
+    } catch {
+      setPublishState('idle');
+    }
+  };
   const available = getWidgets().filter((w) => !effective.some((p) => p.widgetId === w.id));
 
   const ensureOwned = () => { if (!layout) setLayout(effective); };
@@ -47,6 +79,14 @@ export function WorkspaceEngine({ roleTemplateId }: { roleTemplateId?: string })
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                {can('settings.configure') && (
+                  <Button variant="outline" size="sm" onClick={publishRoleDefault} disabled={publishState === 'saving'}
+                    className="h-8 gap-1.5 border-zinc-800 bg-transparent text-[13px] text-zinc-300 hover:bg-zinc-900"
+                    title={`Publier cette disposition comme défaut du rôle « ${roleKey ?? '' } »`}>
+                    <CloudUpload className="size-3.5" />
+                    {publishState === 'saved' ? 'Publié ✓' : 'Défaut du rôle'}
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" onClick={reset}
                   className="h-8 gap-1.5 text-[13px] text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200">
                   <RotateCcw className="size-3.5" /> {t('workspace.reset')}

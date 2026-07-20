@@ -75,6 +75,8 @@ const PodiumSpotlight = () => {
   const { data: edition } = useBallonDor();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
+  // Sprint 2 (de-mock): no published edition → no podium (pre-ceremony state).
+  if (!edition) return null;
   const top3 = edition.ranking.slice(0, 3);
   const closing = timeUntil(edition.votingDeadline);
 

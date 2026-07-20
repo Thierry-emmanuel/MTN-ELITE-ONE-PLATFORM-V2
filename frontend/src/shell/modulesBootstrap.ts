@@ -5,3 +5,4 @@
  */
 import '@/modules/admin-legacy/module';
 import '@/modules/business/module';
+import '@/modules/iam/module';

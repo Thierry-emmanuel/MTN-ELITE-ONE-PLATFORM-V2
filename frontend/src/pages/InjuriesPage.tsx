@@ -4,7 +4,7 @@ import { HeartPulse } from 'lucide-react';
 import PageLayout from '@/layout/PageLayout';
 import { PageHero } from '@/components/elite/FootballPrimitives';
 import { useInjuries } from '@/hooks/useFootball';
-import { buildClubMedicalReports } from '@/services/transfersInjuriesMockData';
+import { buildClubMedicalReports } from '@/services/transfersInjuriesUtils';
 import type { InjuryRecord } from '@/types/transfersInjuries.types';
 
 import { InjuriesStatStrip } from '@/components/elite/injuries/InjuriesStatStrip';

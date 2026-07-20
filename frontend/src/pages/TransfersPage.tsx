@@ -4,7 +4,7 @@ import { ArrowLeftRight } from 'lucide-react';
 import PageLayout from '@/layout/PageLayout';
 import { PageHero } from '@/components/elite/FootballPrimitives';
 import { useTransfers } from '@/hooks/useFootball';
-import { buildClubActivity } from '@/services/transfersInjuriesMockData';
+import { buildClubActivity } from '@/services/transfersInjuriesUtils';
 import type { TransferRecord } from '@/types/transfersInjuries.types';
 
 import { TransfersStatStrip } from '@/components/elite/transfers/TransfersStatStrip';

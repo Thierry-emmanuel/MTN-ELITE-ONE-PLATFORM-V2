@@ -10,6 +10,7 @@ import { useNavigationStore } from '../stores/navigation.store';
 import { useFavorites } from '../stores/favorites.store';
 import { useRecents } from '../stores/recents.store';
 import { useDrafts } from '../stores/drafts.store';
+import { applyMenuConfig, useMenuStore } from '../stores/menu.store';
 import { EntityRow } from './EntityPrimitives';
 import { useT } from '../i18n';
 import type { OSEntity } from '../registry/types';
@@ -19,7 +20,10 @@ function DomainItem({ id, collapsed }: { id: (typeof DOMAINS)[number]['id']; col
   const d = DOMAINS.find((x) => x.id === id)!;
   const { pathname } = useLocation();
   const active = pathname.startsWith(d.route);
-  const modules = getModulesByDomain(d.id);
+  // Sprint 1 — Menu Builder: ordering + visibility come from iam_config
+  // ("os.menu"), falling back to raw registry order when unset.
+  const menuConfig = useMenuStore((s) => s.config);
+  const modules = applyMenuConfig(getModulesByDomain(d.id), menuConfig);
 
   const link = (
     <NavLink

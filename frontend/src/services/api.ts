@@ -5,11 +5,11 @@ import type {
   PlayerStatsFilter, ClubStatsFilter, TopPerformer, StatCategory,
   MatchStatsResponse, MatchLineups, HeadToHead,
 } from '../types/football.types';
-import { clubs as MOCK_CLUBS, legends as MOCK_LEGENDS } from '../components/elite/data';
-import { MOCK_PLAYER_STATS, MOCK_FIXTURES } from './mockData';
-import { MOCK_INJURIES, MOCK_TRANSFERS } from './transfersInjuriesMockData';
 import type { InjuryRecord, TransferRecord } from '../types/transfersInjuries.types';
-import { withClubProfile, getClubCoach } from './clubProfileData';
+// Sprint 2 (de-mock): withClubProfile only ENRICHES real clubs with editorial
+// branding (colors, hero imagery). It is no longer a data source and no mock
+// records survive anywhere in this client.
+import { withClubProfile } from './clubProfileData';
 import type { Club, CoachStaff } from '../types/football.types';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ const createClient = (): AxiosInstance => {
 
   client.interceptors.response.use(
     (res) => res,
-    (err: AxiosError) => {
+    async (err: AxiosError) => {
       if (err.code === 'ECONNABORTED') {
         return Promise.reject(new ApiError(408, 'La requête a expiré. Vérifiez votre connexion.'));
       }
@@ -60,6 +60,30 @@ const createClient = (): AxiosInstance => {
         return Promise.reject(new ApiError(0, 'Impossible de joindre le serveur.'));
       }
       const status = err.response.status;
+
+      // ── Sprint 1: silent refresh-token rotation on 401 ────────────────
+      // The access token is short-lived (15 min); when it expires, one
+      // attempt is made to rotate the refresh token, then the original
+      // request is replayed. On failure the stale credentials are cleared.
+      const original = err.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined;
+      const refreshToken = localStorage.getItem('mtn_refresh');
+      const isAuthRoute = original?.url?.includes('/auth/');
+      if (status === 401 && refreshToken && original && !original._retried && !isAuthRoute) {
+        original._retried = true;
+        try {
+          const { data } = await axios.post<{ accessToken: string; refreshToken: string }>(
+            `${BASE_URL}/auth/refresh`, { refreshToken }, { timeout: DEFAULT_TIMEOUT },
+          );
+          localStorage.setItem('mtn_token', data.accessToken);
+          localStorage.setItem('mtn_refresh', data.refreshToken);
+          return client.request(original);
+        } catch {
+          localStorage.removeItem('mtn_token');
+          localStorage.removeItem('mtn_refresh');
+          localStorage.removeItem('mtn_user');
+        }
+      }
+
       const data   = err.response.data as Record<string, unknown>;
       const message =
         (typeof data?.message === 'string' ? data.message : null) ??
@@ -188,26 +212,15 @@ export const footballApi = {
 
   // ── Clubs ──────────────────────────────────────────────────────────────────
   getClubs: async (): Promise<Club[]> => {
-    try {
-      const res = await get<any>('/clubs');
-      // NestJS backend returns paginated or array, handle both
-      const list: Club[] = Array.isArray(res) ? res : res.data || Object.values(MOCK_CLUBS);
-      return list.map(withClubProfile);
-    } catch (e) {
-      console.warn('Failed to fetch clubs from backend, using mock data.', e);
-      return Object.values(MOCK_CLUBS).map(withClubProfile);
-    }
+    const res = await get<any>('/clubs');
+    // NestJS backend returns paginated or array, handle both
+    const list: Club[] = Array.isArray(res) ? res : res.data ?? [];
+    return list.map(withClubProfile);
   },
 
   getClub: async (id: string): Promise<Club> => {
-    try {
-      const club = await get<Club>(`/clubs/${id}`);
-      return withClubProfile(club);
-    } catch (e) {
-      console.warn(`Failed to fetch club ${id} from backend, using mock data.`, e);
-      const fallback = Object.values(MOCK_CLUBS).find(c => c.id === id) || MOCK_CLUBS.cot;
-      return withClubProfile(fallback);
-    }
+    const club = await get<Club>(`/clubs/${id}`);
+    return withClubProfile(club);
   },
 
   getClubSquad: async (id: string) => {
@@ -218,8 +231,8 @@ export const footballApi = {
       const players = Array.isArray(res) ? res : (res?.players ?? []);
       return players as any[];
     } catch (e) {
-      console.warn(`Failed to fetch squad for club ${id}, using mock players.`, e);
-      return MOCK_PLAYER_STATS.filter(p => p.clubId === id);
+      console.warn(`Failed to fetch squad for club ${id}.`, e);
+      return [];
     }
   },
 
@@ -231,9 +244,8 @@ export const footballApi = {
       const awayMatches = res?.awayMatches ?? [];
       return [...homeMatches, ...awayMatches];
     } catch (e) {
-      console.warn(`Failed to fetch matches for club ${id}, using mock fixtures.`, e);
-      // Filter fixtures containing this club
-      return MOCK_FIXTURES.flatMap(fd => fd.matches).filter(m => m.homeClub.id === id || m.awayClub.id === id);
+      console.warn(`Failed to fetch matches for club ${id}.`, e);
+      return [];
     }
   },
 
@@ -241,65 +253,30 @@ export const footballApi = {
   getClubCoaches: async (id: string): Promise<CoachStaff[]> => {
     try {
       const res = await get<any>('/coaches', { params: { clubId: id } });
-      const list: CoachStaff[] = Array.isArray(res) ? res : res.data || [];
-      if (list.length > 0) return list;
-      const mock = getClubCoach(id);
-      return mock ? [mock] : [];
+      return Array.isArray(res) ? res : res.data ?? [];
     } catch (e) {
-      console.warn(`Failed to fetch coaching staff for club ${id}, using mock data.`, e);
-      const mock = getClubCoach(id);
-      return mock ? [mock] : [];
+      console.warn(`Failed to fetch coaching staff for club ${id}.`, e);
+      return [];
     }
   },
 
   // ── Players ────────────────────────────────────────────────────────────────
   getPlayers: async (params?: { position?: string; clubId?: string }) => {
-    try {
-      const res = await get<any>('/players', { params });
-      return Array.isArray(res) ? res : res.data || MOCK_PLAYER_STATS;
-    } catch (e) {
-      console.warn('Failed to fetch players, using mock data.', e);
-      // Reverse-map backend enum values back to mock data short codes
-      const REVERSE_POS: Record<string, string> = { DEF: 'DF', MID: 'MF', FWD: 'FW', GK: 'GK' };
-      let filtered = [...MOCK_PLAYER_STATS];
-      if (params?.position && params.position !== 'ALL') {
-        const mockPos = REVERSE_POS[params.position] ?? params.position;
-        filtered = filtered.filter(p => p.position === mockPos || p.position === params.position);
-      }
-      if (params?.clubId) {
-        filtered = filtered.filter(p => p.clubId === params.clubId);
-      }
-      return filtered;
-    }
+    const res = await get<any>('/players', { params });
+    return Array.isArray(res) ? res : res.data ?? [];
   },
 
-  getPlayer: async (id: string) => {
-    try {
-      return await get<any>(`/players/${id}`);
-    } catch (e) {
-      console.warn(`Failed to fetch player ${id}, using mock.`, e);
-      return MOCK_PLAYER_STATS.find(p => p.playerId === id) || MOCK_PLAYER_STATS[0];
-    }
-  },
+  getPlayer: async (id: string) => get<any>(`/players/${id}`),
 
   // ── Hall of Fame / History ─────────────────────────────────────────────────
-  getLegends: async () => {
-    try {
-      return await get<any[]>('/hall-of-fame');
-    } catch (e) {
-      console.warn('Failed to fetch hall-of-fame, using mock legends.', e);
-      return MOCK_LEGENDS;
-    }
-  },
+  getLegends: async () => get<any[]>('/hall-of-fame'),
 
   // ── Injuries ───────────────────────────────────────────────────────────────
   getInjuries: async (params?: { status?: string; clubId?: string }): Promise<InjuryRecord[]> => {
     try {
       const res = await get<any>('/injuries', { params });
       const rawList = Array.isArray(res) ? res : res.data || [];
-      if (rawList.length === 0) return MOCK_INJURIES;
-
-      return rawList.map((i: any) => {
+      return rawList.filter((i: any) => i.player?.club).map((i: any) => {
         // Coerce position from backend enum (e.g. DEF -> DF)
         const REVERSE_POS: Record<string, 'GK' | 'DF' | 'MF' | 'FW'> = {
           GK: 'GK', DEF: 'DF', MID: 'MF', FWD: 'FW',
@@ -312,7 +289,7 @@ export const footballApi = {
           playerName: i.player ? [i.player.firstName, i.player.lastName].filter(Boolean).join(' ') : 'Inconnu',
           playerPhotoUrl: i.player?.photoUrl,
           position: pos,
-          club: i.player?.club || MOCK_CLUBS.cot, // fallback to avoid crash
+          club: i.player.club,
           bodyPart: i.type || 'Autre',
           diagnosis: i.notes || 'Pas de diagnostic disponible',
           severity: i.severity || 'MINOR',
@@ -325,8 +302,8 @@ export const footballApi = {
         } as InjuryRecord;
       });
     } catch (e) {
-      console.warn('Failed to fetch injuries from backend, using mock medical data.', e);
-      return MOCK_INJURIES;
+      console.warn('Failed to fetch injuries from backend.', e);
+      return [];
     }
   },
 
@@ -335,9 +312,7 @@ export const footballApi = {
     try {
       const res = await get<any>('/transfers', { params });
       const rawList = Array.isArray(res) ? res : res.data || [];
-      if (rawList.length === 0) return MOCK_TRANSFERS;
-
-      return rawList.map((t: any) => {
+      return rawList.filter((t: any) => t.toClub).map((t: any) => {
         const REVERSE_POS: Record<string, 'GK' | 'DF' | 'MF' | 'FW'> = {
           GK: 'GK', DEF: 'DF', MID: 'MF', FWD: 'FW',
         };
@@ -353,7 +328,7 @@ export const footballApi = {
           position: pos,
           age: 2026 - birthYear,
           fromClub: t.fromClub || null,
-          toClub: t.toClub || MOCK_CLUBS.cot,
+          toClub: t.toClub,
           kind: t.type || 'PERMANENT',
           stage: 'CONFIRMED',
           confidence: 5,
@@ -364,8 +339,8 @@ export const footballApi = {
         } as TransferRecord;
       });
     } catch (e) {
-      console.warn('Failed to fetch transfers from backend, using mock mercato data.', e);
-      return MOCK_TRANSFERS;
+      console.warn('Failed to fetch transfers from backend.', e);
+      return [];
     }
   },
 };

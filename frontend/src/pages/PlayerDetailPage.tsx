@@ -10,7 +10,7 @@ import { useArticles } from '@/hooks/useNews';
 import PageLayout from '@/layout/PageLayout';
 import { getPlayerProfile } from '@/data/playerProfile.mock';
 import { buildPassportData } from '@/data/passport.mock';
-import { DEV_SEASON_ID } from '@/services/mockData';
+import { SEASON_KEY } from '@/services/season';
 
 import { PlayerProfileHero } from '@/components/elite/player-profile/PlayerProfileHero';
 import { PlayerSubNav, type ProfileNavSection } from '@/components/elite/player-profile/PlayerSubNav';
@@ -93,7 +93,7 @@ function normalizeBackendPlayer(p: any): PlayerStat {
 
 export default function PlayerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: allPlayers, isLoading: statsLoading } = usePlayerStats(DEV_SEASON_ID, { limit: 500 });
+  const { data: allPlayers, isLoading: statsLoading } = usePlayerStats(SEASON_KEY, { limit: 500 });
   const { data: backendPlayer, isLoading: playerLoading } = usePlayer(id ?? '');
   const { data: articles } = useArticles();
 

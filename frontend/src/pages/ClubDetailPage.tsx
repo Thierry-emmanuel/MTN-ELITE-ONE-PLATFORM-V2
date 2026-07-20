@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ExploreRail } from '@/components/elite/ExploreRail';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useClub, useClubSquad, useClubMatches, useClubCoaches, useStandings, useClubStats } from '@/hooks/useFootball';
-import { DEV_SEASON_ID } from '@/services/mockData';
+import { SEASON_KEY } from '@/services/season';
 import { getClubHubProfile } from '@/services/clubHubData';
 import PageLayout from '@/layout/PageLayout';
 import {
@@ -50,7 +50,7 @@ export default function ClubDetailPage() {
   const { data: matches,   isLoading: matchesLoading }  = useClubMatches(clubId);
   const { data: coaches }  = useClubCoaches(clubId);
   const { data: standings, isLoading: standingsLoading } = useStandings();
-  const { data: clubStats, isLoading: statsLoading }    = useClubStats(DEV_SEASON_ID);
+  const { data: clubStats, isLoading: statsLoading }    = useClubStats(SEASON_KEY);
 
   const clubStanding = useMemo(
     () => standings?.find(s => s.club.id === clubId),

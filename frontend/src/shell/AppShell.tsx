@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { TopCommandBar } from './components/TopCommandBar';
 import { OSSidebar } from './components/OSSidebar';
+import { useMenuStore } from './stores/menu.store';
 import { BreadcrumbBar } from './components/BreadcrumbBar';
 import { CommandPalette } from './components/CommandPalette';
 import { InspectorDrawer } from './components/InspectorDrawer';
@@ -36,6 +37,10 @@ export function AppShell() {
   const openHelp = useHelpStore((s) => s.setOpen);
 
   useGlobalShortcutListener();
+
+  // Sprint 1 — hydrate the Menu Builder config (iam_config "os.menu") once.
+  const hydrateMenu = useMenuStore((s) => s.hydrate);
+  useEffect(() => { void hydrateMenu(); }, [hydrateMenu]);
 
   // Screen-reader route announcement (a11y floor).
   useEffect(() => {

@@ -8,7 +8,7 @@ import {
   Minus, Crown, Users, Calendar, Sparkles, Play, Pause, ImagePlus,
 } from 'lucide-react';
 import { useAwardCountdown } from '@/hooks/useAwards';
-import { MOCK_HISTORICAL } from '@/services/mockAwards';
+import { useHistoricalWinners } from '@/hooks/useAwards';
 import { CEREMONY_PHOTOS } from '@/services/ceremonyPhotos';
 import { CeremonyBackdrop } from './CeremonyBackdrop';
 import type { BallonDorEdition, HistoricalWinner } from '@/types/awards.types';
@@ -579,7 +579,9 @@ export const PastWinnersGallery = memo(() => {
   const inView  = useInView(ref, { once: true, margin: '-40px' });
   const [current, setCurrent] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
-  const total   = MOCK_HISTORICAL.length;
+  // Sprint 2 (de-mock): palmarès from GET /awards/public/historical (Heritage Builder)
+  const { data: winners } = useHistoricalWinners('BALLON_DOR');
+  const total   = winners.length;
 
   // Autoplay
   useEffect(() => {
@@ -592,7 +594,7 @@ export const PastWinnersGallery = memo(() => {
   const next = useCallback(() => { setAutoplay(false); setCurrent(c => (c + 1) % total); }, [total]);
   const goTo = (i: number) => { setAutoplay(false); setCurrent(i); };
 
-  if (MOCK_HISTORICAL.length === 0) {
+  if (total === 0) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} className="text-center py-12">
         <div className="text-4xl mb-3 opacity-30">📜</div>
@@ -630,7 +632,7 @@ export const PastWinnersGallery = memo(() => {
       >
         {/* Slide area */}
         <div className="relative h-[340px] mx-12">
-          {MOCK_HISTORICAL.map((winner, i) => (
+          {winners.map((winner, i) => (
             <CarouselSlide
               key={`${winner.year}-${winner.category}`}
               winner={winner}
@@ -662,7 +664,7 @@ export const PastWinnersGallery = memo(() => {
       {/* Dots + autoplay toggle */}
       <div className="flex items-center justify-center gap-4">
         <div className="flex gap-2">
-          {MOCK_HISTORICAL.map((w, i) => (
+          {winners.map((w, i) => (
             <button
               key={`${w.year}-${w.category}`}
               onClick={() => goTo(i)}
@@ -700,7 +702,7 @@ export const PastWinnersGallery = memo(() => {
         transition={{ delay: 0.3 }}
         className="flex gap-2 overflow-x-auto scrollbar-hide pb-1"
       >
-        {MOCK_HISTORICAL.map((w, i) => (
+        {winners.map((w, i) => (
           <motion.button
             key={`${w.year}-${w.category}`}
             onClick={() => goTo(i)}

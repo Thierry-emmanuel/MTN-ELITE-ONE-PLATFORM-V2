@@ -5,7 +5,6 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { newsApi, NEWS_QK } from '@/services/newsApi';
-import { MOCK_ARTICLES } from '@/services/mockNews';
 import type {
   Article, ArticlesFilter, CreateArticlePayload,
 } from '@/types/news.types';
@@ -18,21 +17,16 @@ const STALE = {
 } as const;
 
 // ─── useArticles ──────────────────────────────────────────────────────────────
-/** List of articles, filtered. Falls back to mock data when API is unreachable. */
+/** List of articles, filtered. Live data only (Sprint 2 — de-mock). */
 export function useArticles(filters?: ArticlesFilter, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: NEWS_QK.articles(filters),
     queryFn: async () => {
-      try {
-        const res = await newsApi.getArticles(filters);
-        return res.data?.length > 0 ? res.data : MOCK_ARTICLES;
-      } catch {
-        return MOCK_ARTICLES;
-      }
+      const res = await newsApi.getArticles(filters);
+      return res.data ?? [];
     },
-    staleTime:      STALE.articles,
-    placeholderData: MOCK_ARTICLES,
-    enabled:        options?.enabled ?? true,
+    staleTime: STALE.articles,
+    enabled:   options?.enabled ?? true,
   });
 }
 
@@ -48,18 +42,11 @@ export function useArticle(slug: string) {
 }
 
 // ─── useFeatured ──────────────────────────────────────────────────────────────
-/** Featured articles (separate endpoint). Falls back to the first featured mock. */
+/** Featured articles (separate endpoint). */
 export function useFeatured() {
   return useQuery({
     queryKey: NEWS_QK.featured(),
-    queryFn: async () => {
-      try {
-        const res = await newsApi.getFeatured();
-        return res.length > 0 ? res : MOCK_ARTICLES.filter(a => a.featured);
-      } catch {
-        return MOCK_ARTICLES.filter(a => a.featured);
-      }
-    },
+    queryFn:  () => newsApi.getFeatured(),
     staleTime: STALE.featured,
   });
 }
@@ -70,12 +57,8 @@ export function useAllArticlesEditor() {
   return useQuery({
     queryKey: NEWS_QK.articles({ limit: 200 } as ArticlesFilter),
     queryFn: async () => {
-      try {
-        const res = await newsApi.getArticles({ limit: 200 });
-        return res.data?.length > 0 ? res.data : MOCK_ARTICLES;
-      } catch {
-        return MOCK_ARTICLES;
-      }
+      const res = await newsApi.getArticles({ limit: 200 });
+      return res.data ?? [];
     },
     staleTime: STALE.articles,
   });

@@ -1,7 +1,6 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { MOCK_RESULTS } from "@/services/mockData";
 import { ClubLogo } from "@/components/ui/football";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
@@ -92,7 +91,7 @@ export const Results = () => {
   const { data: daysData, isLoading: loading } = useResults();
 
   const matches = useMemo(() => {
-    const days = daysData ?? MOCK_RESULTS;
+    const days = daysData ?? [];
     const allMatches = days.flatMap(d => d.matches)
       .filter(m => m.status === "FT" || m.status === "FINISHED")
       .slice(-8)

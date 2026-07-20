@@ -7,7 +7,7 @@ import {
   Users, Shield, Table2, Target, Zap, BookOpen,
   ArrowUpRight, Square, Clock, RefreshCw, TrendingUp, Star,
 } from 'lucide-react';
-import { MOCK_PLAYER_STATS, MOCK_CLUB_STATS, DEV_SEASON_ID } from '@/services/mockData';
+import { SEASON_KEY } from '@/services/season';
 import { PageHero }              from '@/components/ui/football';
 import { StatsFilters }          from '@/components/elite/stats/StatsFilters';
 import { PlayerStatsTable }      from '@/components/elite/stats/PlayerStatsTable';
@@ -22,7 +22,7 @@ import type {
   PlayerStatsFilter, StatSortField, StatCategory,
 } from '@/types/football.types';
 
-const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
+const SEASON_ID = SEASON_KEY;
 const DEFAULT_PAGE_SIZE = 25;
 // High ceiling so a full season's roster/clubs is never silently truncated client-side.
 const FULL_PLAYER_FETCH_LIMIT = 1000;
@@ -93,8 +93,8 @@ export default function StatsPage() {
   const [activeCategory, setActiveCategory] = useState<StatCategory>((searchParams.get('cat') as StatCategory) ?? 'goals');
   const { data: allPlayersData, isLoading: playersLoading, refetch: refetchPlayers } = usePlayerStats(seasonId, { limit: FULL_PLAYER_FETCH_LIMIT });
   const { data: allClubsData, isLoading: clubsLoading, refetch: refetchClubs } = useClubStats(seasonId, { limit: FULL_CLUB_FETCH_LIMIT });
-  const allPlayers = allPlayersData ?? MOCK_PLAYER_STATS;
-  const allClubs = allClubsData ?? MOCK_CLUB_STATS;
+  const allPlayers = allPlayersData ?? [];
+  const allClubs = allClubsData ?? [];
   const loading = playersLoading || clubsLoading;
 
   const [per90,          setPer90]          = useState(false);

@@ -5,14 +5,13 @@ import {
   ArrowLeft, BarChart2, History, Vote, Sparkles,
   Crown, Star, Trophy, Calendar, Users,
 } from 'lucide-react';
-import { useBallonDor, useVoting } from '@/hooks/useAwards';
+import { useAwards, useBallonDor, useHistoricalWinners, useVoting } from '@/hooks/useAwards';
 import {
   BallonDorHero,
   BallonDorRankingList,
   PastWinnersGallery,
 } from '@/components/elite/awards/BallonDorComponents';
 import { VotingPanel } from '@/components/elite/awards/VotingPanel';
-import { MOCK_AWARDS, MOCK_HISTORICAL } from '@/services/mockAwards';
 import type { HistoricalWinner } from '@/types/awards.types';
 import trophyImageSrc from '@/assets/images/trophies/ballon-dor-cameroun.png';
 
@@ -130,7 +129,8 @@ HofCard.displayName = 'HofCard';
 
 // ─── Hall of Fame view ────────────────────────────────────────────────────────
 const HallOfFameTab = memo(() => {
-  const winners = MOCK_HISTORICAL;
+  // Sprint 2 (de-mock): live palmarès from the Heritage Builder
+  const { data: winners } = useHistoricalWinners('BALLON_DOR');
 
   return (
     <div className="space-y-10">
@@ -225,7 +225,10 @@ export default function BallonDorPage() {
   const { data: edition, isLoading } = useBallonDor();
   const [activeTab, setActiveTab] = useState<Tab>('ranking');
 
-  const ballonDorAward = MOCK_AWARDS.find(a => a.category === 'BALLON_DOR') ?? MOCK_AWARDS[0];
+  // Sprint 2 (de-mock): the live Ballon d'Or award drives voting; when none
+  // is open, voting UI simply has no award to bind to.
+  const { data: awards } = useAwards();
+  const ballonDorAward = awards.find(a => a.category === 'BALLON_DOR') ?? null;
   const { vote, isVoting, hasVoted, votedNomineeId } = useVoting(ballonDorAward?.id ?? '');
 
   // ── Loading state ──────────────────────────────────────────────────────────

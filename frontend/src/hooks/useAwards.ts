@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { awardsApi, connectAwardsSocket, disconnectAwardsSocket, subscribeToAward, unsubscribeFromAward } from '../services/awardsApi';
 import { useAwardsStore, useVotingStore, useRealtimeStore } from '../store/awards.store';
-import { MOCK_AWARDS, MOCK_BALLON_DOR, MOCK_TEAM_OF_WEEK, MOCK_HISTORICAL } from '../services/mockAwards';
 import type { BallonDorEdition, HistoricalWinner, AwardCategory } from '../types/awards.types';
 
 const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? 'season-2025-26';
@@ -22,7 +21,7 @@ export function useAwards() {
 
   const query = useQuery({
     queryKey: AWARD_QK.all(SEASON_ID),
-    queryFn:  async () => { try { return await awardsApi.getAll(SEASON_ID); } catch { return MOCK_AWARDS; } },
+    queryFn:  () => awardsApi.getAll(SEASON_ID),
     staleTime: 60_000,
     retry: 1,
   });
@@ -34,13 +33,13 @@ export function useAwards() {
   }, [query.data, query.isError, query.isLoading]);
 
   const filtered = useMemo(() => {
-    let list = query.data ?? MOCK_AWARDS;
+    let list = query.data ?? [];
     if (activeType     !== 'ALL') list = list.filter(a => a.type     === activeType);
     if (activeCategory !== 'ALL') list = list.filter(a => a.category === activeCategory);
     return list;
   }, [query.data, activeType, activeCategory]);
 
-  return { ...query, filtered, data: query.data ?? MOCK_AWARDS };
+  return { ...query, filtered, data: query.data ?? [] };
 }
 
 // ─── useAwardDetails ──────────────────────────────────────────────────────────
@@ -52,7 +51,7 @@ export function useAwardDetails(awardId: string | null) {
 
   return useQuery({
     queryKey: AWARD_QK.one(awardId ?? ''),
-    queryFn:  async () => { try { return await awardsApi.getById(awardId!); } catch { return MOCK_AWARDS.find(a => a.id === awardId) ?? null; } },
+    queryFn:  () => awardsApi.getById(awardId!),
     enabled: !!awardId,
     staleTime: 30_000,
   });
@@ -113,48 +112,27 @@ export function useRealtimeVotes() {
 export function useBallonDor(year?: number) {
   const { setBallonDor } = useAwardsStore();
   const query = useQuery({
-    // NOTE: the backend has no dedicated Ballon d'Or route yet — awardsApi.getBallonDor()
-    // resolves an `Award | null` (filtered from /awards/active), not a full BallonDorEdition
-    // (ranking, ceremonyDate, votingOpen...). Until that endpoint exists, treat anything
-    // that isn't already a proper edition as unavailable and use the mock edition instead.
+    // Sprint 2 (de-mock): GET /awards/public/ballon-dor is live — a null
+    // edition means the ceremony hasn't been published yet, and the page
+    // renders its pre-ceremony state instead of an invented ranking.
     queryKey: AWARD_QK.ballonDor(year),
-    queryFn:  async (): Promise<BallonDorEdition> => {
-      try {
-        const result = await awardsApi.getBallonDor(year);
-        return result && 'ranking' in result ? (result as unknown as BallonDorEdition) : MOCK_BALLON_DOR;
-      } catch {
-        return MOCK_BALLON_DOR;
-      }
-    },
+    queryFn:  (): Promise<BallonDorEdition | null> => awardsApi.getBallonDor(year),
     staleTime: 120_000,
   });
   useEffect(() => { if (query.data) setBallonDor(query.data); }, [query.data]);
-  return { ...query, data: query.data ?? MOCK_BALLON_DOR };
+  return { ...query, data: query.data ?? null };
 }
 
 // ─── useHistoricalWinners ───────────────────────────────────────────────────
-// Powers the Awards Archive timeline. Same backend gap as useBallonDor:
-// awardsApi.getHistorical() currently resolves `Award[]` (no dedicated route
-// yet), so anything that isn't already shaped like a HistoricalWinner[] falls
-// back to the mock archive, optionally filtered to a single category.
+// Powers the Awards Archive timeline from GET /awards/public/historical —
+// the Heritage Builder's palmarès is the single source of truth.
 export function useHistoricalWinners(category?: AwardCategory) {
   const query = useQuery({
     queryKey: AWARD_QK.historical(category),
-    queryFn:  async (): Promise<HistoricalWinner[]> => {
-      try {
-        const result = await awardsApi.getHistorical(category);
-        const list = Array.isArray(result) && result.length > 0 && 'winner' in result[0]
-          ? (result as unknown as HistoricalWinner[])
-          : MOCK_HISTORICAL;
-        return category ? list.filter(w => w.category === category) : list;
-      } catch {
-        return category ? MOCK_HISTORICAL.filter(w => w.category === category) : MOCK_HISTORICAL;
-      }
-    },
+    queryFn:  (): Promise<HistoricalWinner[]> => awardsApi.getHistorical(category),
     staleTime: 300_000,
   });
-  const fallback = category ? MOCK_HISTORICAL.filter(w => w.category === category) : MOCK_HISTORICAL;
-  return { ...query, data: (query.data ?? fallback).slice().sort((a, b) => b.year - a.year) };
+  return { ...query, data: (query.data ?? []).slice().sort((a, b) => b.year - a.year) };
 }
 
 // ─── useTeamOfWeek ────────────────────────────────────────────────────────────
@@ -162,7 +140,7 @@ export function useTeamOfWeek() {
   const { setTeamOfWeek } = useAwardsStore();
   const query = useQuery({
     queryKey: AWARD_QK.teamOfWeek(),
-    queryFn:  async () => { try { return await awardsApi.getTeamOfWeek() as any; } catch { return MOCK_TEAM_OF_WEEK; } },
+    queryFn:  () => awardsApi.getTeamOfWeek() as any,
     staleTime: 300_000,
   });
   useEffect(() => { if (query.data) setTeamOfWeek(query.data as any); }, [query.data]);

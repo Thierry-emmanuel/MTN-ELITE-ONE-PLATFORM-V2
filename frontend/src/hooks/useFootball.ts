@@ -1,18 +1,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { footballApi, QK, ApiError } from '../services/api';
-import {
-  MOCK_FIXTURES, MOCK_RESULTS, MOCK_STANDINGS, MOCK_PLAYER_STATS, MOCK_CLUB_STATS, DEV_SEASON_ID,
-} from '../services/mockData';
-import {
-  buildFallbackStats, buildFallbackLineups, buildFallbackHeadToHead,
-} from '../services/matchCenterMock';
+import { SEASON_KEY, resolveSeasonId } from '../services/season';
 import type {
   FixturesFilter, ResultsFilter, StandingsFilter, MatchDay, Match,
   PlayerStatsFilter, ClubStatsFilter,
 } from '../types/football.types';
 
-const SEASON_ID =
-  (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
+// Sprint 2 (de-mock): the season id is resolved from GET /seasons/current
+// inside each queryFn; SEASON_KEY keeps react-query keys stable.
+const SEASON_ID = SEASON_KEY;
 
 // ─── Stale times ──────────────────────────────────────────────────────────────
 const STALE = {
@@ -30,20 +26,13 @@ export function useFixtures(filters?: Partial<FixturesFilter>) {
   const query = useQuery({
     queryKey: QK.fixtures(SEASON_ID, filters),
     queryFn: async () => {
-      try {
-        return await footballApi.getFixtures(SEASON_ID, {
-          limit:   100,
-          round:   filters?.round   ?? undefined,
-          clubId:  filters?.clubId  ?? undefined,
-          status:  filters?.status  ?? undefined,
-        });
-      } catch (err) {
-        // Fallback to mock in dev / when API is unreachable
-        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
-          return MOCK_FIXTURES;
-        }
-        throw err;
-      }
+      const sid = await resolveSeasonId();
+      return footballApi.getFixtures(sid, {
+        limit:   100,
+        round:   filters?.round   ?? undefined,
+        clubId:  filters?.clubId  ?? undefined,
+        status:  filters?.status  ?? undefined,
+      });
     },
     staleTime: STALE.fixtures,
     // Refetch every 15 s when there are live matches
@@ -64,7 +53,8 @@ export function useFixtures(filters?: Partial<FixturesFilter>) {
   const prefetchNextRound = (currentRound: number) => {
     qc.prefetchQuery({
       queryKey: QK.fixtures(SEASON_ID, { ...filters, round: currentRound + 1 }),
-      queryFn: () => footballApi.getFixtures(SEASON_ID, { round: currentRound + 1 }),
+      queryFn: async () =>
+        footballApi.getFixtures(await resolveSeasonId(), { round: currentRound + 1 }),
       staleTime: STALE.fixtures,
     });
   };
@@ -78,19 +68,12 @@ export function useResults(filters?: Partial<ResultsFilter>) {
   return useQuery({
     queryKey: QK.results(SEASON_ID, filters),
     queryFn: async () => {
-      try {
-        const res = await footballApi.getResults(SEASON_ID, {
-          round:  filters?.round  ?? undefined,
-          clubId: filters?.clubId ?? undefined,
-        });
-        const days = res.grouped ?? [];
-        return days.length > 0 ? days : MOCK_RESULTS;
-      } catch (err) {
-        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
-          return MOCK_RESULTS;
-        }
-        throw err;
-      }
+      const sid = await resolveSeasonId();
+      const res = await footballApi.getResults(sid, {
+        round:  filters?.round  ?? undefined,
+        clubId: filters?.clubId ?? undefined,
+      });
+      return res.grouped ?? [];
     },
     staleTime: STALE.results,
     retry: (count, err) => {
@@ -105,19 +88,7 @@ export function useResults(filters?: Partial<ResultsFilter>) {
 export function useMatch(matchId: string | null) {
   return useQuery({
     queryKey: QK.match(matchId ?? ''),
-    queryFn: async () => {
-      try {
-        return await footballApi.getMatch(matchId!);
-      } catch (err) {
-        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
-          // Find in mock data
-          const allMatches = [...MOCK_FIXTURES, ...MOCK_RESULTS].flatMap(day => day.matches);
-          const match = allMatches.find(m => String(m.id) === String(matchId));
-          if (match) return match;
-        }
-        throw err;
-      }
-    },
+    queryFn: () => footballApi.getMatch(matchId!),
     staleTime: STALE.live, // Short stale time for live updates
     enabled: !!matchId,
     refetchInterval: (query) => {
@@ -128,22 +99,15 @@ export function useMatch(matchId: string | null) {
 }
 
 // ─── useMatchStats ────────────────────────────────────────────────────────────
-// Team-level stats (possession, shots, cards…). Falls back to a deterministic
-// placeholder — consistent with a scoreline — whenever the backend hasn't
-// recorded real stats for this match yet (404) or is unreachable.
+// Team-level stats (possession, shots, cards…). Sprint 2: no fabricated
+// fallback — when the backend has no stats for a match the query errors and
+// the Match Center shows its empty state instead of invented numbers.
 
 export function useMatchStats(match: Match | undefined | null) {
   const matchId = match?.id ? String(match.id) : '';
   return useQuery({
     queryKey: QK.matchStats(matchId),
-    queryFn: async () => {
-      try {
-        return await footballApi.getMatchStats(matchId);
-      } catch (err) {
-        if (err instanceof ApiError && match) return buildFallbackStats(match);
-        throw err;
-      }
-    },
+    queryFn: () => footballApi.getMatchStats(matchId),
     staleTime: STALE.live,
     enabled: !!match,
     refetchInterval: () => (match?.status === 'LIVE' || match?.status === 'HT') ? STALE.live : false,
@@ -156,14 +120,7 @@ export function useMatchLineups(match: Match | undefined | null) {
   const matchId = match?.id ? String(match.id) : '';
   return useQuery({
     queryKey: QK.matchLineups(matchId),
-    queryFn: async () => {
-      try {
-        return await footballApi.getMatchLineups(matchId);
-      } catch (err) {
-        if (err instanceof ApiError && match) return buildFallbackLineups(match);
-        throw err;
-      }
-    },
+    queryFn: () => footballApi.getMatchLineups(matchId),
     staleTime: STALE.fixtures,
     enabled: !!match,
   });
@@ -175,14 +132,7 @@ export function useHeadToHead(match: Match | undefined | null) {
   const matchId = match?.id ? String(match.id) : '';
   return useQuery({
     queryKey: QK.headToHead(matchId),
-    queryFn: async () => {
-      try {
-        return await footballApi.getHeadToHead(matchId);
-      } catch (err) {
-        if (err instanceof ApiError && match) return buildFallbackHeadToHead(match);
-        throw err;
-      }
-    },
+    queryFn: () => footballApi.getHeadToHead(matchId),
     staleTime: STALE.results,
     enabled: !!match,
   });
@@ -194,17 +144,8 @@ export function useStandings(filters?: Partial<StandingsFilter>) {
   return useQuery({
     queryKey: QK.standings(SEASON_ID, filters?.view),
     queryFn: async () => {
-      try {
-        const data = await footballApi.getStandings(SEASON_ID, {
-          type: filters?.view ?? 'overall',
-        });
-        return data.length > 0 ? data : MOCK_STANDINGS;
-      } catch (err) {
-        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
-          return MOCK_STANDINGS;
-        }
-        throw err;
-      }
+      const sid = await resolveSeasonId();
+      return footballApi.getStandings(sid, { type: filters?.view ?? 'overall' });
     },
     staleTime: STALE.standings,
     retry: (count, err) => {
@@ -315,15 +256,9 @@ export function usePlayerStats(seasonId: string, filters?: Omit<PlayerStatsFilte
   return useQuery({
     queryKey: QK.playerStats(seasonId, filters),
     queryFn: async () => {
-      try {
-        const res = await footballApi.getPlayerStats(seasonId, filters);
-        return res.data && res.data.length > 0 ? res.data : MOCK_PLAYER_STATS;
-      } catch (err) {
-        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
-          return MOCK_PLAYER_STATS;
-        }
-        throw err;
-      }
+      const sid = seasonId === 'current' ? await resolveSeasonId() : seasonId;
+      const res = await footballApi.getPlayerStats(sid, filters);
+      return res.data ?? [];
     },
     staleTime: 120_000,
   });
@@ -334,7 +269,7 @@ export function usePlayerStats(seasonId: string, filters?: Omit<PlayerStatsFilte
 export function useTopPerformers(category: Parameters<typeof footballApi.getTopPerformers>[1] = 'goals', limit = 1) {
   return useQuery({
     queryKey: QK.topPerformers(SEASON_ID, category),
-    queryFn: () => footballApi.getTopPerformers(SEASON_ID, category, limit),
+    queryFn: async () => footballApi.getTopPerformers(await resolveSeasonId(), category, limit),
     staleTime: 120_000,
     retry: (count, err) => {
       if (err instanceof ApiError && err.status < 500) return false;
@@ -348,15 +283,9 @@ export function useClubStats(seasonId: string, filters?: Omit<ClubStatsFilter, '
   return useQuery({
     queryKey: QK.clubStats(seasonId, filters),
     queryFn: async () => {
-      try {
-        const res = await footballApi.getClubStats(seasonId, filters);
-        return res.data && res.data.length > 0 ? res.data : MOCK_CLUB_STATS;
-      } catch (err) {
-        if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) {
-          return MOCK_CLUB_STATS;
-        }
-        throw err;
-      }
+      const sid = seasonId === 'current' ? await resolveSeasonId() : seasonId;
+      const res = await footballApi.getClubStats(sid, filters);
+      return res.data ?? [];
     },
     staleTime: 120_000,
   });

@@ -54,7 +54,7 @@ export class Role {
   @Column({ default: 1 })
   version: number;
 
-  @Column({ name: 'cloned_from_key', length: 64, nullable: true })
+  @Column({ name: 'cloned_from_key', type: 'varchar', length: 64, nullable: true })
   clonedFromKey: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

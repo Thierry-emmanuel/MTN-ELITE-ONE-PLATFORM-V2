@@ -1,5 +1,5 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
-import { Keyboard, Settings2, User } from 'lucide-react';
+import { Keyboard, ListTree, ScrollText, Settings2, ShieldCheck, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InspectorLayout } from '../layouts/InspectorLayout';
 import { usePreferences } from '../stores/preferences.store';
@@ -7,6 +7,8 @@ import { ShortcutRegistry, formatKeys } from '../navigation/shortcuts';
 import { Kbd } from '../components/ShortcutHint';
 import { useShellPage } from '../stores/page.store';
 import { SHELL_BASE } from '../navigation/domains';
+import { AuditSection, MenuSection, SecuritySection } from './SettingsIamSections';
+import { usePermissions } from '../services/permissions';
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -33,14 +35,18 @@ function Choice<T extends string>({ value, options, onSelect }: {
   );
 }
 
-const ProfileSection = () => (
-  <SectionCard title="Profil">
-    <div className="space-y-2 text-[13px] text-zinc-400">
-      <p><span className="text-zinc-500">Nom :</span> N2K</p>
-      <p><span className="text-zinc-500">Rôle :</span> League Administrator <span className="text-zinc-600">(bundle de capacités — configurable, jamais codé en dur)</span></p>
-    </div>
-  </SectionCard>
-);
+const ProfileSection = () => {
+  const { me, roleKeys, loading } = usePermissions();
+  return (
+    <SectionCard title="Profil">
+      <div className="space-y-2 text-[13px] text-zinc-400">
+        <p><span className="text-zinc-500">Nom :</span> {loading ? '…' : me ? `${me.user.firstName} ${me.user.lastName}` : 'Non connecté'}</p>
+        <p><span className="text-zinc-500">Email :</span> {me?.user.email ?? '—'}</p>
+        <p><span className="text-zinc-500">Rôles :</span> {roleKeys.join(', ') || '—'} <span className="text-zinc-600">(bundles de permissions configurés dans Identité & Accès)</span></p>
+      </div>
+    </SectionCard>
+  );
+};
 
 const PreferencesSection = () => {
   const { theme, setTheme, language, setLanguage, density, setDensity } = usePreferences();
@@ -80,9 +86,13 @@ export default function SettingsPage() {
     title: 'Paramètres',
     breadcrumb: [{ label: 'FootballOS', href: `${SHELL_BASE}/workspace` }, { label: 'Paramètres' }],
   });
+  const { can } = usePermissions();
   const tabs = [
     { id: 'profile', label: 'Profil', icon: User },
     { id: 'preferences', label: 'Préférences', icon: Settings2 },
+    { id: 'security', label: 'Sécurité', icon: ShieldCheck },
+    ...(can('audit.view') ? [{ id: 'audit', label: 'Audit', icon: ScrollText }] : []),
+    ...(can('settings.configure') ? [{ id: 'menu', label: 'Menu', icon: ListTree }] : []),
     { id: 'shortcuts', label: 'Raccourcis', icon: Keyboard },
   ];
   return (
@@ -104,6 +114,9 @@ export default function SettingsPage() {
           <Route index element={<Navigate to="profile" replace />} />
           <Route path="profile" element={<ProfileSection />} />
           <Route path="preferences" element={<PreferencesSection />} />
+          <Route path="security" element={<SecuritySection />} />
+          <Route path="audit" element={<AuditSection />} />
+          <Route path="menu" element={<MenuSection />} />
           <Route path="shortcuts" element={<ShortcutsSection />} />
         </Routes>
       }

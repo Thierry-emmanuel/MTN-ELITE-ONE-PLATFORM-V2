@@ -1,7 +1,6 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight, Radio } from "lucide-react";
-import { MOCK_FIXTURES } from "@/services/mockData";
 import { ClubLogo } from "@/components/ui/football";
 import { SectionHeader } from "./SectionHeader";
 import { Link } from "react-router-dom";
@@ -136,7 +135,7 @@ export const Fixtures = () => {
   const { data: daysData, isLoading: loading } = useFixtures();
 
   const matches = useMemo(() => {
-    const days = daysData ?? MOCK_FIXTURES;
+    const days = daysData ?? [];
     const allMatches = days.flatMap(d => d.matches);
     const upcoming = allMatches.filter(m => m.status === "SCHEDULED" || m.status === "LIVE");
     return upcoming.slice(0, 8);

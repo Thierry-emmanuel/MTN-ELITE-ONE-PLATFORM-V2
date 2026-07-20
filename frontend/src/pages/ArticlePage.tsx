@@ -7,7 +7,6 @@ import {
   Calendar, Share2, Bookmark, ExternalLink, Link2,
 } from 'lucide-react';
 import { newsApi } from '@/services/newsApi';
-import { MOCK_ARTICLES, MOCK_COMMENTS } from '@/services/mockNews';
 import { CategoryBadge, ArticleCard } from '@/components/elite/news/ArticleCard';
 import { CommentsSection } from '@/components/elite/news/CommentsSection';
 import type { Article, Comment } from '@/types/news.types';
@@ -71,16 +70,14 @@ export default function ArticlePage() {
         newsApi.getComments(art.id),
         newsApi.getArticles({ status: 'PUBLISHED', limit: 20 }),
       ]);
-      setComments(cms.status === 'fulfilled' ? cms.value : MOCK_COMMENTS.filter(c => c.articleId === art.id));
+      setComments(cms.status === 'fulfilled' ? cms.value : []);
       if (allArts.status === 'fulfilled') {
         setRelated(allArts.value.data.filter(a => a.id !== art.id && a.category === art.category).slice(0, 3));
       }
     } catch {
-      const art = MOCK_ARTICLES.find(a => a.slug === slug);
-      if (!art) { navigate('/news'); return; }
-      setArticle(art);
-      setComments(MOCK_COMMENTS.filter(c => c.articleId === art.id));
-      setRelated(MOCK_ARTICLES.filter(a => a.id !== art.id && a.category === art.category && a.status === 'PUBLISHED').slice(0, 3));
+      // Sprint 2 (de-mock): unknown slug or unreachable API → back to the news hub.
+      navigate('/news');
+      return;
     } finally {
       setLoading(false);
     }

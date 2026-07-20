@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { footballApi as api } from "@/services/api";
 import type { ApiStanding } from "@/types/football.types";
-import { MOCK_STANDINGS, DEV_SEASON_ID } from '../services/mockData';
+import { resolveSeasonId } from '../services/season';
 import { sortStandings, getZone } from '../utils/football.utils';
 import type { StandingsView, Zone } from '../types/football.types';
 import {
@@ -15,7 +15,6 @@ import {
 } from '../components/ui/football';
 import { Link } from 'react-router-dom';
 
-const SEASON_ID = (import.meta.env.VITE_SEASON_ID as string | undefined) ?? DEV_SEASON_ID;
 
 // ─── Normalise legacy form strings (V→W etc.) ────────────────────────────────
 function normaliseForm(f: string): 'W' | 'D' | 'L' {
@@ -285,10 +284,10 @@ export default function StandingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getStandings(SEASON_ID);
-      setRaw(data.length > 0 ? data : MOCK_STANDINGS as unknown as ApiStanding[]);
+      const data = await api.getStandings(await resolveSeasonId());
+      setRaw(Array.isArray(data) ? data : []);
     } catch {
-      setRaw(MOCK_STANDINGS as unknown as ApiStanding[]);
+      setRaw([]);
     } finally {
       setLoading(false);
     }

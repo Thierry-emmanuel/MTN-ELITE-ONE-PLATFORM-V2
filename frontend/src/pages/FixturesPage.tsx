@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Radio, RefreshCw, CalendarDays, Trophy
 } from 'lucide-react';
-import { MOCK_FIXTURES } from '../services/mockData';
 import { extractRounds, extractClubs } from '../utils/football.utils';
 import type { MatchDay } from '../types/football.types';
 import {
@@ -17,7 +16,7 @@ type StatusFilter = 'all' | 'live' | 'upcoming';
 
 export default function FixturesPage() {
   const { data: daysData, isLoading: loading, error, refetch } = useFixtures();
-  const days = daysData ?? MOCK_FIXTURES;
+  const days = daysData ?? [];
 
   const [activeRound, setActiveRound]   = useState<number>(19); // Default to current round
   const [clubFilter,   setClubFilter]   = useState<string | null>(null);
