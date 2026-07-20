@@ -10,10 +10,10 @@ export class AuditLog {
   id: string;
 
   @Index()
-  @Column({ name: 'actor_id', nullable: true })
+  @Column({ name: 'actor_id', type: 'integer', nullable: true })
   actorId: number | null;
 
-  @Column({ name: 'actor_email', length: 160, nullable: true })
+  @Column({ name: 'actor_email', type: 'varchar', length: 160, nullable: true })
   actorEmail: string | null;
 
   /** e.g. auth.login, auth.logout, roles.update, users.suspend, articles.publish */
@@ -22,16 +22,16 @@ export class AuditLog {
   action: string;
 
   @Index()
-  @Column({ name: 'target_type', length: 64, nullable: true })
+  @Column({ name: 'target_type', type: 'varchar', length: 64, nullable: true })
   targetType: string | null;
 
-  @Column({ name: 'target_id', length: 64, nullable: true })
+  @Column({ name: 'target_id', type: 'varchar', length: 64, nullable: true })
   targetId: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, unknown> | null;
 
-  @Column({ length: 64, nullable: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
   ip: string | null;
 
   @Index()

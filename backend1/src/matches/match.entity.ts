@@ -71,10 +71,10 @@ export class Match {
   @Column({ name: 'season_id' })
   seasonId: number;
 
-  @Column({ name: 'stadium_id', nullable: true })
+  @Column({ name: 'stadium_id', type: 'int', nullable: true })
   stadiumId: number | null;
 
-  @Column({ name: 'referee_id', nullable: true })
+  @Column({ name: 'referee_id', type: 'int', nullable: true })
   refereeId: number | null;
 
   // ── Relations ────────────────────────────────────────────────────────────────

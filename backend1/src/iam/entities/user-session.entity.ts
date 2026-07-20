@@ -21,10 +21,10 @@ export class UserSession {
   @Column({ name: 'refresh_token_hash', length: 64 })
   refreshTokenHash: string;
 
-  @Column({ name: 'user_agent', length: 400, nullable: true })
+  @Column({ name: 'user_agent', type: 'varchar', length: 400, nullable: true })
   userAgent: string | null;
 
-  @Column({ length: 64, nullable: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
   ip: string | null;
 
   @Column({ name: 'expires_at', type: 'timestamp' })
