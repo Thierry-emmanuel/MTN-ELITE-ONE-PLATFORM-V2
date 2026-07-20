@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import PageLayout from "@/layout/PageLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -20,7 +20,6 @@ const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
 const MediaPage       = lazy(() => import("./pages/MediaPage"));
 const ArticlePage     = lazy(() => import("./pages/ArticlePage"));
 const EditorPage      = lazy(() => import("./pages/EditorPage"));
-const AdminPage       = lazy(() => import("./pages/AdminPage"));
 const AwardsPage      = lazy(() => import("./pages/AwardsPage"));
 const BallonDorPage   = lazy(() => import("./pages/BallonDorPage"));
 const VotePage        = lazy(() => import("./pages/VotePage"));
@@ -86,7 +85,7 @@ const App = () => (
         <Route path="/journal/studio"      element={<ProtectedRoute roles={['admin','editor']}><PageLayout><StoryBuilderPage /></PageLayout></ProtectedRoute>} />
         <Route path="/journal/:slug"       element={<PageLayout><JournalStoryPage /></PageLayout>} />
         <Route path="/editor" element={<ProtectedRoute roles={['admin','editor']}><PageLayout><EditorPage /></PageLayout></ProtectedRoute>} />
-        <Route path="/admin"  element={<ProtectedRoute roles={['admin']}><AdminPage /></ProtectedRoute>} />
+        <Route path="/admin"  element={<Navigate to="/os" replace />} />
         <Route path="/awards"              element={<PageLayout><AwardsPage /></PageLayout>} />
         <Route path="/awards/ballon-dor"   element={<PageLayout><BallonDorPage /></PageLayout>} />
         <Route path="/awards/team-of-week" element={<PageLayout><TeamOfWeekPage /></PageLayout>} />

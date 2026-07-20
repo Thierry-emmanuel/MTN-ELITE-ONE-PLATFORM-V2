@@ -899,7 +899,7 @@ export const Navbar = ({ onSearchOpen }: NavbarProps) => {
 
             {user?.role === 'admin' && (
               <Link
-                to="/admin"
+                to="/os"
                 title="Administration CMS"
                 className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-[11px] font-medium text-accent/70 hover:text-accent border border-accent/10 hover:border-accent/30 hover:bg-accent/5 transition-all"
               >
