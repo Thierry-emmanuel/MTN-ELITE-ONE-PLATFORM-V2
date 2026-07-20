@@ -22,7 +22,7 @@ export class Transfer {
   @JoinColumn({ name: 'fromClubId' })
   fromClub: Club | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   fromClubId: number | null;
 
   @ManyToOne(() => Club, { eager: true })

@@ -32,10 +32,10 @@ export class Equipment {
   brand: string;
 
   /** optional link to a club (league-wide gear when null) */
-  @Column({ name: 'club_id', nullable: true })
+  @Column({ name: 'club_id', type: 'int', nullable: true })
   clubId: number | null;
 
-  @Column({ name: 'image_url', length: 500, nullable: true })
+  @Column({ name: 'image_url', type: 'varchar', length: 500, nullable: true })
   imageUrl: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

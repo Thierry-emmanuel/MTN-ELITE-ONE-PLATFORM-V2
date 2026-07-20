@@ -48,7 +48,7 @@ export class Staff {
   @Column({ type: 'enum', enum: StaffRole, default: StaffRole.ASSISTANT_COACH })
   role: StaffRole;
 
-  @Column({ name: 'club_id', nullable: true })
+  @Column({ name: 'club_id', type: 'int', nullable: true })
   clubId: number | null;
 
   @ManyToOne(() => Club, { nullable: true, eager: false, onDelete: 'SET NULL' })
