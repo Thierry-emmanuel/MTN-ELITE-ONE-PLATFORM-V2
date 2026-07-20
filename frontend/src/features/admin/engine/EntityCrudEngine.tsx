@@ -96,7 +96,7 @@ function EntityCrudEngineInner<T extends { id?: string; _id?: string }>({
                 currentStatus={(editing as any)[config.workflow.statusField] || ''}
                 allowedTransitions={(() => {
                   const currentStatus = (editing as any)[config.workflow.statusField] || 'draft';
-                  const t = config.workflow.transitions[currentStatus.toLowerCase() as any] || [];
+                  const t = (config.workflow.transitions as Record<string, string[]>)[currentStatus.toLowerCase()] || [];
                   return t.map((s: string) => s.toUpperCase());
                 })()}
                 refetch={() => {
@@ -129,7 +129,7 @@ function EntityCrudEngineInner<T extends { id?: string; _id?: string }>({
             label: c.label,
             align: c.align,
             render: c.render
-              ? (r: T) => c.render!(r)
+              ? (r: T) => c.render!(r, lookupOptions)
               : c.optionsKey
                 ? (r: T) => {
                     const v = (r as Record<string, unknown>)[c.key as string];

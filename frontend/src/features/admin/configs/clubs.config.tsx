@@ -1,6 +1,5 @@
 import type { EntityConfig } from '../engine/entityConfig.types';
 
-// Mirrors backend Club entity (src/clubs/club.entity.ts) and its DTOs.
 export interface Club {
   id?: string;
   name: string;
@@ -42,9 +41,23 @@ export const clubsConfig: EntityConfig<Club> = {
   idField: 'id',
   searchableKeys: ['name', 'nickname', 'city'],
 
-  // ── Table columns (matches the HSD-style list pattern: identity, status, actions) ──
   columns: [
-    { key: 'name', label: 'Club' },
+    {
+      key: 'name',
+      label: 'Club',
+      render: (r: Club) => (
+        <div className="flex items-center gap-2">
+          {r.logoUrl ? (
+            <img src={r.logoUrl} alt={r.name} className="h-6 w-6 object-contain rounded bg-white/5 p-0.5" />
+          ) : (
+            <div className="h-6 w-6 rounded bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">
+              {r.name.slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <span>{r.name}</span>
+        </div>
+      ),
+    },
     { key: 'city', label: 'Ville' },
     { key: 'stadium', label: 'Stade' },
     { key: 'foundedYear', label: 'Fondé en' },
@@ -98,29 +111,29 @@ export const clubsConfig: EntityConfig<Club> = {
     { key: 'history', label: 'Histoire du club', type: 'richtext', span: 2 },
     {
       key: 'palmares', label: 'Palmarès', type: 'tags', span: 2,
-      hint: 'ex. "MTN Elite One 2010", "Coupe du Cameroun 2015"',
+      hint: 'Appuyez sur Entrée pour ajouter un titre, ex: Champion 2024',
     },
-
-    // ── Leadership ───────────────────────────────────────────────────────
     { key: 'presidentName', label: 'Nom du président', type: 'text', span: 1 },
     {
       key: 'presidentPhotoUrl', label: 'Photo du président', type: 'media-image', span: 1,
       uploadScope: { entity: 'clubs', field: 'president' },
     },
-    { key: 'budget', label: 'Budget annuel (FCFA)', type: 'number', span: 2 },
+    { key: 'budget', label: 'Budget annuel estimé (FCFA)', type: 'number', span: 1 },
 
-    // ── Nested JSON objects ──────────────────────────────────────────────
+    // ── Achievements sub-object (nested) ──────────────────────────────
     {
-      key: 'achievements', label: 'Trophées', type: 'nested-object', span: 2,
+      key: 'achievements', label: 'Détail des titres nationaux / internationaux', type: 'nested-object', span: 2,
       subFields: [
-        { key: 'league', label: 'Titres de championnat', type: 'number' },
-        { key: 'cup', label: 'Coupes nationales', type: 'number' },
-        { key: 'regional', label: 'Trophées régionaux', type: 'number' },
-        { key: 'african', label: 'Trophées africains (CAF)', type: 'number' },
+        { key: 'league', label: 'Titres de Championnat (Elite One)', type: 'number' },
+        { key: 'cup', label: 'Coupes du Cameroun', type: 'number' },
+        { key: 'regional', label: 'Ligues régionales', type: 'number' },
+        { key: 'african', label: 'Titres CAF (Ligue des champions...)', type: 'number' },
       ],
     },
+
+    // ── Social Media sub-object (nested) ──────────────────────────────
     {
-      key: 'socialMedia', label: 'Réseaux sociaux', type: 'nested-object', span: 2,
+      key: 'socialMedia', label: 'Réseaux sociaux officiels', type: 'nested-object', span: 2,
       subFields: [
         { key: 'twitter', label: 'Twitter / X', type: 'text' },
         { key: 'instagram', label: 'Instagram', type: 'text' },
@@ -132,57 +145,51 @@ export const clubsConfig: EntityConfig<Club> = {
   ],
 
   emptyRecord: () => ({
-    name: '', city: '', stadium: '', foundedYear: new Date().getFullYear(),
-    status: 'ACTIVE', achievements: {}, socialMedia: {},
+    name: '', city: '', foundedYear: new Date().getFullYear(), stadium: '', status: 'ACTIVE',
   }),
 
-  // ── League Studio: Club Builder ─────────────────────────────────────────
-  // Same fields as above, grouped into the journey a club administrator
-  // actually thinks in: who we are → how we look → where we play → our
-  // story → who leads us → our honours → confirm.
   builderSteps: [
     {
       id: 'identity',
       label: 'Identité',
-      description: 'Le nom et les informations de base du club.',
-      fieldKeys: ['name', 'nickname', 'city', 'region', 'foundedYear', 'websiteUrl'],
+      description: 'Nom du club, ville, année de fondation et statut.',
+      fieldKeys: ['name', 'nickname', 'city', 'region', 'foundedYear', 'websiteUrl', 'status'],
     },
     {
-      id: 'branding',
-      label: 'Image de marque',
-      description: 'Logo, bannière et couleurs — utilisés partout où le club apparaît sur la plateforme.',
+      id: 'visuals',
+      label: 'Identité Visuelle',
+      description: 'Logo officiel, bannière de page et couleurs du club.',
       fieldKeys: ['logoUrl', 'bannerUrl', 'videoUrl', 'primaryColor', 'secondaryColor'],
     },
     {
       id: 'stadium',
-      label: 'Stade',
-      description: "L'antre du club.",
+      label: 'Infrastructures',
+      description: 'Nom, capacité et photo de l\'enceinte du club.',
       fieldKeys: ['stadium', 'stadiumCapacity', 'stadiumPhotoUrl'],
     },
     {
-      id: 'story',
-      label: 'Histoire & Palmarès',
-      description: 'Ce qui rend ce club mémorable.',
-      fieldKeys: ['description', 'history', 'palmares'],
+      id: 'narrative',
+      label: 'Histoire & Direction',
+      description: 'Président, palmarès historique et description du club.',
+      fieldKeys: ['description', 'history', 'palmares', 'presidentName', 'presidentPhotoUrl', 'budget'],
     },
     {
-      id: 'leadership',
-      label: 'Direction',
-      description: 'Qui dirige le club.',
-      fieldKeys: ['presidentName', 'presidentPhotoUrl', 'budget'],
+      id: 'achievements',
+      label: 'Palmarès chiffré',
+      description: 'Nombre exact de trophées remportés par catégorie.',
+      fieldKeys: ['achievements'],
     },
     {
-      id: 'honours',
-      label: 'Trophées & Réseaux',
-      description: 'Palmarès chiffré et présence sur les réseaux sociaux.',
-      fieldKeys: ['achievements', 'socialMedia'],
+      id: 'socials',
+      label: 'Communauté',
+      description: 'Liens vers les réseaux sociaux officiels du club.',
+      fieldKeys: ['socialMedia'],
     },
     {
       id: 'review',
       label: 'Relecture',
-      description: "Vérifiez tout avant de publier — l'aperçu à droite est exactement ce que verront les supporters.",
-      fieldKeys: ['status'],
+      description: 'Validez toutes les sections de la fiche club.',
+      fieldKeys: [],
     },
   ],
-  publishOverrides: { status: 'ACTIVE' },
 };

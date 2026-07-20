@@ -51,7 +51,22 @@ export const playersConfig: EntityConfig<Player> = {
   searchableKeys: ['firstName', 'lastName', 'nickname', 'nationality'],
 
   columns: [
-    { key: 'lastName', label: 'Nom', render: (r) => `${r.firstName} ${r.lastName}` },
+    {
+      key: 'lastName',
+      label: 'Nom',
+      render: (r: Player) => (
+        <div className="flex items-center gap-2">
+          {r.photoUrl ? (
+            <img src={r.photoUrl} alt={r.lastName} className="h-6 w-6 object-cover rounded-full bg-white/5 border border-white/10" />
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">
+              {r.firstName?.[0] || ''}{r.lastName?.[0] || ''}
+            </div>
+          )}
+          <span>{r.firstName} {r.lastName}</span>
+        </div>
+      ),
+    },
     { key: 'position', label: 'Poste' },
     { key: 'nationality', label: 'Nationalité' },
     { key: 'jerseyNumber', label: 'N°' },
@@ -154,11 +169,6 @@ export const playersConfig: EntityConfig<Player> = {
   }),
   publishOverrides: { isActive: true, status: 'ACTIVE' },
 
-  // ── League Studio: Player Builder ─────────────────────────────────────
-  // Groups the same `fields` above into a guided, six-step journey. No new
-  // fields, no new validation rules — this is purely a presentation layer
-  // on top of the flat config, so the CRUD table/form and the wizard never
-  // drift apart.
   builderSteps: [
     {
       id: 'identity',

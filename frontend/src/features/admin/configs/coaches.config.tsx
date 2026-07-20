@@ -1,6 +1,6 @@
 import type { EntityConfig } from '../engine/entityConfig.types';
+import { clubsLookup } from '../lookups/sharedLookups';
 
-// Mirrors the DTO built by CoachesTab's emptyCoach()/save() in AdminEntityTabs.tsx.
 export interface Coach {
   id?: string;
   firstName: string;
@@ -33,12 +33,46 @@ export const coachesConfig: EntityConfig<Coach> = {
   apiBasePath: '/coaches',
   idField: 'id',
   searchableKeys: ['firstName', 'lastName'],
+  lookups: [clubsLookup],
 
   columns: [
-    { key: 'firstName', label: 'Prénom' },
-    { key: 'lastName', label: 'Nom' },
+    {
+      key: 'firstName',
+      label: 'Entraîneur',
+      render: (r: Coach, lookups?: any) => {
+        const clubOpt = lookups?.clubs?.find((c: any) => String(c.value) === String(r.clubId));
+        return (
+          <div className="flex items-center gap-2">
+            {r.photoUrl ? (
+              <img src={r.photoUrl} alt={`${r.firstName} ${r.lastName}`} className="h-6 w-6 object-cover rounded-full bg-white/5 border border-white/10" />
+            ) : (
+              <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">
+                {r.firstName?.[0] || ''}{r.lastName?.[0] || ''}
+              </div>
+            )}
+            <div>
+              <div>{r.firstName} {r.lastName}</div>
+              {clubOpt && <div className="text-[10px] text-white/40">{clubOpt.label}</div>}
+            </div>
+          </div>
+        );
+      },
+    },
     { key: 'qualification', label: 'Qualification' },
-    { key: 'clubId', label: 'Club' },
+    {
+      key: 'clubId',
+      label: 'Club',
+      render: (r: Coach, lookups?: any) => {
+        const clubOpt = lookups?.clubs?.find((c: any) => String(c.value) === String(r.clubId));
+        if (!clubOpt) return <span className="text-white/30">—</span>;
+        return (
+          <div className="flex items-center gap-1.5">
+            {clubOpt.logoUrl && <img src={clubOpt.logoUrl} alt={clubOpt.label} className="h-4 w-4 object-contain" />}
+            <span>{clubOpt.label}</span>
+          </div>
+        );
+      },
+    },
     { key: 'status', label: 'Statut' },
   ],
 
@@ -48,7 +82,6 @@ export const coachesConfig: EntityConfig<Coach> = {
     { key: 'nationality', label: 'Nationalité', type: 'text', span: 1 },
     { key: 'birthDate', label: 'Date de naissance', type: 'date', span: 1 },
     { key: 'birthPlace', label: 'Lieu de naissance', type: 'text', span: 2 },
-
     { key: 'clubId', label: 'Club', type: 'select', optionsKey: 'clubs', span: 1 },
     {
       key: 'status', label: 'Statut', type: 'select', span: 1,
@@ -60,7 +93,6 @@ export const coachesConfig: EntityConfig<Coach> = {
     { key: 'qualification', label: 'Qualification', type: 'text', span: 1, hint: 'ex. Licence CAF Pro' },
     { key: 'specialization', label: 'Spécialisation', type: 'text', span: 1 },
     { key: 'contractExpiry', label: 'Fin de contrat', type: 'date', span: 2 },
-
     {
       key: 'photoUrl', label: 'Photo', type: 'media-image', span: 1,
       uploadScope: { entity: 'coaches', field: 'photo' },
@@ -69,16 +101,13 @@ export const coachesConfig: EntityConfig<Coach> = {
       key: 'bannerUrl', label: 'Bannière', type: 'media-image', span: 1,
       uploadScope: { entity: 'coaches', field: 'banner' },
     },
-
     { key: 'biography', label: 'Biographie', type: 'richtext', span: 2 },
     { key: 'formerClubs', label: 'Anciens clubs', type: 'tags', span: 2 },
     { key: 'trophies', label: 'Palmarès', type: 'tags', span: 2 },
-
     { key: 'assistantCoachName', label: 'Entraîneur Adjoint', type: 'text', span: 1 },
     { key: 'fitnessCoachName', label: 'Préparateur Physique', type: 'text', span: 1 },
     { key: 'goalkeeperCoachName', label: 'Entraîneur des Gardiens', type: 'text', span: 1 },
     { key: 'analystName', label: 'Analyste Vidéo', type: 'text', span: 1 },
-
     {
       key: 'socialMedia', label: 'Réseaux sociaux', type: 'nested-object', span: 2,
       subFields: [
@@ -95,10 +124,6 @@ export const coachesConfig: EntityConfig<Coach> = {
     formerClubs: [], trophies: [], socialMedia: {}, status: 'ACTIVE',
   }),
 
-  // ── League Studio: Coach Builder ────────────────────────────────────────
-  // Mirrors CoachesTab's own six-tab form (Identité, Qualifications, Staff,
-  // Carrière, Médias, Réseaux) — same grouping the editor already knows,
-  // now as a guided journey with a live preview.
   builderSteps: [
     {
       id: 'identity',
@@ -133,9 +158,6 @@ export const coachesConfig: EntityConfig<Coach> = {
   ],
   publishOverrides: { status: 'ACTIVE' },
 
-  // CoachesTab's original save() coerced clubId to Number|null before
-  // sending — keep that contract so the backend (which expects a numeric
-  // FK) behaves identically whichever path created the record.
   beforeSave: (payload) => ({
     ...payload,
     clubId: payload.clubId ? (Number(payload.clubId) as unknown as string) : (null as unknown as string),

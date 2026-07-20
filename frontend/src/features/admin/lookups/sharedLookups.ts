@@ -28,7 +28,7 @@ export const clubsLookup: LookupSource = {
   queryKey: ['lookups', 'clubs'],
   fetch: async () => {
     const clubs = await footballApi.getClubs();
-    return clubs.map((c: any) => ({ value: c.id, label: c.name }));
+    return clubs.map((c: any) => ({ value: c.id, label: c.name, logoUrl: c.logoUrl }));
   },
 };
 
@@ -40,6 +40,7 @@ export const playersLookup: LookupSource = {
     return players.map((p: any) => ({
       value: p.id,
       label: [p.firstName, p.lastName].filter(Boolean).join(' ') || p.nickname || p.id,
+      photoUrl: p.photoUrl,
     }));
   },
 };

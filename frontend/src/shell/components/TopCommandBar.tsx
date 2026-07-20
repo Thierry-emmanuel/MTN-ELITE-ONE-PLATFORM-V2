@@ -1,6 +1,7 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Bell, CircleHelp, Plus, Search, Zap, ChevronsUpDown, Radio, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 import { SHELL_BASE } from '../navigation/domains';
 import { usePaletteStore } from '../stores/palette.store';

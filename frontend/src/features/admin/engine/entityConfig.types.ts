@@ -1,6 +1,4 @@
-// Generic, strictly-typed config contract every admin entity must satisfy.
-// One config file per domain (transfers, injuries, selections, clubs, players, ...)
-// replaces the old pattern of one 200+ line bespoke tab per entity.
+import type { ReactNode } from 'react';
 
 export type FieldType =
   | 'text' | 'textarea' | 'number' | 'select' | 'date' | 'datetime-local' | 'switch'
@@ -48,7 +46,7 @@ export interface ColumnDef<T> {
   key: keyof T;
   label: string;
   align?: 'left' | 'center' | 'right';
-  render?: (row: T) => string;
+  render?: (row: T, lookupOptions?: Record<string, any[]>) => ReactNode;
   /** Resolve the cell value against a LookupSource (e.g. show club name for clubId) */
   optionsKey?: string;
 }

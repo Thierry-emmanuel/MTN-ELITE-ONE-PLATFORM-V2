@@ -22,8 +22,44 @@ export const transfersConfig: EntityConfig<Transfer> = {
   idField: 'id',
   lookups: [playersLookup, clubsLookup],
   columns: [
-    { key: 'playerName', label: 'Joueur' },
-    { key: 'toClubId', label: 'Vers' },
+    {
+      key: 'playerName',
+      label: 'Joueur',
+      render: (r: Transfer, lookups?: any) => {
+        const playerOpt = lookups?.players?.find((p: any) => String(p.value) === String(r.playerId));
+        return (
+          <div className="flex items-center gap-2">
+            {playerOpt?.photoUrl ? (
+              <img src={playerOpt.photoUrl} alt={r.playerName} className="h-6 w-6 object-cover rounded-full bg-white/5 border border-white/10" />
+            ) : (
+              <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">
+                J
+              </div>
+            )}
+            <span>{r.playerName || playerOpt?.label || '—'}</span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'toClubId',
+      label: 'Vers',
+      render: (r: Transfer, lookups?: any) => {
+        const clubOpt = lookups?.clubs?.find((c: any) => String(c.value) === String(r.toClubId));
+        return (
+          <div className="flex items-center gap-2">
+            {clubOpt?.logoUrl ? (
+              <img src={clubOpt.logoUrl} alt={clubOpt.label} className="h-6 w-6 object-contain rounded bg-white/5 p-0.5" />
+            ) : (
+              <div className="h-6 w-6 rounded bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">
+                C
+              </div>
+            )}
+            <span>{clubOpt?.label || '—'}</span>
+          </div>
+        );
+      },
+    },
     { key: 'type', label: 'Type' },
     { key: 'transferDate', label: 'Date' },
   ],

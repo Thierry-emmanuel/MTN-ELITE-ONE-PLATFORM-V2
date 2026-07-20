@@ -5,13 +5,19 @@ export interface Injury {
   id?: string;
   playerId: string;
   playerName?: string;
-  type: string;             // e.g. "Entorse de la cheville"
+  type: string;
   severity: 'MINOR' | 'MODERATE' | 'SEVERE';
   status: 'ACTIVE' | 'RECOVERING' | 'CLEARED';
-  injuredAt: string;        // ISO date
-  expectedReturn?: string;  // ISO date
+  injuredAt: string;
+  expectedReturn?: string;
   notes?: string;
 }
+
+const SEVERITY_COLORS: Record<string, string> = {
+  MINOR: 'text-amber-400',
+  MODERATE: 'text-orange-400',
+  SEVERE: 'text-red-400',
+};
 
 export const injuriesConfig: EntityConfig<Injury> = {
   name: 'injuries',
@@ -21,15 +27,37 @@ export const injuriesConfig: EntityConfig<Injury> = {
   idField: 'id',
   lookups: [playersLookup, clubsLookup],
   columns: [
-    { key: 'playerName', label: 'Joueur' },
+    {
+      key: 'playerName',
+      label: 'Joueur',
+      render: (r: Injury, lookups?: any) => {
+        const opt = lookups?.players?.find((p: any) => String(p.value) === String(r.playerId));
+        return (
+          <div className="flex items-center gap-2">
+            {opt?.photoUrl ? (
+              <img src={opt.photoUrl} alt={r.playerName} className="h-6 w-6 object-cover rounded-full bg-white/5 border border-white/10" />
+            ) : (
+              <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">J</div>
+            )}
+            <span>{r.playerName || opt?.label || '—'}</span>
+          </div>
+        );
+      },
+    },
     { key: 'type', label: 'Blessure' },
-    { key: 'severity', label: 'Gravité' },
+    {
+      key: 'severity',
+      label: 'Gravité',
+      render: (r: Injury) => (
+        <span className={`font-semibold ${SEVERITY_COLORS[r.severity] || ''}`}>{r.severity}</span>
+      ),
+    },
     { key: 'status', label: 'Statut' },
     { key: 'expectedReturn', label: 'Retour prévu' },
   ],
   fields: [
     { key: 'playerId', label: 'Joueur', type: 'select', optionsKey: 'players', required: true, span: 2 },
-    { key: 'type', label: "Type de blessure", type: 'text', required: true },
+    { key: 'type', label: 'Type de blessure', type: 'text', required: true },
     {
       key: 'severity', label: 'Gravité', type: 'select', required: true,
       options: [

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiClient } from '../../../services/api';
+import { apiClient } from '../../services/api';
 import {
   Shield, ShieldCheck, ShieldOff, QrCode, CheckCircle2,
   AlertCircle, Loader2, KeyRound, ChevronRight,

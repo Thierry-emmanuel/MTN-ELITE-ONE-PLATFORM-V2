@@ -18,6 +18,12 @@ export interface Referee {
   notes?: string;
 }
 
+const LICENSE_BADGE: Record<string, string> = {
+  FIFA: 'text-amber-400 bg-amber-400/10 border border-amber-400/30',
+  CAF: 'text-emerald-400 bg-emerald-400/10 border border-emerald-400/30',
+  NATIONAL: 'text-blue-400 bg-blue-400/10 border border-blue-400/30',
+};
+
 export const refereesConfig: EntityConfig<Referee> = {
   name: 'referees',
   labelSingular: 'Arbitre',
@@ -26,8 +32,31 @@ export const refereesConfig: EntityConfig<Referee> = {
   idField: 'id',
   searchableKeys: ['firstName', 'lastName', 'city'],
   columns: [
-    { key: 'lastName', label: 'Nom', render: (r) => `${r.firstName} ${r.lastName}` },
-    { key: 'licenseLevel', label: 'Niveau' },
+    {
+      key: 'lastName',
+      label: 'Arbitre',
+      render: (r: Referee) => (
+        <div className="flex items-center gap-2">
+          {r.photoUrl ? (
+            <img src={r.photoUrl} alt={`${r.firstName} ${r.lastName}`} className="h-6 w-6 object-cover rounded-full bg-white/5 border border-white/10" />
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">
+              {r.firstName?.[0] || ''}{r.lastName?.[0] || ''}
+            </div>
+          )}
+          <span>{r.firstName} {r.lastName}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'licenseLevel',
+      label: 'Niveau',
+      render: (r: Referee) => (
+        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${LICENSE_BADGE[r.licenseLevel] || ''}`}>
+          {r.licenseLevel}
+        </span>
+      ),
+    },
     { key: 'city', label: 'Ville' },
     { key: 'status', label: 'Statut' },
   ],
