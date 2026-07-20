@@ -118,6 +118,18 @@ export const articlesConfig: EntityConfig<Article> = {
       : undefined,
   }),
   publishOverrides: { status: 'PUBLISHED' },
+  workflow: {
+    statusField: 'status',
+    initialStatus: 'draft',
+    transitions: {
+      draft: ['in_review'],
+      in_review: ['needs_changes', 'approved'],
+      needs_changes: ['in_review', 'draft'],
+      approved: ['published', 'draft'],
+      published: ['archived'],
+      archived: ['draft'],
+    },
+  },
   builderSteps: [
     { id: 'type', label: 'Type & angle', fieldKeys: ['category', 'articleType', 'author'] },
     { id: 'content', label: 'Contenu', fieldKeys: ['title', 'subtitle', 'body'] },

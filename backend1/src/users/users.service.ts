@@ -238,4 +238,16 @@ export class UsersService {
     const { password, ...rest } = user;
     return rest;
   }
+
+  async updateMfaSecret(id: number, secret: string): Promise<void> {
+    await this.usersRepo.update(id, { mfaSecret: secret });
+  }
+
+  async enableMfa(id: number): Promise<void> {
+    await this.usersRepo.update(id, { mfaEnabled: true });
+  }
+
+  async disableMfa(id: number): Promise<void> {
+    await this.usersRepo.update(id, { mfaEnabled: false, mfaSecret: null });
+  }
 }

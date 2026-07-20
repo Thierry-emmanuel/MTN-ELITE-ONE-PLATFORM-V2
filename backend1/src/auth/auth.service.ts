@@ -1,5 +1,5 @@
 import {
-  Injectable, UnauthorizedException, BadRequestException, ForbiddenException,
+  Injectable, UnauthorizedException, BadRequestException, ForbiddenException, NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -9,6 +9,7 @@ import { User, UserRole } from '../users/user.entity';
 import { SessionsService } from '../iam/sessions.service';
 import { AuditService } from '../iam/audit.service';
 import { RolesService } from '../iam/roles.service';
+import { MfaService } from './mfa.service';
 
 export interface JwtPayload {
   sub:   number;
@@ -36,6 +37,7 @@ export class AuthService {
     private readonly sessions:     SessionsService,
     private readonly audit:        AuditService,
     private readonly roles:        RolesService,
+    private readonly mfaService:   MfaService,
   ) {}
 
   private signAccess(user: User, sessionId: string): string {
@@ -66,6 +68,16 @@ export class AuthService {
     }
 
     this.assertLoginAllowed(user);
+
+    if (user.mfaEnabled) {
+      if (!dto.mfaCode) {
+        return { requiresMfa: true, email: user.email };
+      }
+      const verified = this.mfaService.verifyCode(user.mfaSecret!, dto.mfaCode);
+      if (!verified) {
+        throw new UnauthorizedException('Code de validation 2FA invalide');
+      }
+    }
 
     const { session, refreshToken } = await this.sessions.open(user.id, meta);
 
@@ -116,7 +128,44 @@ export class AuthService {
       permissions,
       fieldDeny,
       mustChangePassword: user.mustChangePassword,
+      mfaEnabled: user.mfaEnabled,
     };
+  }
+
+  // ── MFA Management ─────────────────────────────────────────
+  async generateMfa(userId: number) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new NotFoundException('Compte introuvable');
+    const { secret, otpauthUrl } = this.mfaService.generateSecret(user.email);
+    const qrDataUrl = await this.mfaService.generateQrCode(otpauthUrl);
+    
+    // Save secret temporarily but don't enable MFA yet
+    await this.usersService.updateMfaSecret(userId, secret);
+    return { secret, qrDataUrl };
+  }
+
+  async verifyAndEnableMfa(userId: number, code: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new NotFoundException('Compte introuvable');
+    if (!user.mfaSecret) throw new BadRequestException('MFA non configuré. Générez d\'abord un secret.');
+    
+    const verified = this.mfaService.verifyCode(user.mfaSecret, code);
+    if (!verified) throw new BadRequestException('Code 2FA invalide.');
+
+    await this.usersService.enableMfa(userId);
+    return { message: 'MFA activé avec succès.' };
+  }
+
+  async disableMfa(userId: number, code: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new NotFoundException('Compte introuvable');
+    if (!user.mfaEnabled || !user.mfaSecret) throw new BadRequestException('MFA n\'est pas activé.');
+
+    const verified = this.mfaService.verifyCode(user.mfaSecret, code);
+    if (!verified) throw new BadRequestException('Code 2FA invalide.');
+
+    await this.usersService.disableMfa(userId);
+    return { message: 'MFA désactivé avec succès.' };
   }
 
   // ── Change own password ────────────────────────────────────

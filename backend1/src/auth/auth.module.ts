@@ -9,6 +9,8 @@ import { UsersModule } from '../users/users.module';
 import { User } from '../users/user.entity';
 import { JwtStrategy } from '../common/guards/jwt.strategy';
 
+import { MfaService } from './mfa.service';
+
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -29,8 +31,8 @@ import { JwtStrategy } from '../common/guards/jwt.strategy';
     TypeOrmModule.forFeature([User]),
     UsersModule,
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, MfaService],
   controllers: [AuthController],
-  exports: [AuthService, JwtModule, JwtStrategy],
+  exports: [AuthService, JwtModule, JwtStrategy, MfaService],
 })
 export class AuthModule {}

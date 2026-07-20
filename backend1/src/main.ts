@@ -5,6 +5,16 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 async function bootstrap() {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret || jwtSecret === 'change_me_in_production') {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('FATAL: JWT_SECRET configuration is missing or insecure.');
+      process.exit(1);
+    } else {
+      console.warn('WARNING: Running in development mode with insecure or missing JWT_SECRET.');
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // Versioning API

@@ -42,6 +42,7 @@ export interface IamUser {
   organizationId?: string | null;
   status: 'active' | 'suspended' | 'archived';
   mustChangePassword?: boolean;
+  mfaEnabled?: boolean;
   lastLoginAt?: string | null;
   createdAt?: string;
 }
@@ -80,4 +81,5 @@ export interface MeResponse {
   permissions: string[];
   fieldDeny: Record<string, string[]>;
   mustChangePassword: boolean;
+  mfaEnabled: boolean;
 }

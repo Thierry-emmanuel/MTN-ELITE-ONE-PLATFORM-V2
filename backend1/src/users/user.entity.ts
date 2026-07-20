@@ -121,6 +121,12 @@ export class User {
   @Column({ name: 'password_reset_expires', type: 'timestamp', nullable: true })
   passwordResetExpires: Date;
 
+  @Column({ name: 'mfa_secret', type: 'varchar', nullable: true })
+  mfaSecret: string | null;
+
+  @Column({ name: 'mfa_enabled', type: 'boolean', default: false })
+  mfaEnabled: boolean;
+
   // ── Timestamps ────────────────────────────────────────────────
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

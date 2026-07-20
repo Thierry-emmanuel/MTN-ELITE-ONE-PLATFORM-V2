@@ -72,4 +72,28 @@ export class AuthController {
   registerEditor(@Body() dto: RegisterEditorDto) {
     return this.authService.registerEditor(dto);
   }
+
+  /** POST /auth/mfa/generate — generate MFA secret + QR code URL */
+  @Post('mfa/generate')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  generateMfa(@Req() req: AuthedRequest) {
+    return this.authService.generateMfa(req.user.id);
+  }
+
+  /** POST /auth/mfa/enable — enable MFA after verifying input code */
+  @Post('mfa/enable')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  enableMfa(@Req() req: AuthedRequest, @Body('code') code: string) {
+    return this.authService.verifyAndEnableMfa(req.user.id, code);
+  }
+
+  /** POST /auth/mfa/disable — disable MFA after verification */
+  @Post('mfa/disable')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  disableMfa(@Req() req: AuthedRequest, @Body('code') code: string) {
+    return this.authService.disableMfa(req.user.id, code);
+  }
 }

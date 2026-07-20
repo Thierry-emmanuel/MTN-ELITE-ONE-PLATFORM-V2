@@ -9,6 +9,7 @@ import type { IamAuditLog, IamSession } from '@/features/iam/iam.types';
 import { getModules } from '../registry/module.registry';
 import { useMenuStore } from '../stores/menu.store';
 import { usePermissions } from '../services/permissions';
+import { SettingsMfaSection } from './SettingsMfaSection';
 
 /**
  * Sprint 1 — IAM settings surfaces. Three sections mounted inside the
@@ -65,6 +66,8 @@ export function SecuritySection() {
       setMsg((e as Error)?.message ?? 'Échec du changement de mot de passe');
     } finally { setBusy(false); }
   };
+
+  const { me } = usePermissions();
 
   return (
     <div className="space-y-3">
@@ -123,6 +126,9 @@ export function SecuritySection() {
           {msg && <span className="text-[12px] text-zinc-400">{msg}</span>}
         </div>
       </Card>
+
+      {/* ── MFA ─────────────────────────────────────────────── */}
+      <SettingsMfaSection mfaEnabled={me?.mfaEnabled ?? false} />
     </div>
   );
 }

@@ -7,6 +7,8 @@ import {
 import { createEntityHooks } from '../hooks/useEntityCrud';
 import { renderEntityField } from './renderField';
 import type { EntityConfig, SelectOption } from './entityConfig.types';
+import { WorkflowActionBar } from '@/shell/components/WorkflowActionBar';
+import { exportEntity } from '@/services/exportApi';
 
 interface Props<T extends { id?: string; _id?: string }> {
   config: EntityConfig<T>;
@@ -64,33 +66,59 @@ function EntityCrudEngineInner<T extends { id?: string; _id?: string }>({
         title={config.labelPlural}
         subtitle={`Gérez l'ensemble des ${config.labelPlural.toLowerCase()} de la plateforme`}
         actions={
-          config.builderSteps && onOpenBuilder ? (
-            <AdminButton onClick={() => onOpenBuilder(config.emptyRecord())}>
-              <Sparkles className="h-3.5 w-3.5" /> Nouveau {config.labelSingular.toLowerCase()}
+          <div className="flex items-center gap-2">
+            <AdminButton variant="secondary" onClick={() => exportEntity(config.name, 'csv')}>
+              Exporter CSV
             </AdminButton>
-          ) : (
-            <AdminButton onClick={() => setEditing(config.emptyRecord())}>
-              <Plus className="h-3.5 w-3.5" /> Ajouter
+            <AdminButton variant="secondary" onClick={() => exportEntity(config.name, 'json')}>
+              Exporter JSON
             </AdminButton>
-          )
+            {config.builderSteps && onOpenBuilder ? (
+              <AdminButton onClick={() => onOpenBuilder(config.emptyRecord())}>
+                <Sparkles className="h-3.5 w-3.5" /> Nouveau {config.labelSingular.toLowerCase()}
+              </AdminButton>
+            ) : (
+              <AdminButton onClick={() => setEditing(config.emptyRecord())}>
+                <Plus className="h-3.5 w-3.5" /> Ajouter
+              </AdminButton>
+            )}
+          </div>
         }
       />
 
       {editing && (
         <AdminCard title={isNew ? `Nouveau ${config.labelSingular}` : `Modifier ${config.labelSingular}`} accent>
-          <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
-            {config.fields.map((field) => {
-              const value = (editing as Record<string, unknown>)[field.key as string] ?? '';
-              const onChange = (v: unknown) =>
-                setEditing((prev) => ({ ...(prev as T), [field.key]: v }));
-              const wrapClass = field.span === 2 ? 'col-span-2' : field.span === 3 ? 'col-span-3' : '';
-              return renderEntityField(field, value, onChange, lookupOptions, wrapClass);
-            })}
-            <div className="col-span-2 flex justify-end gap-2 pt-2 border-t border-stone-200">
-              <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
-              <AdminButton type="submit" loading={isSaving}>Sauvegarder</AdminButton>
-            </div>
-          </form>
+          <div className="space-y-4">
+            {!isNew && config.workflow && (
+              <WorkflowActionBar
+                entity={config.name}
+                id={idOf(editing as T)}
+                currentStatus={(editing as any)[config.workflow.statusField] || ''}
+                allowedTransitions={(() => {
+                  const currentStatus = (editing as any)[config.workflow.statusField] || 'draft';
+                  const t = config.workflow.transitions[currentStatus.toLowerCase() as any] || [];
+                  return t.map((s: string) => s.toUpperCase());
+                })()}
+                refetch={() => {
+                  setEditing(null);
+                }}
+                showToast={showToast}
+              />
+            )}
+            <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+              {config.fields.map((field) => {
+                const value = (editing as Record<string, unknown>)[field.key as string] ?? '';
+                const onChange = (v: unknown) =>
+                  setEditing((prev) => ({ ...(prev as T), [field.key]: v }));
+                const wrapClass = field.span === 2 ? 'col-span-2' : field.span === 3 ? 'col-span-3' : '';
+                return renderEntityField(field, value, onChange, lookupOptions, wrapClass);
+              })}
+              <div className="col-span-2 flex justify-end gap-2 pt-2 border-t border-stone-200">
+                <AdminButton variant="secondary" onClick={() => setEditing(null)}>Annuler</AdminButton>
+                <AdminButton type="submit" loading={isSaving}>Sauvegarder</AdminButton>
+              </div>
+            </form>
+          </div>
         </AdminCard>
       )}
 

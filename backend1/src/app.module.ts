@@ -44,6 +44,8 @@ import { SponsorsModule } from './sponsors/sponsors.module';
 import { StadiumsModule } from './stadiums/stadiums.module';
 import { RefereesModule } from './referees/referees.module';
 import { StaffModule } from './staff/staff.module';
+import { WorkflowModule } from './workflow/workflow.module';
+import { ExportsModule } from './exports/exports.module';
 import { APP_GUARD }         from '@nestjs/core';
 import { ThrottlerGuard }    from '@nestjs/throttler';
 
@@ -143,6 +145,8 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
     StadiumsModule,
     RefereesModule,
     StaffModule,
+    WorkflowModule,
+    ExportsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

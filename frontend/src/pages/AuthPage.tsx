@@ -164,6 +164,11 @@ export const AuthPage = () => {
   const [success, setSuccess] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // ── MFA challenge state ──
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaEmail, setMfaEmail]       = useState("");
+  const [mfaCode, setMfaCode]         = useState("");
+
   // ── Login fields ──
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPass, setLoginPass]   = useState("");
@@ -219,14 +224,48 @@ export const AuthPage = () => {
     if (!validateLogin()) return;
     setLoading(true); setServerError("");
     try {
+      const { data } = await apiClient.post<
+        { accessToken: string; refreshToken?: string; user: any } |
+        { requiresMfa: true; email: string }
+      >('/auth/login', { email: loginEmail, password: loginPass });
+
+      // ── MFA gate ─────────────────────────────────────────────
+      if ('requiresMfa' in data && data.requiresMfa) {
+        setMfaRequired(true);
+        setMfaEmail(data.email);
+        return;
+      }
+
+      // ── Normal login ─────────────────────────────────────────
+      const d = data as { accessToken: string; refreshToken?: string; user: any };
+      localStorage.setItem('mtn_token', d.accessToken);
+      if (d.refreshToken) localStorage.setItem('mtn_refresh', d.refreshToken);
+      localStorage.setItem('mtn_user', JSON.stringify({
+        name: `${d.user.firstName} ${d.user.lastName}`,
+        email: d.user.email,
+        role: d.user.role,
+        createdAt: d.user.createdAt,
+      }));
+      window.dispatchEvent(new Event('storage'));
+      navigate('/');
+    } catch (err: any) {
+      setServerError(err?.message ?? 'Identifiants incorrects. Veuillez réessayer.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaCode.trim()) { setServerError('Saisissez votre code 2FA.'); return; }
+    setLoading(true); setServerError("");
+    try {
       const { data } = await apiClient.post<{ accessToken: string; refreshToken?: string; user: any }>(
         '/auth/login',
-        { email: loginEmail, password: loginPass },
+        { email: mfaEmail, password: loginPass, mfaCode },
       );
-      // Persist tokens so api.ts interceptor sends + silently rotates them
       localStorage.setItem('mtn_token', data.accessToken);
       if (data.refreshToken) localStorage.setItem('mtn_refresh', data.refreshToken);
-      // Store minimal user info for UI display
       localStorage.setItem('mtn_user', JSON.stringify({
         name: `${data.user.firstName} ${data.user.lastName}`,
         email: data.user.email,
@@ -236,7 +275,7 @@ export const AuthPage = () => {
       window.dispatchEvent(new Event('storage'));
       navigate('/');
     } catch (err: any) {
-      setServerError(err?.message ?? 'Identifiants incorrects. Veuillez réessayer.');
+      setServerError(err?.message ?? 'Code 2FA invalide.');
     } finally {
       setLoading(false);
     }
@@ -302,6 +341,72 @@ export const AuthPage = () => {
             <motion.div className="h-full bg-win" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 1.8 }} />
           </div>
         </motion.div>
+      </div>
+    );
+  }
+
+  // ── MFA challenge screen ──
+  if (mfaRequired) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        <LeftPanel mode="login" />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-[380px] space-y-6"
+          >
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="h-16 w-16 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center">
+                <Shield className="h-8 w-8 text-accent" />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl mb-1">VÉRIFICATION 2FA</h1>
+                <p className="text-sm text-muted-foreground">
+                  Ouvrez votre application d'authentification et saisissez le code à 6 chiffres.
+                </p>
+              </div>
+            </div>
+
+            {serverError && (
+              <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 text-destructive text-xs rounded-xl px-4 py-3">
+                <AlertCircle className="h-4 w-4 shrink-0" />{serverError}
+              </div>
+            )}
+
+            <form onSubmit={handleMfaVerify} noValidate className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="mfaCode" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Code 2FA <span className="text-accent ml-1">*</span>
+                </label>
+                <input
+                  id="mfaCode"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={mfaCode}
+                  onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full rounded-xl bg-surface-elevated border border-border/60 px-4 py-3.5 text-center text-2xl font-display tracking-[.3em] text-foreground outline-none transition-all focus:border-accent/60 focus:ring-2 focus:ring-accent/10"
+                />
+              </div>
+              <motion.button type="submit" disabled={loading || mfaCode.length < 6}
+                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-accent text-accent-foreground font-display font-bold tracking-widest text-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {loading ? 'VÉRIFICATION...' : 'CONFIRMER'}
+                {!loading && <ChevronRight className="h-4 w-4" />}
+              </motion.button>
+            </form>
+
+            <button
+              onClick={() => { setMfaRequired(false); setMfaCode(''); setServerError(''); }}
+              className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Retour à la connexion
+            </button>
+          </motion.div>
+        </div>
       </div>
     );
   }

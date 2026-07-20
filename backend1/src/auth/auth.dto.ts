@@ -12,6 +12,10 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty({ message: 'Le mot de passe est requis' })
   password: string;
+
+  @IsOptional()
+  @IsString()
+  mfaCode?: string;
 }
 
 // ── Register (base — shared fields) ───────────────────────────

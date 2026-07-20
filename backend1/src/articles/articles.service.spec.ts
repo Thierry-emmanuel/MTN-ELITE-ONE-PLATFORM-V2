@@ -64,14 +64,15 @@ describe('ArticlesService', () => {
 
   describe('findAll', () => {
     it('should return an array of articles', async () => {
-      const result = await service.findAll();
-      expect(result).toEqual([mockArticle]);
+      const result = await service.findAll({ page: 1, limit: 10 });
+      expect(result).toHaveProperty('data');
+      expect(result.data).toEqual([mockArticle]);
     });
   });
 
-  describe('findOne', () => {
+  describe('findById', () => {
     it('should return a single article', async () => {
-      const result = await service.findOne('mockId');
+      const result = await service.findById('mockId');
       expect(result).toEqual(mockArticle);
     });
   });
