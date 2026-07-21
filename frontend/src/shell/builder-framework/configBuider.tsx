@@ -162,13 +162,31 @@ function PublicPreview<T extends AnyRecord>({ draft, opts }: { draft: Partial<T>
   const subtitle = (opts?.subtitleKeys ?? [])
     .map((k) => draft[k]).filter(filled).join(' · ');
   const badges = (opts?.badgeKeys ?? []).map((k) => draft[k]).filter(filled);
-  const img = opts?.imageKey ? draft[opts.imageKey] : undefined;
+  const rawImg = opts?.imageKey ? draft[opts.imageKey] : undefined;
+  const img = (typeof rawImg === 'string' && rawImg)
+    ? rawImg
+    : ((draft as any).photoUrl ||
+       (draft as any).photo_url ||
+       (draft as any).logoUrl ||
+       (draft as any).logo_url ||
+       (draft as any).avatarUrl ||
+       (draft as any).avatar_url ||
+       (draft as any).heroUrl ||
+       (draft as any).config?.branding?.heroUrl ||
+       (draft as any).config?.identity?.officialLogo ||
+       (draft as any).config?.identity?.panoramicCover);
 
   return (
     <div className="mx-auto max-w-[560px] overflow-hidden rounded-2xl bg-stone-50 text-stone-900 shadow-xl">
-      {typeof img === 'string' && img && (
-        <div className="h-44 w-full bg-stone-200">
-          <img src={img} alt="" className="h-full w-full object-cover" />
+      {img ? (
+        <div className="h-48 w-full bg-stone-200 relative overflow-hidden flex items-center justify-center p-2">
+          <img src={String(img)} alt={title} className="h-full w-full object-cover rounded-t-xl" />
+        </div>
+      ) : (
+        <div className="h-36 w-full bg-gradient-to-r from-emerald-950 via-zinc-900 to-emerald-950 flex flex-col items-center justify-center p-4 text-center border-b border-emerald-800/30">
+          <span className="text-3xl mb-1">✨</span>
+          <span className="text-xs font-semibold text-emerald-400">Visuel non défini</span>
+          <span className="text-[10px] text-stone-400 mt-0.5">Téléversez une image ou un logo pour prévisualiser</span>
         </div>
       )}
       <div className="p-6">

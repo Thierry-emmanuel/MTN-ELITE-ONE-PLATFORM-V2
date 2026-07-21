@@ -137,7 +137,15 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {(isAdmin || isEditor) && (
+                  <Link
+                    to="/os/workspace"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 font-bold text-xs hover:bg-emerald-600/30 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" /> FootballOS Control Room (Studio)
+                  </Link>
+                )}
                 {isEditor && (
                   <Link to="/editor" className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FCD116] text-black font-black text-xs hover:bg-[#FFE566] transition-colors shadow-[0_0_15px_rgba(252,209,22,0.3)]">
                     <Plus className="h-3.5 w-3.5" /> Créer un article
@@ -241,6 +249,43 @@ export default function DashboardPage() {
                             <p className="font-display text-2xl font-black text-white mt-3 tabular-nums">{m.value}</p>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* FootballOS Studio Quick Launchers Widget (Tier 2 Bridge) */}
+                    {(isAdmin || isEditor) && (
+                      <div className="p-6 rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/20 via-zinc-950 to-black space-y-4 shadow-xl">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-emerald-400" />
+                            <h2 className="font-display text-sm font-black uppercase tracking-wider text-white">FootballOS Control Room (Studio)</h2>
+                          </div>
+                          <span className="text-[10px] text-emerald-400 font-mono">Tier 2 Configuration</span>
+                        </div>
+                        <p className="text-xs text-white/50">Accédez directement aux studios de configuration avancée de la plateforme :</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <Link
+                            to="/os/builders/admin/stadiums/new"
+                            className="p-3.5 rounded-xl border border-emerald-800/40 bg-emerald-950/30 hover:bg-emerald-900/40 transition-all flex flex-col justify-between gap-3 group"
+                          >
+                            <span className="text-xs font-bold text-emerald-300 group-hover:text-emerald-200">🏟️ Stadium Builder</span>
+                            <span className="text-[10px] text-emerald-500 font-mono">14 Sections & Homologation →</span>
+                          </Link>
+                          <Link
+                            to="/os/builders/admin/competitions/new"
+                            className="p-3.5 rounded-xl border border-blue-800/40 bg-blue-950/30 hover:bg-blue-900/40 transition-all flex flex-col justify-between gap-3 group"
+                          >
+                            <span className="text-xs font-bold text-blue-300 group-hover:text-blue-200">🏆 Competition Studio</span>
+                            <span className="text-[10px] text-blue-500 font-mono">Barèmes & Règlements →</span>
+                          </Link>
+                          <Link
+                            to="/os/builders/admin/matches/new"
+                            className="p-3.5 rounded-xl border border-purple-800/40 bg-purple-950/30 hover:bg-purple-900/40 transition-all flex flex-col justify-between gap-3 group"
+                          >
+                            <span className="text-xs font-bold text-purple-300 group-hover:text-purple-200">⚽ Match Studio</span>
+                            <span className="text-[10px] text-purple-500 font-mono">Feuille de match & VAR →</span>
+                          </Link>
+                        </div>
                       </div>
                     )}
 

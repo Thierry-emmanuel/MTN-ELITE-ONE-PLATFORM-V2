@@ -52,10 +52,17 @@ export function TopCommandBar() {
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-[13px] gap-2 focus:bg-zinc-800 focus:text-zinc-100 cursor-pointer"
+            onSelect={() => navigate('/dashboard')}
+          >
+            <LayoutDashboard className="size-3.5 text-emerald-400" />
+            Vue d'ensemble (Dashboard Hub)
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-[13px] gap-2 focus:bg-zinc-800 focus:text-zinc-100 cursor-pointer"
             onSelect={() => navigate('/admin')}
           >
             <LayoutDashboard className="size-3.5 text-amber-500" />
-            Dashboard
+            Administration Classique
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

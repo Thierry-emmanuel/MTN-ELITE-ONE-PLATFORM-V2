@@ -29,6 +29,7 @@ import { MatchBuilderCanvas } from '@/shell/builder-framework/match/MatchBuilder
 import { StoryCanvas } from '@/shell/builder-framework/story/StoryCanvas';
 import { CompetitionCanvas } from '@/shell/builder-framework/competition/CompetitionCanvas';
 import { SeasonCanvas } from '@/shell/builder-framework/season/SeasonCanvas';
+import { StadiumCanvas } from '@/shell/builder-framework/stadium/StadiumCanvas';
 import type { Article } from '@/features/admin/configs/articles.config';
 import type { MediaAsset } from '@/features/admin/configs/media.config';
 import type { Legend } from '@/features/admin/configs/hallOfFame.config';
@@ -114,6 +115,23 @@ const CURATED: Record<string, BuilderOptions<any>> = {
   } satisfies BuilderOptions<Player>,
   stadiums: {
     titleOf: (d: Partial<Stadium>) => d.name ?? '',
+    Canvas: StadiumCanvas,
+    sections: (d: Partial<Stadium>) => [
+      { id: 'general', label: 'Informations Générales', complete: !!(d.name && d.city && d.capacity) },
+      { id: 'identity', label: 'Identité & Brand', complete: !!(d.photoUrl || d.config?.identity?.officialLogo) },
+      { id: 'location', label: 'Localisation & GPS', complete: !!(d.city && d.address) },
+      { id: 'infrastructure', label: 'Infrastructure & Sièges', complete: !!(d.capacity && d.config?.infrastructureDetails?.vipCapacity) },
+      { id: 'pitch', label: 'Terrain & Pelouse', complete: !!(d.surface && d.config?.pitchDetails?.conditionRating) },
+      { id: 'facilities', label: 'Équipements & Services', complete: !!(d.config?.facilitiesList?.hasWifi) },
+      { id: 'ownership', label: 'Propriété & Gestion', complete: !!(d.config?.ownershipDetails?.owner) },
+      { id: 'competitions', label: 'Compétitions Homologuées', complete: (d.config?.competitionsConfigured?.allowedCompetitions?.length ?? 0) > 0 },
+      { id: 'resident-clubs', label: 'Clubs Résidents', complete: !!(d.clubId || d.config?.clubsAssigned?.primaryClubId) },
+      { id: 'media', label: 'Médias & Kit Presse', complete: !!(d.photoUrl) },
+      { id: 'gallery', label: 'Galerie Photos', complete: false },
+      { id: 'documents', label: 'Documents & Licences', complete: false },
+      { id: 'security', label: 'Sécurité & Secours CAF', complete: !!(d.config?.securitySpecs?.rating) },
+      { id: 'operations', label: 'Exploitation & Planning', complete: !!(d.config?.operationsConfig?.rentalPricePerMatch) },
+    ],
     preview: { imageKey: 'photoUrl', titleKeys: ['name'], subtitleKeys: ['city'], badgeKeys: ['capacity', 'surface'] },
   } satisfies BuilderOptions<Stadium>,
   /**
