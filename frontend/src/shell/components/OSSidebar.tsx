@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FileEdit, PanelLeftClose, PanelLeftOpen, Star, Clock } from 'lucide-react';
@@ -14,16 +15,29 @@ import { applyMenuConfig, useMenuStore } from '../stores/menu.store';
 import { EntityRow } from './EntityPrimitives';
 import { useT } from '../i18n';
 import type { OSEntity } from '../registry/types';
+import { usePermissions } from '../services/permissions';
 
 function DomainItem({ id, collapsed }: { id: (typeof DOMAINS)[number]['id']; collapsed: boolean }) {
   const t = useT();
   const d = DOMAINS.find((x) => x.id === id)!;
   const { pathname } = useLocation();
   const active = pathname.startsWith(d.route);
+  const { can } = usePermissions();
+
   // Sprint 1 — Menu Builder: ordering + visibility come from iam_config
   // ("os.menu"), falling back to raw registry order when unset.
   const menuConfig = useMenuStore((s) => s.config);
-  const modules = applyMenuConfig(getModulesByDomain(d.id), menuConfig);
+  const rawModules = applyMenuConfig(getModulesByDomain(d.id), menuConfig);
+
+  const modules = useMemo(() => {
+    return rawModules.filter((m) => {
+      // If it contains entities, filter out modules where user has no access to any entity
+      if (m.entities?.length) {
+        return m.entities.some((e) => can(`${e.type}.view`));
+      }
+      return true;
+    });
+  }, [rawModules, can]);
 
   const link = (
     <NavLink

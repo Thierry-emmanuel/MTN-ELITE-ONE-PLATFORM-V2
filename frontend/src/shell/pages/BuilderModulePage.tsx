@@ -12,6 +12,7 @@ import { SHELL_BASE } from '../navigation/domains';
 import { ENTITY_REGISTRY } from '@/features/admin/entityRegistry';
 import { createEntityApi } from '@/features/admin/services/entityApi';
 import type { EntityTypeDefinition } from '../registry/types';
+import { usePermissions } from '../services/permissions';
 
 type Row = Record<string, unknown> & { id?: string; _id?: string };
 
@@ -134,13 +135,18 @@ function EntityListPane({ typeDef, moduleSlug }: { typeDef: EntityTypeDefinition
   );
 }
 
-/** /builders/:module — Split Layout: entity types (URL-synced) · live records. */
 export default function BuilderModulePage() {
   const { module: slug = '' } = useParams();
   const [params, setParams] = useSearchParams();
+  const { can } = usePermissions();
   const mod = getModule(slug);
-  const selected = params.get('selected') ?? mod?.entities?.[0]?.type ?? '';
-  const entity = mod?.entities?.find((e) => e.type === selected);
+
+  const allowedEntities = useMemo(() => {
+    return (mod?.entities ?? []).filter((e) => can(`${e.type}.view`));
+  }, [mod?.entities, can]);
+
+  const selected = params.get('selected') ?? allowedEntities[0]?.type ?? '';
+  const entity = allowedEntities.find((e) => e.type === selected);
 
   useShellPage({
     title: mod?.label ?? 'Module',
@@ -159,7 +165,7 @@ export default function BuilderModulePage() {
         <nav className="p-2" aria-label="Types d'objet">
           <p className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Types d'objet</p>
           <ul className="space-y-0.5">
-            {(mod.entities ?? []).map((e) => (
+            {allowedEntities.map((e) => (
               <li key={e.type}>
                 <button
                   onClick={() => setParams({ selected: e.type }, { replace: false })}

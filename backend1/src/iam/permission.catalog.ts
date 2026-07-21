@@ -103,5 +103,12 @@ export const LEGACY_ROLE_PERMISSIONS: Record<string, string[]> = {
     'matches.view', 'players.view', 'clubs.view', 'standings.view',
     'awards.view', 'hall-of-fame.view', 'big-moments.view',
   ],
+  'match-builder': [
+    'matches.view', 'matches.create', 'matches.update', 'matches.delete', 'matches.publish',
+    'seasons.view', 'seasons.create', 'seasons.update', 'seasons.delete', 'seasons.configure',
+    'stadiums.view', 'stadiums.create', 'stadiums.update', 'stadiums.delete',
+    'referees.view', 'referees.create', 'referees.update', 'referees.delete', 'referees.assign',
+    'clubs.view', 'players.view', 'standings.view', 'standings.update',
+  ],
   user: [],
 };
