@@ -9,11 +9,14 @@ import { User, UserRole } from './user.entity';
 
 export interface CreateUserAdminDto {
   email: string;
-  password: string;
+  password?: string;
   firstName: string;
   lastName: string;
   phone?: string;
   role: UserRole;
+  username?: string;
+  permissions?: string[];
+  roleKeys?: string[];
 }
 
 export interface UpdateUserAdminDto {
@@ -27,6 +30,8 @@ export interface UpdateUserAdminDto {
   // IAM (Sprint 1)
   roleKeys?: string[];
   organizationId?: string | null;
+  username?: string | null;
+  permissions?: string[];
   // Editor fields
   agency?: string;
   cniNumber?: string;
@@ -120,14 +125,26 @@ export class UsersService {
 
   async adminCreate(dto: CreateUserAdminDto): Promise<Omit<User, 'password'>> {
     await this.assertEmailFree(dto.email);
-    const hash = await bcrypt.hash(dto.password, 12);
+    if (dto.username) {
+      await this.assertUsernameFree(dto.username);
+    }
+    const passwordToUse = dto.password || 'ChangeMe2026';
+    const hash = await bcrypt.hash(passwordToUse, 12);
+    const validEnumRoles = Object.values(UserRole) as string[];
+    const rawRole = (dto.role as string) || 'user';
+    const safeRole = validEnumRoles.includes(rawRole) ? (rawRole as UserRole) : UserRole.USER;
+    const safeRoleKeys = dto.roleKeys?.length ? dto.roleKeys : [rawRole];
+
     const user = this.usersRepo.create({
       email:     dto.email,
+      username:  dto.username || null,
       password:  hash,
       firstName: dto.firstName,
       lastName:  dto.lastName,
       phone:     dto.phone,
-      role:      dto.role,
+      role:      safeRole,
+      roleKeys:  safeRoleKeys,
+      permissions: dto.permissions || [],
       isVerified: true, // admin-created users start verified
     });
     const saved = await this.usersRepo.save(user);
@@ -138,6 +155,16 @@ export class UsersService {
   async adminUpdate(id: number, dto: UpdateUserAdminDto): Promise<Omit<User, 'password'>> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`Utilisateur introuvable`);
+    if (dto.username && dto.username !== user.username) {
+      await this.assertUsernameFree(dto.username);
+    }
+    const validEnumRoles = Object.values(UserRole) as string[];
+    if (dto.role && !validEnumRoles.includes(dto.role as string)) {
+      if (!dto.roleKeys || !dto.roleKeys.includes(dto.role as string)) {
+        dto.roleKeys = [...(dto.roleKeys || user.roleKeys || []), dto.role as string];
+      }
+      dto.role = UserRole.USER;
+    }
     Object.assign(user, dto);
     const saved = await this.usersRepo.save(user);
     return this.sanitize(saved);
@@ -232,6 +259,11 @@ export class UsersService {
   private async assertEmailFree(email: string) {
     const existing = await this.findByEmail(email);
     if (existing) throw new ConflictException('Cet email est déjà utilisé');
+  }
+
+  private async assertUsernameFree(username: string) {
+    const existing = await this.usersRepo.findOne({ where: { username } });
+    if (existing) throw new ConflictException('Ce nom d’utilisateur est déjà utilisé');
   }
 
   sanitize(user: User): Omit<User, 'password'> {

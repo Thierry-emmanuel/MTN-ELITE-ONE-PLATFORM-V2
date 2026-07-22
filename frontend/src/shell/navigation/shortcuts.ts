@@ -44,8 +44,8 @@ const chordOf = (e: KeyboardEvent): string => {
   if (e.metaKey || e.ctrlKey) parts.push('mod');
   if (e.shiftKey) parts.push('shift');
   if (e.altKey) parts.push('alt');
-  const k = e.key.toLowerCase();
-  if (!['meta', 'control', 'shift', 'alt'].includes(k)) parts.push(k === ' ' ? 'space' : k);
+  const k = e.key ? e.key.toLowerCase() : '';
+  if (k && !['meta', 'control', 'shift', 'alt'].includes(k)) parts.push(k === ' ' ? 'space' : k);
   return parts.join('+');
 };
 

@@ -41,5 +41,7 @@ export const rolesConfig: EntityConfig<RoleRow> = {
   }),
   builderSteps: [
     { id: 'identity', label: 'Identité', description: 'Nom, clé et description du rôle', fieldKeys: ['name', 'key', 'description', 'isDefault'] },
+    { id: 'permissions', label: 'Permissions', description: 'Accorder et gérer les permissions du rôle', fieldKeys: ['permissions'] },
+    { id: 'fields', label: 'Champs', description: 'Restrictions d’accès au niveau des champs', fieldKeys: ['fieldPolicies'] },
   ],
 };

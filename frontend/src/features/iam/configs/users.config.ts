@@ -33,26 +33,33 @@ export const iamUsersConfig: EntityConfig<UserRow> = {
     { key: 'firstName', label: 'Prénom', type: 'text', required: true, span: 1 },
     { key: 'lastName', label: 'Nom', type: 'text', required: true, span: 1 },
     { key: 'email', label: 'Email', type: 'text', required: true, span: 1 },
+    { key: 'username', label: 'Nom d’utilisateur', type: 'text', span: 1 },
     { key: 'phone', label: 'Téléphone', type: 'text', span: 1 },
     {
       key: 'password', label: 'Mot de passe initial', type: 'text', span: 1,
-      hint: 'Création uniquement — l’utilisateur devra le changer',
+      hint: 'Par défaut : ChangeMe2026',
     } as never,
     {
       key: 'role', label: 'Rôle hérité (legacy)', type: 'select', span: 1,
-      hint: 'Compatibilité — les permissions réelles viennent des rôles IAM',
-      options: [
-        { value: 'user', label: 'Utilisateur' },
-        { value: 'editor', label: 'Éditeur' },
-        { value: 'admin', label: 'Administrateur' },
-      ],
+      hint: 'Compatibilité — sélection directe depuis les rôles enregistrés en BD',
+      optionsKey: 'roles',
     },
+    { key: 'roleKeys', label: 'Rôles IAM', type: 'tags', span: 2, optionsKey: 'roles', hint: 'Cliquez sur un rôle en BD ou saisissez une clé personnalisée' } as never,
+    {
+      key: 'permissions',
+      label: 'Permissions additionnelles (spécifiques à cet utilisateur)',
+      type: 'tags',
+      span: 2,
+      optionsKey: 'permissionCatalog',
+      hint: 'Cliquez sur les permissions du catalogue ou saisissez une permission spécifique',
+    } as never,
     { key: 'organizationId', label: 'Organisation', type: 'select', span: 1, optionsKey: 'organizations' },
   ],
-  extraPersistKeys: ['roleKeys'],
+  extraPersistKeys: ['roleKeys', 'permissions'],
   emptyRecord: () => ({
-    firstName: '', lastName: '', email: '', phone: '',
-    role: 'user', roleKeys: ['user'], organizationId: null, status: 'active',
+    firstName: '', lastName: '', email: '', username: '', phone: '',
+    role: 'user', roleKeys: ['user'], permissions: [], organizationId: null, status: 'active',
+    password: 'ChangeMe2026',
   }),
   lookups: [
     {
@@ -71,9 +78,26 @@ export const iamUsersConfig: EntityConfig<UserRow> = {
         return roles.map((r) => ({ value: r.key, label: r.name }));
       },
     },
+    {
+      key: 'permissionCatalog',
+      queryKey: ['iam', 'permissions', 'catalogLookup'],
+      fetch: async () => {
+        const catalog = await iamApi.catalog();
+        const options: { value: string; label: string }[] = [];
+        catalog.modules.forEach((m) => {
+          m.actions.forEach((a) => {
+            options.push({
+              value: `${m.key}.${a}`,
+              label: `${m.label} · ${a} (${m.key}.${a})`,
+            });
+          });
+        });
+        return options;
+      },
+    },
   ],
   builderSteps: [
-    { id: 'identity', label: 'Identité', description: 'Informations du compte', fieldKeys: ['firstName', 'lastName', 'email', 'phone'] },
-    { id: 'access', label: 'Accès', description: 'Rôle et organisation', fieldKeys: ['role', 'organizationId'] },
+    { id: 'identity', label: 'Identité', description: 'Informations du compte', fieldKeys: ['firstName', 'lastName', 'email', 'username', 'phone', 'password'] },
+    { id: 'access', label: 'Accès', description: 'Rôle et organisation', fieldKeys: ['role', 'roleKeys', 'permissions', 'organizationId'] },
   ],
 };

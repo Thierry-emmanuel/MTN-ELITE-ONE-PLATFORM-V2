@@ -46,11 +46,10 @@ export class RolesService {
   }
 
   private validatePermissions(perms: string[]) {
-    const valid = new Set([...allPermissions(), '*']);
     for (const p of perms) {
-      const base = p.endsWith(':own') ? p.slice(0, -4) : p;
-      if (base === '*' || base.endsWith('.*') || valid.has(base)) continue;
-      throw new BadRequestException(`Permission inconnue: "${p}"`);
+      if (!p || typeof p !== 'string' || !p.trim()) {
+        throw new BadRequestException(`Permission invalide`);
+      }
     }
   }
 
@@ -193,9 +192,10 @@ export class RolesService {
   }
 
   /** Convenience for guards/services. */
-  async can(roleKeys: string[], required: string): Promise<'yes' | 'own' | 'no'> {
+  async can(roleKeys: string[], required: string, userSpecificPermissions: string[] = []): Promise<'yes' | 'own' | 'no'> {
     const { permissions } = await this.resolve(roleKeys);
-    return checkPermission(permissions, required);
+    const combined = [...new Set([...permissions, ...userSpecificPermissions])];
+    return checkPermission(combined, required);
   }
 
   /**
@@ -213,5 +213,35 @@ export class RolesService {
     return Object.fromEntries(
       Object.entries(payload).filter(([k]) => !denied.has(k)),
     ) as T;
+  }
+
+  // ── Custom permissions store ──────────────────────────────────
+  private customPermissionsList: { key: string; label: string; module: string; description?: string }[] = [];
+
+  async getCustomPermissions() {
+    return this.customPermissionsList;
+  }
+
+  async addCustomPermission(dto: { key: string; label: string; module: string; description?: string }) {
+    if (!dto.key || !dto.label) throw new BadRequestException('La clé et le libellé sont requis');
+    const existing = this.customPermissionsList.find((p) => p.key === dto.key);
+    if (existing) {
+      existing.label = dto.label;
+      existing.module = dto.module || existing.module;
+      existing.description = dto.description ?? existing.description;
+      return existing;
+    }
+    const newItem = {
+      key: dto.key,
+      label: dto.label,
+      module: dto.module || 'custom',
+      description: dto.description || '',
+    };
+    this.customPermissionsList.push(newItem);
+    return newItem;
+  }
+
+  async removeCustomPermission(key: string) {
+    this.customPermissionsList = this.customPermissionsList.filter((p) => p.key !== key);
   }
 }

@@ -34,17 +34,20 @@ export interface IamOrganization {
 export interface IamUser {
   id?: number;
   email: string;
+  username?: string | null;
   firstName: string;
   lastName: string;
   phone?: string;
   role: 'user' | 'editor' | 'admin';
   roleKeys: string[];
+  permissions?: string[];
   organizationId?: string | null;
   status: 'active' | 'suspended' | 'archived';
   mustChangePassword?: boolean;
   mfaEnabled?: boolean;
   lastLoginAt?: string | null;
   createdAt?: string;
+  password?: string;
 }
 
 export interface IamSession {

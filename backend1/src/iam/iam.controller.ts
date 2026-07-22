@@ -26,12 +26,75 @@ export class IamController {
     private readonly config: IamConfigService,
   ) {}
 
-  // ── Permission catalog ─────────────────────────────────────────
+  // ── Permission catalog & CRUD ──────────────────────────────────
   @Get('permissions/catalog')
   @Secured('roles.view')
   @ApiOperation({ summary: 'Modules × actions catalog for the Role Builder matrix' })
   catalog() {
     return { actions: IAM_ACTIONS, modules: PERMISSION_CATALOG };
+  }
+
+  @Get('permissions')
+  @Secured('roles.view')
+  async listPermissions() {
+    const list: { id: string; key: string; label: string; module: string; description: string }[] = [];
+    PERMISSION_CATALOG.forEach((m) => {
+      m.actions.forEach((a) => {
+        list.push({
+          id: `${m.key}.${a}`,
+          key: `${m.key}.${a}`,
+          label: `${m.label} · ${a}`,
+          module: m.key,
+          description: `Permission standard pour l'action ${a} du module ${m.label}`,
+        });
+      });
+    });
+    const custom = await this.roles.getCustomPermissions();
+    custom.forEach((c) => {
+      if (!list.some((l) => l.key === c.key)) {
+        list.push({
+          id: c.key,
+          key: c.key,
+          label: c.label || c.key,
+          module: c.module || 'custom',
+          description: c.description || 'Permission personnalisée',
+        });
+      }
+    });
+    return list;
+  }
+
+  @Get('permissions/:id')
+  @Secured('roles.view')
+  async getPermission(@Param('id') id: string) {
+    const all = await this.listPermissions();
+    const found = all.find((p) => p.id === id || p.key === id);
+    if (!found) return { id, key: id, label: id, module: 'custom', description: 'Permission personnalisée' };
+    return found;
+  }
+
+  @Post('permissions')
+  @Secured('roles.create')
+  async createPermission(@Body() dto: { key: string; label: string; module: string; description?: string }) {
+    return this.roles.addCustomPermission(dto);
+  }
+
+  @Patch('permissions/:id')
+  @Secured('roles.update')
+  async updatePermission(@Param('id') id: string, @Body() dto: { key?: string; label?: string; module?: string; description?: string }) {
+    return this.roles.addCustomPermission({
+      key: dto.key || id,
+      label: dto.label || id,
+      module: dto.module || 'custom',
+      description: dto.description,
+    });
+  }
+
+  @Delete('permissions/:id')
+  @Secured('roles.delete')
+  async deletePermission(@Param('id') id: string) {
+    await this.roles.removeCustomPermission(id);
+    return { success: true };
   }
 
   // ── Roles ──────────────────────────────────────────────────────

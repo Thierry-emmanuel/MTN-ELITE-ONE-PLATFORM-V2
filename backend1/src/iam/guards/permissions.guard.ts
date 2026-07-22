@@ -15,6 +15,7 @@ export interface RequestUser {
   email: string;
   role: string;          // legacy enum, kept for backward compatibility
   roleKeys: string[];    // IAM role keys (falls back to [role])
+  permissions?: string[]; // Custom user-specific permissions
   sessionId?: string;
   /** set by PermissionsGuard when access was granted with ":own" scope only */
   ownershipRequired?: string;
@@ -51,7 +52,7 @@ export class PermissionsGuard implements CanActivate {
     const roleKeys = user.roleKeys?.length ? user.roleKeys : [user.role].filter(Boolean);
 
     for (const perm of required) {
-      const verdict = await this.roles.can(roleKeys, perm);
+      const verdict = await this.roles.can(roleKeys, perm, user.permissions || []);
       if (verdict === 'no')
         throw new ForbiddenException(`Permission requise: ${perm}`);
       if (verdict === 'own') user.ownershipRequired = perm;

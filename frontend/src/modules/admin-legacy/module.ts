@@ -30,6 +30,7 @@ import { StoryCanvas } from '@/shell/builder-framework/story/StoryCanvas';
 import { CompetitionCanvas } from '@/shell/builder-framework/competition/CompetitionCanvas';
 import { SeasonCanvas } from '@/shell/builder-framework/season/SeasonCanvas';
 import { StadiumCanvas } from '@/shell/builder-framework/stadium/StadiumCanvas';
+import { RoleCanvas } from '@/shell/builder-framework/iam/RoleCanvas';
 import type { Article } from '@/features/admin/configs/articles.config';
 import type { MediaAsset } from '@/features/admin/configs/media.config';
 import type { Legend } from '@/features/admin/configs/hallOfFame.config';
@@ -171,6 +172,15 @@ const CURATED: Record<string, BuilderOptions<any>> = {
     titleOf: (d: Partial<Legend>) => d.name ?? '',
     preview: { titleKeys: ['name'], subtitleKeys: ['era', 'career_summary'], badgeKeys: ['inducted_year'] },
   } satisfies BuilderOptions<Legend>,
+  roles: {
+    titleOf: (d) => d.name ?? d.key ?? '',
+    Canvas: RoleCanvas,
+    sections: (d) => [
+      { id: 'identity', label: 'Identité', complete: !!d.name && !!d.key },
+      { id: 'permissions', label: 'Permissions', complete: (d.permissions ?? []).length > 0 },
+      { id: 'fields', label: 'Champs', complete: Object.keys(d.fieldPolicies ?? {}).length > 0 },
+    ],
+  },
 };
 
 const entities: EntityTypeDefinition[] = Object.entries(ENTITY_REGISTRY).map(

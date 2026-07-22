@@ -21,12 +21,14 @@ import { mediaConfig } from './configs/media.config';
 import { hallOfFameConfig } from './configs/hallOfFame.config';
 import { BUSINESS_CONFIGS } from '@/features/business/business.configs';
 import { rolesConfig } from '@/features/iam/configs/roles.config';
+import { permissionsConfig } from '@/features/iam/configs/permissions.config';
 import { organizationsConfig } from '@/features/iam/configs/organizations.config';
 import { iamUsersConfig } from '@/features/iam/configs/users.config';
 import type { EntityConfig } from './engine/entityConfig.types';
 
 export const ENTITY_REGISTRY: Record<string, EntityConfig<any>> = {
   roles: rolesConfig,
+  permissions: permissionsConfig,
   organizations: organizationsConfig,
   'iam-users': iamUsersConfig,
   articles: articlesConfig,

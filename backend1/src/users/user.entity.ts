@@ -19,6 +19,9 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ type: 'varchar', length: 120, unique: true, nullable: true })
+  username: string | null;
+
   @Column()
   password: string;           // bcrypt hash
 
@@ -30,6 +33,9 @@ export class User {
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
+
+  @Column({ type: 'jsonb', default: () => "'[]'" })
+  permissions: string[];
 
   // ── IAM (Sprint 1) ─────────────────────────────────────────────
   /** lifecycle: active | suspended | archived (supersedes isActive) */

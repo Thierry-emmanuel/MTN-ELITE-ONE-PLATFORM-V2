@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FormField, MediaUploader } from '@/components/ui/AdminUI';
 import { RichTextEditor } from '../components/RichTextEditor';
 import type { FieldDef, SelectOption } from './entityConfig.types';
@@ -89,47 +90,16 @@ export function renderEntityField<T>(
   }
 
   if (field.type === 'tags') {
-    const tags: string[] = Array.isArray(value) ? (value as string[]) : [];
-    const addTag = (input: string) => {
-      const trimmed = input.trim();
-      if (trimmed && !tags.includes(trimmed)) onChange([...tags, trimmed]);
-    };
+    const availableOptions = field.optionsKey ? lookupOptions[field.optionsKey] : field.options;
     return (
-      <div key={String(field.key)} className={wrapClass || 'col-span-2'}>
-        <label className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/40 mb-1.5">
-          {field.label}
-        </label>
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/8 text-white/70 text-[11px]"
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => onChange(tags.filter((t) => t !== tag))}
-                className="ml-1 text-white/30 hover:text-red-400 leading-none"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-        <input
-          type="text"
-          placeholder={field.hint ?? 'Appuyez sur Entrée pour ajouter'}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              addTag((e.target as HTMLInputElement).value);
-              (e.target as HTMLInputElement).value = '';
-            }
-          }}
-          onBlur={(e) => { addTag(e.target.value); e.target.value = ''; }}
-          className="w-full text-xs rounded-xl bg-white/[0.04] border border-white/8 px-4 py-3 text-white placeholder:text-white/15 outline-none focus:border-accent/50 transition-all"
-        />
-      </div>
+      <TagsFieldInput
+        key={String(field.key)}
+        field={field}
+        value={value}
+        onChange={onChange}
+        availableOptions={availableOptions}
+        wrapClass={wrapClass}
+      />
     );
   }
 
@@ -169,6 +139,128 @@ export function renderEntityField<T>(
         options={options}
         required={field.required}
         hint={field.hint}
+      />
+    </div>
+  );
+}
+
+function TagsFieldInput({
+  field,
+  value,
+  onChange,
+  availableOptions,
+  wrapClass,
+}: {
+  field: FieldDef<any>;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  availableOptions?: SelectOption[];
+  wrapClass?: string;
+}) {
+  const tags: string[] = Array.isArray(value) ? (value as string[]) : [];
+  const [tagSearch, setTagSearch] = useState('');
+  const addTag = (input: string) => {
+    const trimmed = input.trim();
+    if (trimmed && !tags.includes(trimmed)) onChange([...tags, trimmed]);
+  };
+  const toggleTag = (val: string) => {
+    if (tags.includes(val)) {
+      onChange(tags.filter((t) => t !== val));
+    } else {
+      onChange([...tags, val]);
+    }
+  };
+  const filteredOpts = availableOptions
+    ? tagSearch.trim()
+      ? availableOptions.filter(
+          (o) =>
+            o.label.toLowerCase().includes(tagSearch.toLowerCase()) ||
+            String(o.value).toLowerCase().includes(tagSearch.toLowerCase())
+        )
+      : availableOptions
+    : [];
+
+  return (
+    <div key={String(field.key)} className={wrapClass || 'col-span-2'}>
+      <label className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/40 mb-1.5">
+        {field.label}
+      </label>
+
+      {/* ── Quick select options from DB ─────────────────────── */}
+      {availableOptions && availableOptions.length > 0 && (
+        <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2">
+          {availableOptions.length > 5 && (
+            <input
+              type="text"
+              placeholder="Filtrer les options..."
+              value={tagSearch}
+              onChange={(e) => setTagSearch(e.target.value)}
+              className="w-full text-xs rounded-lg bg-black/40 border border-white/10 px-3 py-1.5 text-white placeholder:text-white/20 outline-none focus:border-emerald-500/50"
+            />
+          )}
+          <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+            {filteredOpts.map((opt) => {
+              const val = String(opt.value);
+              const isSelected = tags.includes(val);
+              return (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => toggleTag(val)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] border transition-all flex items-center gap-1 ${
+                    isSelected
+                      ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-300 font-medium shadow-sm'
+                      : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white hover:border-white/20'
+                  }`}
+                >
+                  {isSelected ? '✓ ' : '+ '}
+                  {opt.label}
+                </button>
+              );
+            })}
+            {filteredOpts.length === 0 && (
+              <span className="text-[11px] text-white/30 italic">Aucune option ne correspond à la recherche</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Selected tags list ─────────────────────────────── */}
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 text-[11px]"
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={() => onChange(tags.filter((t) => t !== tag))}
+              className="ml-1 text-emerald-400 hover:text-red-400 font-bold leading-none"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <input
+        type="text"
+        placeholder={field.hint ?? 'Appuyez sur Entrée pour ajouter'}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addTag((e.target as HTMLInputElement).value);
+            (e.target as HTMLInputElement).value = '';
+          }
+        }}
+        onBlur={(e) => {
+          const val = e.target.value.trim();
+          if (val) {
+            addTag(val);
+            e.target.value = '';
+          }
+        }}
+        className="w-full text-xs rounded-xl bg-white/[0.04] border border-white/8 px-4 py-3 text-white placeholder:text-white/15 outline-none focus:border-accent/50 transition-all"
       />
     </div>
   );
