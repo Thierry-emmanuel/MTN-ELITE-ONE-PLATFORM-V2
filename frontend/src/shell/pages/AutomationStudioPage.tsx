@@ -119,7 +119,7 @@ export default function AutomationStudioPage() {
           <section key={p.id} className={cn('rounded-xl border p-4', p.enabled ? 'border-emerald-900/60 bg-emerald-950/10' : 'border-zinc-800 bg-zinc-950/60')}>
             <header className="mb-3 flex flex-wrap items-center gap-2">
               <Zap className={cn('size-4', p.enabled ? 'text-emerald-500' : 'text-zinc-600')} />
-              <input value={p.label} onChange={(e) => mutate(p.id, (x) => ({ ...x, label: e.target.value }))}
+               <input value={p.label ?? ''} onChange={(e) => mutate(p.id, (x) => ({ ...x, label: e.target.value }))}
                 className="min-w-0 flex-1 bg-transparent font-sans text-[14px] font-bold text-zinc-100 outline-none" />
               <select value={p.trigger} onChange={(e) => mutate(p.id, (x) => ({ ...x, trigger: e.target.value }))}
                 className="h-7 rounded-lg border border-zinc-800 bg-zinc-900 px-2 text-[12px] text-zinc-300 outline-none">

@@ -61,22 +61,24 @@ interface FormFieldProps {
   min?: number | string;
 }
 
-export const FormField = memo(({ label, type = 'text', placeholder, value, onChange, options, error, required, hint, min }: FormFieldProps) => (
-  <div className="flex flex-col gap-1.5 w-full">
+export const FormField = memo(({ label, type = 'text', placeholder, value, onChange, options, error, required, hint, min }: FormFieldProps) => {
+  const safeValue = value ?? '';
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
     <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40 flex items-center gap-1">
       {label}{required && <span className="text-accent">*</span>}
     </label>
     {type === 'textarea' ? (
       <textarea
         placeholder={placeholder}
-        value={value}
+        value={safeValue}
         onChange={(e) => onChange(e.target.value)}
         rows={4}
         className="w-full rounded-xl bg-white/[0.04] border border-white/8 px-4 py-3 text-xs text-white placeholder:text-white/15 outline-none focus:border-accent/50 focus:bg-white/[0.06] transition-all resize-none"
       />
     ) : type === 'select' ? (
       <select
-        value={value}
+        value={safeValue}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-xl bg-[#0d1420] border border-white/8 px-4 py-3 text-xs text-white outline-none focus:border-accent/50 transition-all appearance-none cursor-pointer"
       >
@@ -88,7 +90,7 @@ export const FormField = memo(({ label, type = 'text', placeholder, value, onCha
       <input
         type={type}
         placeholder={placeholder}
-        value={value}
+        value={safeValue}
         min={min}
         onChange={(e) => onChange(type === 'number' ? Number(e.target.value) : e.target.value)}
         className="w-full rounded-xl bg-white/[0.04] border border-white/8 px-4 py-3 text-xs text-white placeholder:text-white/15 outline-none focus:border-accent/50 focus:bg-white/[0.06] transition-all"
@@ -97,7 +99,8 @@ export const FormField = memo(({ label, type = 'text', placeholder, value, onCha
     {hint && !error && <span className="text-[9px] text-white/25">{hint}</span>}
     {error && <span className="flex items-center gap-1 text-[10px] text-red-400 font-medium"><AlertCircle className="h-3 w-3" />{error}</span>}
   </div>
-));
+  );
+});
 FormField.displayName = 'FormField';
 
 // ─── AdminButton ──────────────────────────────────────────────────────────────
