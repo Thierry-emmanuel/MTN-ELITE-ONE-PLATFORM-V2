@@ -37,11 +37,13 @@ export function FormationSection({ matchId, draft }: { matchId: string; draft: M
   const { saveLineups } = useMatchMutations(matchId);
   const pitchRef = useRef<HTMLDivElement>(null);
 
-  const nameOf = useMemo(() => {
-    const m = new Map<number, string>();
-    players.forEach((p) => m.set(p.id, playerName(p)));
-    return (id: number) => m.get(id) ?? `#${id}`;
+  const playerMap = useMemo(() => {
+    const m = new Map<number, { name: string; photoUrl?: string }>();
+    players.forEach((p) => m.set(p.id, { name: playerName(p), photoUrl: p.photoUrl }));
+    return (id: number) => m.get(id);
   }, [players]);
+
+  const nameOf = (id: number) => playerMap(id)?.name ?? `#${id}`;
 
   const [entries, setEntries] = useState<Record<Side, LineupEntry[]>>({ home: [], away: [] });
   const [formation, setFormation] = useState<Record<Side, string>>({ home: '', away: '' });
@@ -90,6 +92,8 @@ export function FormationSection({ matchId, draft }: { matchId: string; draft: M
     });
   };
 
+  const isFinished = draft.status === 'FINISHED';
+
   if (isLoading) return <div className="p-6"><PageSkeleton /></div>;
 
   return (
@@ -101,8 +105,8 @@ export function FormationSection({ matchId, draft }: { matchId: string; draft: M
             <TabsTrigger value="away" className="h-7 rounded-md px-3 text-[12px] text-zinc-400 data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100">Extérieur</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Button size="sm" onClick={persist} disabled={saveLineups.isPending}
-          className="h-8 gap-1.5 bg-emerald-600 text-[13px] text-white hover:bg-emerald-500">
+        <Button size="sm" onClick={persist} disabled={isFinished || saveLineups.isPending}
+          className="h-8 gap-1.5 bg-emerald-600 text-[13px] text-white hover:bg-emerald-500 disabled:opacity-50">
           <Save className="size-3.5" /> {saveLineups.isPending ? 'Enregistrement…' : 'Enregistrer la composition'}
         </Button>
       </div>
@@ -111,8 +115,9 @@ export function FormationSection({ matchId, draft }: { matchId: string; draft: M
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
         <span className="mr-1 text-[11px] font-semibold uppercase tracking-widest text-zinc-600">Schémas</span>
         {Object.keys(PATTERNS).map((name) => (
-          <button key={name} onClick={() => applyPattern(name)}
-            className={cn('rounded-full border px-3 py-1 text-[12px] font-medium transition-colors',
+          <button key={name} onClick={() => !isFinished && applyPattern(name)}
+            disabled={isFinished}
+            className={cn('rounded-full border px-3 py-1 text-[12px] font-medium transition-colors disabled:opacity-50',
               formation[side] === name
                 ? 'border-emerald-700 bg-emerald-950 text-emerald-400'
                 : 'border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200')}>
@@ -138,7 +143,7 @@ export function FormationSection({ matchId, draft }: { matchId: string; draft: M
           {xi.map((e) => (
             <motion.button
               key={e.playerId}
-              drag
+              drag={!isFinished}
               dragMomentum={false}
               dragConstraints={pitchRef}
               onDragEnd={(_, info) => onDragEnd(e.playerId, info.point)}
@@ -146,10 +151,26 @@ export function FormationSection({ matchId, draft }: { matchId: string; draft: M
               style={{ left: `${e.posX ?? 50}%`, top: `${e.posY ?? 50}%` }}
               whileDrag={{ scale: 1.12 }}
             >
-              <span className={cn('grid size-9 place-items-center rounded-full border-2 font-sans text-[12px] font-bold shadow-lg',
-                e.isCaptain ? 'border-amber-400 bg-amber-500 text-black' : 'border-white/70 bg-zinc-950 text-white')}>
-                {e.shirtNumber ?? '·'}
-              </span>
+              {playerMap(e.playerId)?.photoUrl ? (
+                <div className="relative">
+                  <img
+                    src={playerMap(e.playerId)?.photoUrl}
+                    alt={nameOf(e.playerId)}
+                    className={cn(
+                      'size-10 rounded-full object-cover border-2 shadow-lg',
+                      e.isCaptain ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-white/80 bg-zinc-900'
+                    )}
+                  />
+                  <span className="absolute -bottom-1 -right-1 grid size-4.5 place-items-center rounded-full bg-zinc-950 text-[9px] font-bold text-white border border-zinc-700">
+                    {e.shirtNumber ?? '·'}
+                  </span>
+                </div>
+              ) : (
+                <span className={cn('grid size-9 place-items-center rounded-full border-2 font-sans text-[12px] font-bold shadow-lg',
+                  e.isCaptain ? 'border-amber-400 bg-amber-500 text-black' : 'border-white/70 bg-zinc-950 text-white')}>
+                  {e.shirtNumber ?? '·'}
+                </span>
+              )}
               <span className="mt-1 max-w-[84px] truncate rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-medium text-white">
                 {nameOf(e.playerId).split(' ').slice(-1)[0]}
               </span>

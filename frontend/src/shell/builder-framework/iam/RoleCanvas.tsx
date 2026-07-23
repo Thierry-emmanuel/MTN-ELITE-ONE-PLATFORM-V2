@@ -20,6 +20,19 @@ export function RoleCanvas({ draft, onChange, onSelect, activeSection }: CanvasP
 
   const granted = useMemo(() => new Set(draft.permissions ?? []), [draft.permissions]);
 
+  const handleRoleChange = (next: Partial<RoleRow>) => {
+    const oldName = draft.name || '';
+    const newName = next.name || '';
+    if (newName !== oldName) {
+      const slugifiedOld = oldName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const currentKey = next.key || '';
+      if (!currentKey || currentKey === slugifiedOld) {
+        next.key = newName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      }
+    }
+    onChange(next);
+  };
+
   const setPermissions = (next: Set<string>) =>
     onChange({ ...draft, permissions: [...next].sort() });
 
@@ -164,7 +177,7 @@ export function RoleCanvas({ draft, onChange, onSelect, activeSection }: CanvasP
         <section id="identity">
           <SectionTitle icon={<User2 className="size-4" />} title="Identité du rôle"
             subtitle={draft.isSystem ? 'Rôle système — clé verrouillée, permissions modifiables' : undefined} />
-          <ConfigFieldsGrid config={rolesConfig} draft={draft} onChange={onChange}
+          <ConfigFieldsGrid config={rolesConfig} draft={draft} onChange={handleRoleChange}
             fieldKeys={draft.isSystem ? ['name', 'description', 'isDefault'] : ['name', 'key', 'description', 'isDefault']}
             onSelect={onSelect} />
         </section>
@@ -177,38 +190,57 @@ export function RoleCanvas({ draft, onChange, onSelect, activeSection }: CanvasP
             subtitle="Accordez les permissions par module, utilisez un modèle prédéfini ou saisissez des permissions personnalisées." />
 
           {/* ── Presets Bar ──────────────────────────────────── */}
-          <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 p-3.5">
-            <div className="flex items-center gap-2 mb-2 text-[12px] font-semibold text-emerald-400 uppercase tracking-wider">
-              <Sliders className="size-3.5" /> Modèles prédéfinis
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => applyPreset('match-builder')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 text-[12px] hover:bg-emerald-600/30 transition-colors"
-              >
-                <Trophy className="size-3.5" /> Match Builder
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset('editor')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-300 text-[12px] hover:bg-blue-600/30 transition-colors"
-              >
-                <FileText className="size-3.5" /> Éditeur de Contenu
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset('admin')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 border border-purple-500/40 text-purple-300 text-[12px] hover:bg-purple-600/30 transition-colors"
-              >
-                <ShieldAlert className="size-3.5" /> Administrateur (*)
-              </button>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <Sliders className="size-3.5 text-emerald-500" /> Modèles prédéfinis de rôles
+              </div>
               <button
                 type="button"
                 onClick={() => applyPreset('clear')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-800/40 text-red-400 text-[12px] hover:bg-red-900/40 transition-colors ml-auto"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-950/40 border border-red-800/40 text-red-400 text-[11px] hover:bg-red-900/40 transition-colors"
               >
-                <Trash2 className="size-3.5" /> Effacer tout
+                <Trash2 className="size-3.5" /> Réinitialiser
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => applyPreset('match-builder')}
+                className="flex flex-col items-start text-left p-3 rounded-xl border border-emerald-800/40 bg-emerald-950/10 hover:bg-emerald-950/20 transition-all group"
+              >
+                <div className="flex items-center gap-2 text-[12px] font-bold text-emerald-400 mb-1">
+                  <Trophy className="size-4" /> Match Builder
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-normal">
+                  Gestion des championnats, planification des matchs, affectation des arbitres et stades.
+                </p>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => applyPreset('editor')}
+                className="flex flex-col items-start text-left p-3 rounded-xl border border-blue-800/40 bg-blue-950/10 hover:bg-blue-950/20 transition-all group"
+              >
+                <div className="flex items-center gap-2 text-[12px] font-bold text-blue-400 mb-1">
+                  <FileText className="size-4" /> Éditeur de Contenu
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-normal">
+                  Rédaction et publication d'articles de presse, gestion de la galerie média.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => applyPreset('admin')}
+                className="flex flex-col items-start text-left p-3 rounded-xl border border-purple-800/40 bg-purple-950/10 hover:bg-purple-950/20 transition-all group"
+              >
+                <div className="flex items-center gap-2 text-[12px] font-bold text-purple-400 mb-1">
+                  <ShieldAlert className="size-4" /> Administrateur
+                </div>
+                <p className="text-[11px] text-zinc-400 leading-normal">
+                  Accès complet et illimité à tous les modules et configurations système.
+                </p>
               </button>
             </div>
           </div>
@@ -236,27 +268,50 @@ export function RoleCanvas({ draft, onChange, onSelect, activeSection }: CanvasP
                 className="w-full rounded-xl border border-zinc-800 bg-zinc-950 pl-9 pr-3 py-1.5 text-[12px] text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-emerald-500/50"
               />
             </div>
-            <div className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1">
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors',
-                  viewMode === 'cards' ? 'bg-emerald-600/30 text-emerald-300' : 'text-zinc-400 hover:text-zinc-200'
-                )}
-              >
-                <LayoutGrid className="size-3.5" /> Cartes
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('matrix')}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors',
-                  viewMode === 'matrix' ? 'bg-emerald-600/30 text-emerald-300' : 'text-zinc-400 hover:text-zinc-200'
-                )}
-              >
-                <TableIcon className="size-3.5" /> Tableau
-              </button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 border-r border-zinc-800 pr-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!catalog) return;
+                    const all: string[] = [];
+                    catalog.modules.forEach((m) => m.actions.forEach((a) => all.push(`${m.key}.${a}`)));
+                    setPermissions(new Set(all));
+                  }}
+                  className="px-2.5 py-1 rounded-lg border border-zinc-800 bg-zinc-900 text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
+                >
+                  Tout cocher
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPermissions(new Set())}
+                  className="px-2.5 py-1 rounded-lg border border-zinc-800 bg-zinc-900 text-[11px] text-zinc-400 hover:text-red-400 hover:bg-zinc-800 transition-all"
+                >
+                  Tout décocher
+                </button>
+              </div>
+              <div className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-950 p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('cards')}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors',
+                    viewMode === 'cards' ? 'bg-emerald-600/30 text-emerald-300' : 'text-zinc-400 hover:text-zinc-200'
+                  )}
+                >
+                  <LayoutGrid className="size-3.5" /> Cartes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('matrix')}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors',
+                    viewMode === 'matrix' ? 'bg-emerald-600/30 text-emerald-300' : 'text-zinc-400 hover:text-zinc-200'
+                  )}
+                >
+                  <TableIcon className="size-3.5" /> Tableau
+                </button>
+              </div>
             </div>
           </div>
 
@@ -265,11 +320,17 @@ export function RoleCanvas({ draft, onChange, onSelect, activeSection }: CanvasP
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredModules.map((m) => {
                 const allOn = m.actions.every((a) => granted.has(`${m.key}.${a}`));
+                const grantedCount = m.actions.filter((a) => granted.has(`${m.key}.${a}`) || granted.has(`${m.key}.${a}:own`)).length;
                 return (
                   <div key={m.key} className="rounded-xl border border-zinc-800/80 bg-zinc-950/60 p-4 transition-all hover:border-zinc-700">
                     <div className="flex items-center justify-between mb-3 border-b border-zinc-800/50 pb-2">
                       <div>
-                        <h4 className="text-[13px] font-semibold text-zinc-100">{m.label}</h4>
+                        <h4 className="text-[13px] font-semibold text-zinc-100 flex items-center gap-2">
+                          {m.label}
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-900 text-zinc-400 font-normal border border-zinc-800">
+                            {grantedCount}/{m.actions.length}
+                          </span>
+                        </h4>
                         <span className="text-[10px] text-zinc-500 font-mono">{m.key}</span>
                       </div>
                       <button

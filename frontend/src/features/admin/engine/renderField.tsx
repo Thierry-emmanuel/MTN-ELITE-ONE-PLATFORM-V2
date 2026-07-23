@@ -128,6 +128,18 @@ export function renderEntityField<T>(
     );
   }
 
+  if (String(field.key) === 'password') {
+    return (
+      <PasswordFieldInput
+        key={String(field.key)}
+        field={field}
+        value={value}
+        onChange={onChange}
+        wrapClass={wrapClass}
+      />
+    );
+  }
+
   const options = field.optionsKey ? lookupOptions[field.optionsKey] : field.options;
   return (
     <div key={String(field.key)} className={wrapClass}>
@@ -262,6 +274,59 @@ function TagsFieldInput({
         }}
         className="w-full text-xs rounded-xl bg-white/[0.04] border border-white/8 px-4 py-3 text-white placeholder:text-white/15 outline-none focus:border-accent/50 transition-all"
       />
+    </div>
+  );
+}
+
+function PasswordFieldInput({
+  field,
+  value,
+  onChange,
+  wrapClass,
+}: {
+  field: FieldDef<any>;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  wrapClass?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const generate = () => {
+    const chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*';
+    let pass = '';
+    for (let i = 0; i < 12; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    onChange(pass);
+    navigator.clipboard.writeText(pass);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className={wrapClass}>
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <FormField
+            label={field.label}
+            type="text"
+            value={value as string | number}
+            onChange={onChange}
+            required={field.required}
+            hint={field.hint}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={generate}
+          className={`h-[42px] px-3 rounded-xl border text-[11px] font-medium transition-all whitespace-nowrap ${
+            copied
+              ? 'border-emerald-600 bg-emerald-950/20 text-emerald-400'
+              : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+          }`}
+        >
+          {copied ? '✓ Copié !' : 'Générer & Copier'}
+        </button>
+      </div>
     </div>
   );
 }

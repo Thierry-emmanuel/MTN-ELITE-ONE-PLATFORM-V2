@@ -138,10 +138,17 @@ const CURATED: Record<string, BuilderOptions<any>> = {
   /**
    * Match Builder — Phase 3. Bespoke canvas (6 operational sections) inside
    * the SAME BuilderHost as every other entity; the backend is the single
-   * source of truth for score, status, standings and statistics.
    */
   matches: {
-    titleOf: (d: Partial<Match>) => (d.round ? `Journée ${d.round}` : ''),
+    titleOf: (d: Partial<Match>) => {
+      const home = (d as any).homeClub?.name || (d as any).homeClubId;
+      const away = (d as any).awayClub?.name || (d as any).awayClubId;
+      const dateStr = d.scheduledAt ? new Date(d.scheduledAt).toLocaleDateString('fr-FR') : '';
+      if (home && away) {
+        return `${home} vs ${away}${dateStr ? ` (${dateStr})` : ''}`;
+      }
+      return d.round ? `Journée ${d.round}` : '';
+    },
     Canvas: MatchBuilderCanvas,
     sections: (d: Partial<Match>) => {
       const created = d.id != null;
@@ -149,10 +156,12 @@ const CURATED: Record<string, BuilderOptions<any>> = {
       const teams = !!(d.homeClubId && d.awayClubId);
       return [
         { id: 'overview',  label: 'Aperçu du match', complete: scheduled },
-        { id: 'teams',     label: 'Équipes',         complete: teams },
+        { id: 'teams',     label: 'Équipes & Logos', complete: teams },
         { id: 'squads',    label: 'Effectifs',       complete: created },
         { id: 'formation', label: 'Composition',     complete: created },
-        { id: 'timeline',  label: 'Chronologie',     complete: created && d.status === 'FINISHED' },
+        { id: 'live',      label: 'Match en Direct', complete: created && d.status === 'LIVE' },
+        { id: 'results',   label: 'Résultats & Score',complete: created && d.status === 'FINISHED' },
+        { id: 'timeline',  label: 'Chronologie',     complete: created },
         { id: 'stats',     label: 'Statistiques',    complete: false },
       ];
     },
@@ -161,7 +170,11 @@ const CURATED: Record<string, BuilderOptions<any>> = {
   /** Story Builder — Phase 4. Bespoke canvas: auto-population from the linked
    *  match (the Match Builder is the source of truth for every report). */
   articles: {
-    titleOf: (d: Partial<Article>) => d.title?.fr ?? '',
+    titleOf: (d: Partial<Article>) => {
+      if (!d.title) return '';
+      if (typeof d.title === 'string') return d.title;
+      return d.title.fr || '';
+    },
     Canvas: StoryCanvas,
   } satisfies BuilderOptions<Article>,
   media: {

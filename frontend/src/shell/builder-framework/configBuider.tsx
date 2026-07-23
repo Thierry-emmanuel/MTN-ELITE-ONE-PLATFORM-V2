@@ -142,7 +142,103 @@ function makeCanvas<T extends AnyRecord>(config: EntityConfig<T>): ComponentType
                 {renderEntityField(
                   field,
                   draft[field.key],
-                  (v) => onChange({ ...draft, [field.key]: v }),
+                  (v) => {
+                    const next = { ...draft, [field.key]: v };
+                    
+                    if (config.name === 'permissions') {
+                      if (field.key === 'label') {
+                        const newLabel = (v as string || '');
+                        const slugified = newLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^-|-$)/g, '');
+                        const currentKey = draft['key' as keyof T] as string || '';
+                        const moduleVal = next['module' as keyof T] as string || 'matches';
+                        const expectedOldLabelSlug = (draft['label' as keyof T] as string || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^-|-$)/g, '');
+                        const expectedKey = expectedOldLabelSlug ? `${moduleVal}.${expectedOldLabelSlug}` : '';
+                        if (!currentKey || currentKey === expectedKey || currentKey === `${moduleVal}.`) {
+                          (next as any).key = `${moduleVal}.${slugified}`;
+                        }
+                      } else if (field.key === 'module') {
+                        const oldModule = draft['module' as keyof T] as string || 'matches';
+                        const newModule = v as string || 'matches';
+                        const currentKey = draft['key' as keyof T] as string || '';
+                        if (currentKey.startsWith(`${oldModule}.`)) {
+                          (next as any).key = currentKey.replace(`${oldModule}.`, `${newModule}.`);
+                        } else if (!currentKey) {
+                          const labelVal = draft['label' as keyof T] as string || '';
+                          const slugified = labelVal.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^-|-$)/g, '');
+                          (next as any).key = `${newModule}.${slugified}`;
+                        }
+                      }
+                    }
+                    
+                    if (config.name === 'iam-users') {
+                      if (field.key === 'firstName' || field.key === 'lastName') {
+                        const fName = (field.key === 'firstName' ? (v as string) : (draft['firstName' as keyof T] as string || '')).trim().toLowerCase();
+                        const lName = (field.key === 'lastName' ? (v as string) : (draft['lastName' as keyof T] as string || '')).trim().toLowerCase();
+                        const currentUsername = draft['username' as keyof T] as string || '';
+                        const oldFName = (draft['firstName' as keyof T] as string || '').trim().toLowerCase();
+                        const oldLName = (draft['lastName' as keyof T] as string || '').trim().toLowerCase();
+                        const expectedOldUsername = oldFName || oldLName ? `${oldFName}.${oldLName}` : '';
+                        if (!currentUsername || currentUsername === expectedOldUsername || currentUsername === '.') {
+                          (next as any).username = `${fName}.${lName}`;
+                        }
+                      }
+                    }
+
+                    if (config.name === 'seasons') {
+                      if (field.key === 'name') {
+                        const nameStr = v as string || '';
+                        const match = nameStr.match(/(\d{4})/);
+                        if (match) {
+                          const startYear = parseInt(match[1], 10);
+                          const endYear = nameStr.includes('/') || nameStr.includes('-') ? startYear + 1 : startYear;
+                          if (!draft['startDate' as keyof T]) (next as any).startDate = `${startYear}-09-01`;
+                          if (!draft['endDate' as keyof T]) (next as any).endDate = `${endYear}-06-30`;
+                        }
+                      }
+                    }
+
+                    if (config.name === 'matches') {
+                      if (next['homeClubId' as keyof T] && next['homeClubId' as keyof T] === next['awayClubId' as keyof T]) {
+                        if (field.key === 'homeClubId') {
+                          (next as any).awayClubId = '';
+                        } else if (field.key === 'awayClubId') {
+                          (next as any).homeClubId = '';
+                        }
+                      }
+                    }
+
+                    if (config.name === 'players' || config.name === 'coaches') {
+                      if (field.key === 'firstName' || field.key === 'lastName') {
+                        if (!draft['nationality' as keyof T] && !next['nationality' as keyof T]) {
+                          (next as any).nationality = 'Cameroun';
+                        }
+                      }
+                    }
+
+                    if (config.name === 'awards' && field.key === 'category') {
+                      const today = new Date();
+                      const pad = (n: number) => String(n).padStart(2, '0');
+                      const formatDT = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+                      if (v === 'Joueur de la Semaine') {
+                        const monday = new Date(today);
+                        monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+                        monday.setHours(0, 0, 0, 0);
+                        const sunday = new Date(monday);
+                        sunday.setDate(monday.getDate() + 6);
+                        sunday.setHours(23, 59, 59, 999);
+                        (next as any).periodStart = formatDT(monday);
+                        (next as any).periodEnd = formatDT(sunday);
+                      } else if (v === 'Joueur du Mois') {
+                        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+                        (next as any).periodStart = formatDT(firstDay);
+                        (next as any).periodEnd = formatDT(lastDay);
+                      }
+                    }
+
+                    onChange(next);
+                  },
                   lookupOptions,
                   'w-full',
                 )}

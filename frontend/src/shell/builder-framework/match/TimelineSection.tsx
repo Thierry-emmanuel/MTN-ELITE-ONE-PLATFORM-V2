@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle, ArrowLeftRight, Flag, Goal, MonitorPlay, Play,
-  Square, Timer, Trash2, Trophy,
+  ShieldAlert, Square, Timer, Trash2, Trophy,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 import {
   useMatchDetail, useMatchLineups, useMatchMutations, useClubPlayers,
   useSeasonRules, playerName, type MatchEventType,
@@ -45,6 +48,7 @@ export function TimelineSection({ matchId }: { matchId: string }) {
   const { data: rules } = useSeasonRules(match?.seasonId);
   const { addEvent, removeEvent } = useMatchMutations(matchId);
 
+  const [showFinishModal, setShowFinishModal] = useState(false);
   const [minute, setMinute] = useState(1);
   const [extraTime, setExtraTime] = useState(0);
   const [type, setType] = useState<MatchEventType>('GOAL');
@@ -124,7 +128,7 @@ export function TimelineSection({ matchId }: { matchId: string }) {
           className="h-8 gap-1.5 border-zinc-800 bg-transparent text-[13px] text-zinc-300 hover:bg-zinc-900">
           <Timer className="size-3.5" /> Mi-temps
         </Button>
-        <Button size="sm" variant="outline" onClick={() => control('FULL_TIME', rules?.duration ?? 90)} disabled={!live || addEvent.isPending}
+        <Button size="sm" variant="outline" onClick={() => setShowFinishModal(true)} disabled={!live || addEvent.isPending}
           className="h-8 gap-1.5 border-emerald-900 bg-transparent text-[13px] text-emerald-400 hover:bg-emerald-950">
           <Flag className="size-3.5" /> Sifflet final
         </Button>
@@ -236,6 +240,39 @@ export function TimelineSection({ matchId }: { matchId: string }) {
           })}
         </ul>
       )}
+      {/* Finish Confirmation Dialog */}
+      <Dialog open={showFinishModal} onOpenChange={setShowFinishModal}>
+        <DialogContent className="max-w-md border-zinc-800 bg-zinc-950 text-zinc-200">
+          <DialogHeader>
+            <DialogTitle className="text-[15px] font-bold text-red-400 flex items-center gap-2">
+              <ShieldAlert className="size-5 text-red-500" /> Confirmation de la Fin du Match
+            </DialogTitle>
+            <DialogDescription className="text-[12px] text-zinc-400 leading-relaxed mt-2">
+              Êtes-vous sûr de vouloir siffler la fin définitive du match entre{' '}
+              <strong className="text-zinc-200">{match.homeClub?.name}</strong> et{' '}
+              <strong className="text-zinc-200">{match.awayClub?.name}</strong> ?
+              <br /><br />
+              <span className="text-amber-400">
+                Cette action fermera la rencontre et verrouillera les données en mode lecture seule.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setShowFinishModal(false)} className="text-zinc-400 hover:bg-zinc-900">
+              Annuler
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                control('FULL_TIME', rules?.duration ?? 90).then(() => setShowFinishModal(false));
+              }}
+              className="bg-red-600 text-white hover:bg-red-500 font-bold"
+            >
+              Confirmer la fin du match
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

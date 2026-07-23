@@ -97,6 +97,8 @@ export function SquadSection({ matchId, draft }: { matchId: string; draft: Match
   };
   const slotLabel: Record<Slot, string> = { xi: 'XI', bench: 'Banc', out: '—' };
 
+  const isFinished = draft.status === 'FINISHED';
+
   return (
     <div className="mx-auto max-w-[860px] p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -110,8 +112,8 @@ export function SquadSection({ matchId, draft }: { matchId: string; draft: Match
           <span className={cn('text-[12px] font-semibold', xiCount === 11 ? 'text-emerald-500' : 'text-amber-500')}>
             {xiCount} / 11 titulaires
           </span>
-          <Button size="sm" onClick={persist} disabled={saveLineups.isPending}
-            className="h-8 gap-1.5 bg-emerald-600 text-[13px] text-white hover:bg-emerald-500">
+          <Button size="sm" onClick={persist} disabled={isFinished || saveLineups.isPending}
+            className="h-8 gap-1.5 bg-emerald-600 text-[13px] text-white hover:bg-emerald-500 disabled:opacity-50">
             <Save className="size-3.5" /> {saveLineups.isPending ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </div>
@@ -136,12 +138,19 @@ export function SquadSection({ matchId, draft }: { matchId: string; draft: Match
               <li key={p.id}>
                 <div className={cn('flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors',
                   slot === 'out' ? 'border-zinc-800/70 hover:border-zinc-700' : slotStyle[slot])}>
-                  <button onClick={() => !hurt && cycle(p.id, p.jerseyNumber, p.position)}
-                    disabled={hurt && slot === 'out'}
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                    <span className="w-6 shrink-0 text-center font-sans text-[12px] font-bold tabular-nums text-zinc-500">
+                  <button onClick={() => !isFinished && !hurt && cycle(p.id, p.jerseyNumber, p.position)}
+                    disabled={isFinished || (hurt && slot === 'out')}
+                    className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+                    <span className="w-5 shrink-0 text-center font-sans text-[12px] font-bold tabular-nums text-zinc-500">
                       {p.jerseyNumber ?? '·'}
                     </span>
+                    {p.photoUrl ? (
+                      <img src={p.photoUrl} alt={playerName(p)} className="size-7 rounded-full object-cover shrink-0 border border-zinc-700 bg-zinc-900" />
+                    ) : (
+                      <div className="size-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-400 shrink-0">
+                        {p.firstName?.[0] || ''}{p.lastName?.[0] || ''}
+                      </div>
+                    )}
                     <span className={cn('truncate text-[13px]', hurt ? 'text-zinc-600 line-through' : 'text-zinc-200')}>
                       {playerName(p)}
                     </span>
