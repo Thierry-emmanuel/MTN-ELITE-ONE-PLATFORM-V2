@@ -9,6 +9,7 @@ export interface Transfer {
   toClubId: string;
   type: 'PERMANENT' | 'LOAN' | 'FREE' | 'RETURN_FROM_LOAN';
   fee?: number;
+  amount?: number;
   windowLabel: string;     // e.g. "Hiver 2025-26"
   transferDate: string;    // ISO date
   announced: boolean;
@@ -77,6 +78,7 @@ export const transfersConfig: EntityConfig<Transfer> = {
       ],
     },
     { key: 'fee', label: 'Indemnité (FCFA)', type: 'number' },
+    { key: 'amount', label: 'Montant/Salaire', type: 'number' },
     { key: 'windowLabel', label: 'Fenêtre de transfert', type: 'text', required: true },
     { key: 'transferDate', label: 'Date du transfert', type: 'date', required: true },
     { key: 'announced', label: 'Annoncé publiquement', type: 'switch' },
@@ -94,8 +96,8 @@ export const transfersConfig: EntityConfig<Transfer> = {
     {
       id: 'terms',
       label: 'Modalités',
-      description: 'Type de transfert, montant de l\'indemnité, date et fenêtre.',
-      fieldKeys: ['type', 'fee', 'windowLabel', 'transferDate', 'announced'],
+      description: 'Type de transfert, montant de l\'indemnité, salaire, date et fenêtre.',
+      fieldKeys: ['type', 'fee', 'amount', 'windowLabel', 'transferDate', 'announced'],
     },
     {
       id: 'review',

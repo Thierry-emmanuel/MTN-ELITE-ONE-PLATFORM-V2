@@ -38,6 +38,9 @@ export class Transfer {
   @Column({ type: 'numeric', nullable: true })
   fee: number | null;
 
+  @Column({ type: 'numeric', nullable: true })
+  amount: number | null;
+
   @Column()
   windowLabel: string;
 

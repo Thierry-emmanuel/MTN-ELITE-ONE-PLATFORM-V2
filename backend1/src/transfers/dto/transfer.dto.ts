@@ -1,11 +1,12 @@
-import { IsBoolean, IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateTransferDto {
   @IsInt() playerId: number;
   @IsOptional() @IsInt() fromClubId?: number;
   @IsInt() toClubId: number;
-  @IsEnum(['PERMANENT', 'LOAN', 'FREE', 'RETURN_FROM_LOAN']) type: string;
+  @IsIn(['PERMANENT', 'LOAN', 'FREE', 'RETURN_FROM_LOAN']) type: string;
   @IsOptional() @IsNumber() fee?: number;
+  @IsOptional() @IsNumber() amount?: number;
   @IsString() windowLabel: string;
   @IsDateString() transferDate: string;
   @IsOptional() @IsBoolean() announced?: boolean;
@@ -14,8 +15,9 @@ export class CreateTransferDto {
 export class UpdateTransferDto {
   @IsOptional() @IsInt() fromClubId?: number;
   @IsOptional() @IsInt() toClubId?: number;
-  @IsOptional() @IsEnum(['PERMANENT', 'LOAN', 'FREE', 'RETURN_FROM_LOAN']) type?: string;
+  @IsOptional() @IsIn(['PERMANENT', 'LOAN', 'FREE', 'RETURN_FROM_LOAN']) type?: string;
   @IsOptional() @IsNumber() fee?: number;
+  @IsOptional() @IsNumber() amount?: number;
   @IsOptional() @IsString() windowLabel?: string;
   @IsOptional() @IsDateString() transferDate?: string;
   @IsOptional() @IsBoolean() announced?: boolean;

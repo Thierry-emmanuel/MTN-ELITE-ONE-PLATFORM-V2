@@ -31,14 +31,14 @@ export class TransfersService {
 
     // Keep the squad list in sync: move the player to the destination club.
     if (dto.type === 'PERMANENT' || dto.type === 'FREE') {
-      await this.players.update(dto.playerId, { clubId: dto.toClubId } as never);
+      await this.players.update(dto.playerId, { clubId: dto.toClubId });
     }
     return saved;
   }
 
   async update(id: number, dto: UpdateTransferDto): Promise<Transfer> {
     await this.findOne(id);
-    await this.repo.update(id, dto as any);
+    await this.repo.update(id, dto);
     return this.findOne(id);
   }
 

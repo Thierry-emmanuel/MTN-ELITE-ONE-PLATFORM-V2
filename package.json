@@ -8,9 +8,15 @@
   ],
   "scripts": {
     "install:all": "npm install --workspaces",
-    "dev": "npm run start:dev --workspace=backend1 & npm run dev --workspace=frontend",
+    "dev": "concurrently \"npm run start:dev --workspace=backend1\" \"npm run dev --workspace=frontend\"",
     "build": "npm run build --workspace=frontend && npm run build --workspace=backend1",
     "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend1",
     "test": "npm run test --workspace=backend1"
+  },
+  "dependencies": {
+    "picomatch": "^4.0.5"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
   }
 }
