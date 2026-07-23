@@ -14,6 +14,7 @@
     "test": "npm run test --workspace=backend1"
   },
   "dependencies": {
+    "@nestjs/common": "^11.1.28",
     "picomatch": "^4.0.5"
   },
   "devDependencies": {

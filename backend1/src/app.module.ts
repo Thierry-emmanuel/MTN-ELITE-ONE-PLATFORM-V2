@@ -78,22 +78,8 @@ import { ThrottlerGuard }    from '@nestjs/throttler';
 
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (cfg: ConfigService) => {
-        let uri = cfg.get<string>('MONGODB_URI');
-        const isValidScheme = uri && (uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://'));
-        if (!isValidScheme || uri?.includes('localhost') || uri?.includes('127.0.0.1')) {
-          try {
-            const { MongoMemoryServer } = await import('mongodb-memory-server');
-            const mongod = await MongoMemoryServer.create();
-            uri = mongod.getUri();
-            console.log(`[MongoDB] Started in-memory server at ${uri}`);
-          } catch (e) {
-            console.warn(`[MongoDB] In-memory server start failed, falling back to ${uri}: ${(e as Error).message}`);
-            if (!isValidScheme) {
-              uri = 'mongodb://localhost:27017/eliteone'; // fallback to valid scheme to avoid parse error
-            }
-          }
-        }
+      useFactory: (cfg: ConfigService) => {
+        const uri = cfg.get<string>('MONGODB_URI') || 'mongodb://127.0.0.1:27017/mtn_elite_one_editorial';
         return { uri };
       },
     }),

@@ -10,7 +10,7 @@ import { AnalyticsLayout } from '../../layouts/AnalyticsLayout';
 import { useShellPage } from '../../stores/page.store';
 import { SHELL_BASE } from '../../navigation/domains';
 import {
-  useCompetitionMeta, usePlayerStats, useSeasonMatches, useSeasonMeta, useStandings, useTopScorers,
+  useCompetitionMeta, usePlayerStats, useSeasonMatches, useSeasonMeta, useStandings, useTopScorers, useUpcomingMatches,
 } from '@/features/intelligence/intelligence.api';
 import {
   bootProjection, fairPlayTable, goalsByRound, matchTrends, nameOf,
@@ -28,6 +28,7 @@ export default function CompetitionIntelligencePage() {
   const { data: scorers = [] } = useTopScorers(seasonId, 8);
   const { data: playerStats = [] } = usePlayerStats(seasonId);
   const { data: matches = [] } = useSeasonMatches(seasonId);
+  const { data: upcomingMatches = [] } = useUpcomingMatches(seasonId, 5);
 
   useShellPage({
     title: 'Intelligence — Compétition',
@@ -167,6 +168,22 @@ export default function CompetitionIntelligencePage() {
                   <span className="text-[11px] text-amber-400">{c.yellows} 🟨</span>
                   <span className="text-[11px] text-red-400">{c.reds} 🟥</span>
                   <span className="w-10 text-right font-sans text-[12px] font-bold tabular-nums text-zinc-300">{c.score}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </IntelCard>
+
+        <IntelCard title="Prochains matchs programmés" hint="Les prochains rendez-vous de la compétition depuis la base de données.">
+          {upcomingMatches.length === 0 ? <EmptyIntel what="les prochains matchs" /> : (
+            <ul className="space-y-2.5">
+              {upcomingMatches.map((m) => (
+                <li key={m.id} className="flex items-center justify-between rounded-lg border border-zinc-800/60 bg-zinc-900/30 p-2.5 text-[12px]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-emerald-400">J{m.round}</span>
+                    <span className="text-zinc-300">{m.homeClub?.name ?? `Club ${m.homeClubId}`} vs {m.awayClub?.name ?? `Club ${m.awayClubId}`}</span>
+                  </div>
+                  <span className="text-[11px] text-zinc-500">{new Date(m.scheduledAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                 </li>
               ))}
             </ul>

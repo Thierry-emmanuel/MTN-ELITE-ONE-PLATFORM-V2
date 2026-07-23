@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity, AlertTriangle, Bell, Building2, Calendar, Clock,
-  Cpu, HeartPulse, ListTodo, Workflow, Zap, Radio
+  Cpu, HeartPulse, ListTodo, ScrollText, Workflow, Zap, Radio
 } from 'lucide-react';
 import { registerModule } from '@/shell/registry/module.registry';
 
@@ -18,6 +18,7 @@ const OPS_MODULES = [
   { slug: 'resource-allocation', label: 'Allocation des Ressources', icon: Building2 },
   { slug: 'timeline-stream', label: 'Timeline Opérationnelle', icon: Clock },
   { slug: 'operation-health', label: 'Conformité & Santé Ligues', icon: HeartPulse },
+  { slug: 'security-logs-hub', label: 'Logs Sécurité', icon: ScrollText },
 ];
 
 OPS_MODULES.forEach((mod) => {

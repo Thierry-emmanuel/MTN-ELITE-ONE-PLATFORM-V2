@@ -120,6 +120,28 @@ export const useTalents = () => useQuery({
 
 export const usePlayers = () => useQuery({
   queryKey: ['intel', 'players'],
-  queryFn: async () => list<{ id: number; firstName?: string; lastName?: string; birthDate?: string; nationality?: string; clubId?: number; position?: string }>((await apiClient.get('/players', { params: { limit: 600 } })).data),
+  queryFn: async () => list<{ id: number; firstName?: string; lastName?: string; birthDate?: string; nationality?: string; clubId?: number; position?: string; photoUrl?: string }>((await apiClient.get('/players', { params: { limit: 600 } })).data),
   staleTime: 60_000,
 });
+
+/** Next N scheduled/upcoming matches in a season */
+export const useUpcomingMatches = (seasonId?: number, limit = 5) => useQuery({
+  queryKey: ['intel', 'upcoming', seasonId, limit],
+  queryFn: async () => {
+    const { data } = await apiClient.get('/matches', { params: { seasonId, status: 'SCHEDULED', limit } });
+    return list<MatchRow>(data);
+  },
+  enabled: !!seasonId, staleTime: 30_000,
+});
+
+/** All matches for a specific club (across all loaded matches for a season) */
+export const useClubMatches = (seasonId?: number, clubId?: number) => useQuery({
+  queryKey: ['intel', 'club-matches', seasonId, clubId],
+  queryFn: async () => {
+    const { data } = await apiClient.get('/matches', { params: { seasonId, limit: 100 } });
+    const all = list<MatchRow>(data);
+    return all.filter((m) => m.homeClubId === clubId || m.awayClubId === clubId);
+  },
+  enabled: !!seasonId && !!clubId, staleTime: 30_000,
+});
+

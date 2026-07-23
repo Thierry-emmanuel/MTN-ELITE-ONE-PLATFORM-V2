@@ -80,7 +80,7 @@ export function goalsByRound(matches: MatchRow[]) {
 
 /** Match trends: result split + goal habits across finished matches. */
 export function matchTrends(matches: MatchRow[]) {
-  const done = matches.filter((m) => m.status === 'FINISHED');
+  const done = matches.filter((m) => m.status === 'FINISHED' || m.status === 'COMPLETED' || (m.homeScore !== null && m.awayScore !== null && m.homeScore !== undefined));
   const n = done.length || 1;
   let home = 0, draw = 0, away = 0, goals = 0, over25 = 0, bothScored = 0;
   for (const m of done) {
@@ -92,9 +92,12 @@ export function matchTrends(matches: MatchRow[]) {
   }
   return {
     finished: done.length,
-    homePct: Math.round((home / n) * 100), drawPct: Math.round((draw / n) * 100), awayPct: Math.round((away / n) * 100),
-    avgGoals: Math.round((goals / n) * 100) / 100,
-    over25Pct: Math.round((over25 / n) * 100), bothScoredPct: Math.round((bothScored / n) * 100),
+    homePct: done.length ? Math.round((home / n) * 100) : 0,
+    drawPct: done.length ? Math.round((draw / n) * 100) : 0,
+    awayPct: done.length ? Math.round((away / n) * 100) : 0,
+    avgGoals: done.length ? Math.round((goals / n) * 100) / 100 : 0,
+    over25Pct: done.length ? Math.round((over25 / n) * 100) : 0,
+    bothScoredPct: done.length ? Math.round((bothScored / n) * 100) : 0,
   };
 }
 

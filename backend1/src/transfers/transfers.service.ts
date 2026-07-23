@@ -38,7 +38,7 @@ export class TransfersService {
 
   async update(id: number, dto: UpdateTransferDto): Promise<Transfer> {
     await this.findOne(id);
-    await this.repo.update(id, dto);
+    await this.repo.update(id, dto as Partial<Transfer>);
     return this.findOne(id);
   }
 

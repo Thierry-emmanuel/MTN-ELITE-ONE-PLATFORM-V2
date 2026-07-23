@@ -21,6 +21,9 @@ const IntelligencePage = lazy(() => import('./pages/IntelligencePage'));
 const CompetitionIntelligencePage = lazy(() => import('./pages/intelligence/CompetitionIntelligencePage'));
 const ClubIntelligencePage = lazy(() => import('./pages/intelligence/ClubIntelligencePage'));
 const PlayerIntelligencePage = lazy(() => import('./pages/intelligence/PlayerIntelligencePage'));
+const StadiumsIntelligencePage = lazy(() => import('./pages/intelligence/StadiumsIntelligencePage'));
+const RefereesIntelligencePage = lazy(() => import('./pages/intelligence/RefereesIntelligencePage'));
+const PlatformIntelligencePage = lazy(() => import('./pages/intelligence/PlatformIntelligencePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const NotFoundShell = lazy(() => import('./pages/NotFoundShell'));
 
@@ -48,6 +51,9 @@ export default function ShellApp() {
         <Route path="intelligence/competition" element={<S><CompetitionIntelligencePage /></S>} />
         <Route path="intelligence/clubs" element={<S><ClubIntelligencePage /></S>} />
         <Route path="intelligence/players" element={<S><PlayerIntelligencePage /></S>} />
+        <Route path="intelligence/stadiums" element={<S><StadiumsIntelligencePage /></S>} />
+        <Route path="intelligence/referees" element={<S><RefereesIntelligencePage /></S>} />
+        <Route path="intelligence/platform" element={<S><PlatformIntelligencePage /></S>} />
         <Route path="settings/*" element={<S><SettingsPage /></S>} />
         <Route path="*" element={<S><NotFoundShell /></S>} />
       </Route>

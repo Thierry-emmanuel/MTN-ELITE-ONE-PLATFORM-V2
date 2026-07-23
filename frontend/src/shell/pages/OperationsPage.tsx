@@ -14,14 +14,17 @@
  * 11. Operation Timeline (Chronological stream of all league events)
  * 12. Operation Health (Global operational score, compliance checklist, SLA status)
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Activity, AlertTriangle, ArrowUpRight, Bell, Building2, Calendar, CheckCircle2, Clock,
-  Cpu, FileText, Filter, Globe, HeartPulse, Layers, LayoutDashboard, ListTodo, MapPin,
-  MessageSquare, Play, Plus, RefreshCw, Send, Server, Shield, Sparkles, UserCheck, Users,
-  Workflow, Zap, AlertCircle, Eye, ChevronRight
+  Activity, AlertTriangle, Bell, Building2, Calendar, CheckCircle2, Clock,
+  Cpu, FileText, HeartPulse, LayoutDashboard, ListTodo,
+  Play, RefreshCw, ScrollText, Shield, Users,
+  Workflow, Zap, AlertCircle, ChevronLeft, ChevronRight,
+  UserCheck, MessageSquare, Send, Eye, Globe, Server, Plus
 } from 'lucide-react';
+import { iamApi } from '@/features/iam/iam.api';
+import type { IamAuditLog } from '@/features/iam/iam.types';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { apiClient } from '@/services/api';
 // SplitLayout removed — single layout with horizontal tabs
@@ -40,7 +43,8 @@ type TabId =
   | 'incidents'
   | 'resources'
   | 'timeline'
-  | 'health';
+  | 'health'
+  | 'security-logs';
 
 const SLUG_TO_TAB: Record<string, TabId> = {
   'operations-suite': 'dashboard',
@@ -55,21 +59,23 @@ const SLUG_TO_TAB: Record<string, TabId> = {
   'resource-allocation': 'resources',
   'timeline-stream': 'timeline',
   'operation-health': 'health',
+  'security-logs-hub': 'security-logs',
 };
 
-const TABS: { id: TabId; label: string; icon: any; badge?: string }[] = [
+const TABS: { id: TabId; label: string; icon: any }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'workflows', label: 'Workflow Center', icon: Workflow, badge: '5 Active' },
-  { id: 'tasks', label: 'Task Management', icon: ListTodo, badge: '12 Pending' },
+  { id: 'workflows', label: 'Workflow Center', icon: Workflow },
+  { id: 'tasks', label: 'Task Management', icon: ListTodo },
   { id: 'scheduling', label: 'Scheduling', icon: Calendar },
   { id: 'automation', label: 'Automation', icon: Zap },
   { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'background', label: 'Background Tasks', icon: Cpu, badge: '3 Running' },
+  { id: 'background', label: 'Background Tasks', icon: Cpu },
   { id: 'monitoring', label: 'Monitoring', icon: Activity },
-  { id: 'incidents', label: 'Incidents', icon: AlertTriangle, badge: '2 Open' },
+  { id: 'incidents', label: 'Incidents', icon: AlertTriangle },
   { id: 'resources', label: 'Resources', icon: Building2 },
   { id: 'timeline', label: 'Timeline', icon: Clock },
   { id: 'health', label: 'Operation Health', icon: HeartPulse },
+  { id: 'security-logs', label: 'Logs Sécurité', icon: ScrollText },
 ];
 
 export default function OperationsPage() {
@@ -140,6 +146,33 @@ export default function OperationsPage() {
     },
     staleTime: 60_000,
   });
+
+  // Security Logs state
+  const [logPage, setLogPage] = useState(1);
+  const [logAction, setLogAction] = useState('');
+  const [logFrom, setLogFrom] = useState('');
+  const [logTo, setLogTo] = useState('');
+  const LOG_LIMIT = 30;
+
+  const {
+    data: auditData,
+    isLoading: auditLoading,
+    refetch: refetchAudit,
+  } = useQuery({
+    queryKey: ['ops', 'audit', logPage, logAction, logFrom, logTo],
+    queryFn: () =>
+      iamApi.audit({
+        page: logPage,
+        limit: LOG_LIMIT,
+        ...(logAction ? { action: logAction } : {}),
+        ...(logFrom ? { from: logFrom } : {}),
+        ...(logTo ? { to: logTo } : {}),
+      }),
+    staleTime: 15_000,
+    enabled: activeTab === 'security-logs',
+  });
+  const auditLogs: IamAuditLog[] = auditData?.data ?? [];
+  const auditTotal: number = auditData?.total ?? 0;
 
   // KPI Calculations
   const kpis = useMemo(() => {
@@ -733,6 +766,200 @@ export default function OperationsPage() {
               <p className="text-[12px] text-emerald-400 mt-1">✓ Ambulances et médecins délégués confirmés</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── TAB 13: SECURITY LOGS ──────────────────────────────────────────────── */}
+      {activeTab === 'security-logs' && (
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-[15px] font-bold text-zinc-100">Logs Sécurité & Audit</h2>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                Traçabilité complète des actions d'administration — {auditTotal} entrée{auditTotal !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <button
+              onClick={() => refetchAudit()}
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-[12px] font-medium text-zinc-300 hover:bg-zinc-800 transition-all"
+            >
+              <RefreshCw className={`size-3.5 ${auditLoading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </button>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={logAction}
+              onChange={(e) => { setLogPage(1); setLogAction(e.target.value); }}
+              placeholder="Action (ex: auth.login, roles.update…)"
+              className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:border-emerald-700 outline-none w-64"
+            />
+            <input
+              type="date"
+              value={logFrom}
+              onChange={(e) => { setLogPage(1); setLogFrom(e.target.value); }}
+              className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-[12px] text-zinc-200 focus:border-emerald-700 outline-none"
+            />
+            <input
+              type="date"
+              value={logTo}
+              onChange={(e) => { setLogPage(1); setLogTo(e.target.value); }}
+              className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-[12px] text-zinc-200 focus:border-emerald-700 outline-none"
+            />
+            {(logAction || logFrom || logTo) && (
+              <button
+                onClick={() => { setLogAction(''); setLogFrom(''); setLogTo(''); setLogPage(1); }}
+                className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-[12px] text-red-400 hover:bg-zinc-800 transition-all"
+              >
+                Effacer filtres
+              </button>
+            )}
+          </div>
+
+          {/* Log Table */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[850px] text-[12px]">
+                <thead>
+                  <tr className="border-b border-zinc-800/80 text-left">
+                    <th className="px-4 py-2.5 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Date & Heure</th>
+                    <th className="px-4 py-2.5 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Acteur</th>
+                    <th className="px-4 py-2.5 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Action Exécutée</th>
+                    <th className="px-4 py-2.5 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Cible / Entité</th>
+                    <th className="px-4 py-2.5 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">IP & Contexte</th>
+                    <th className="px-4 py-2.5 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Sévérité</th>
+                    <th className="px-4 py-2.5 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Détails Payload</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/50">
+                  {auditLoading && (
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-zinc-500">Chargement des logs du serveur…</td></tr>
+                  )}
+                  {!auditLoading && auditLogs.length === 0 && (
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-zinc-500">Aucun événement enregistré pour ces critères.</td></tr>
+                  )}
+                  {auditLogs.map((log) => {
+                    const isAuth = log.action.startsWith('auth.');
+                    const isDanger = log.action.includes('delete') || log.action.includes('revoke') || log.action.includes('archive') || log.action.includes('failed');
+                    const isWrite = log.action.includes('create') || log.action.includes('update') || log.action.includes('clone') || log.action.includes('configure');
+                    const severity = isDanger ? 'high' : isAuth ? 'info' : isWrite ? 'medium' : 'low';
+                    const severityStyle = {
+                      high: 'bg-red-950/60 text-red-400 border border-red-900/40',
+                      medium: 'bg-amber-950/50 text-amber-400 border border-amber-900/40',
+                      info: 'bg-blue-950/50 text-blue-400 border border-blue-900/40',
+                      low: 'bg-zinc-900 text-zinc-500 border border-zinc-800',
+                    }[severity];
+                    const severityLabel = { high: 'Critique', medium: 'Écriture', info: 'Auth', low: 'Lecture' }[severity];
+                    const hasMetadata = log.metadata && Object.keys(log.metadata).length > 0;
+
+                    return (
+                      <tr key={log.id} className="hover:bg-zinc-900/40 transition-colors group">
+                        <td className="px-4 py-2.5 whitespace-nowrap text-zinc-400 font-mono">
+                          {new Date(log.createdAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' })}
+                        </td>
+                        <td className="px-4 py-2.5 text-zinc-200 font-medium">
+                          {log.actorEmail ?? (log.actorId != null ? `Utilisateur #${log.actorId}` : 'Système / Anonyme')}
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-emerald-400 font-semibold">{log.action}</td>
+                        <td className="px-4 py-2.5 text-zinc-300">
+                          {log.targetType ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="rounded bg-zinc-900 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 border border-zinc-800">
+                                {log.targetType}
+                              </span>
+                              {log.targetId && <span className="font-mono text-zinc-200">#{log.targetId}</span>}
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-zinc-400 font-mono text-[11px]">{log.ip ?? '127.0.0.1'}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${severityStyle}`}>
+                            {severityLabel}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {hasMetadata ? (
+                            <details className="cursor-pointer">
+                              <summary className="text-[11px] text-emerald-400 hover:text-emerald-300 font-mono">
+                                {Object.keys(log.metadata!).length} propriété(s) ▾
+                              </summary>
+                              <pre className="mt-1 max-w-xs overflow-x-auto rounded bg-zinc-950 p-2 text-[10px] text-zinc-300 font-mono border border-zinc-800">
+                                {JSON.stringify(log.metadata, null, 2)}
+                              </pre>
+                            </details>
+                          ) : (
+                            <span className="text-[11px] text-zinc-600">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {auditTotal > LOG_LIMIT && (
+              <div className="flex items-center justify-between border-t border-zinc-800/60 px-4 py-2.5">
+                <span className="text-[11px] text-zinc-500">
+                  Page {logPage} / {Math.ceil(auditTotal / LOG_LIMIT)} — {auditTotal} entrées
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={logPage <= 1}
+                    onClick={() => setLogPage(logPage - 1)}
+                    className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1 text-[11px] text-zinc-400 disabled:opacity-40 hover:bg-zinc-800 transition-all"
+                  >
+                    <ChevronLeft className="size-3" /> Préc.
+                  </button>
+                  <button
+                    disabled={logPage >= Math.ceil(auditTotal / LOG_LIMIT)}
+                    onClick={() => setLogPage(logPage + 1)}
+                    className="flex items-center gap-1 rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1 text-[11px] text-zinc-400 disabled:opacity-40 hover:bg-zinc-800 transition-all"
+                  >
+                    Suiv. <ChevronRight className="size-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Stats cards */}
+          {auditLogs.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Actions Auth</p>
+                <p className="mt-1 text-xl font-black text-blue-400">
+                  {auditLogs.filter(l => l.action.startsWith('auth.')).length}
+                </p>
+                <p className="text-[10px] text-zinc-600 mt-0.5">Sur cette page</p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Suppressions</p>
+                <p className="mt-1 text-xl font-black text-red-400">
+                  {auditLogs.filter(l => l.action.includes('delete') || l.action.includes('archive')).length}
+                </p>
+                <p className="text-[10px] text-zinc-600 mt-0.5">Actions destructives</p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Modifications</p>
+                <p className="mt-1 text-xl font-black text-amber-400">
+                  {auditLogs.filter(l => l.action.includes('update') || l.action.includes('create') || l.action.includes('configure')).length}
+                </p>
+                <p className="text-[10px] text-zinc-600 mt-0.5">Écritures</p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Acteurs uniques</p>
+                <p className="mt-1 text-xl font-black text-emerald-400">
+                  {new Set(auditLogs.map(l => l.actorEmail ?? l.actorId)).size}
+                </p>
+                <p className="text-[10px] text-zinc-600 mt-0.5">Utilisateurs distincts</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
