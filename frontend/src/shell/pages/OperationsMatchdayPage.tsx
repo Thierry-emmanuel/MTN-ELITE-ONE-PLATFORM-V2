@@ -45,7 +45,7 @@ export default function OperationsMatchdayPage() {
   const { data: matches = [], isLoading } = useQuery<MatchRow[]>({
     queryKey: ['operations', 'matchday', seasonId],
     queryFn: async () => {
-      const res = await apiClient.get('/matches', { params: { seasonId, limit: 300 } });
+      const res = await apiClient.get('/matches', { params: { seasonId, limit: 100 } });
       const raw = Array.isArray(res.data) ? res.data : res.data.data ?? [];
       return raw;
     },

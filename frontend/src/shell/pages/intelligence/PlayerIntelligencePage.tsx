@@ -19,7 +19,7 @@ import {
 import {
   age, formIndex, goalContribution, minutesOf, nameOf, roadToTheLions, youngTalentWatch,
 } from '@/features/intelligence/engine';
-import { EmptyIntel, IntelCard, MeterBar, SeasonPicker, useSeasonParam, KpiStat } from './IntelShared';
+import { EmptyIntel, IntelCard, MeterBar, SeasonPicker, useSeasonParam, KpiStat, PlayerAvatar, ClubLogo } from './IntelShared';
 
 const chartConfig = { index: { label: 'Indice de forme', color: '#10b981' } } satisfies ChartConfig;
 
@@ -137,6 +137,7 @@ export default function PlayerIntelligencePage() {
               <ul className="space-y-2">
                 {talents.map((t) => (
                   <li key={t.playerId} className="flex items-center gap-3">
+                    <PlayerAvatar name={nameOf(t)} size="sm" />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">
                       {nameOf(t)} <span className="text-zinc-600">· {t.age} ans · {t.clubName ?? ''}</span>
                     </span>
@@ -153,6 +154,7 @@ export default function PlayerIntelligencePage() {
               <ul className="space-y-2">
                 {lions.slice(0, 8).map((l) => (
                   <li key={l.playerId} className="flex items-center gap-3">
+                    <PlayerAvatar name={nameOf(l)} size="sm" />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">
                       {nameOf(l)} <span className="text-zinc-600">· {l.position ?? ''} · {l.age ?? '—'} ans</span>
                     </span>

@@ -15,7 +15,7 @@ import {
 import {
   currentStreak, developmentMetrics, formationTrends, homeAwaySplit, momentum, squadStability,
 } from '@/features/intelligence/engine';
-import { EmptyIntel, FormChips, IntelCard, MeterBar, SeasonPicker, useSeasonParam, KpiStat } from './IntelShared';
+import { EmptyIntel, FormChips, IntelCard, MeterBar, SeasonPicker, useSeasonParam, KpiStat, ClubLogo } from './IntelShared';
 
 export default function ClubIntelligencePage() {
   const { seasonId } = useSeasonParam();
@@ -137,6 +137,7 @@ export default function ClubIntelligencePage() {
               <ul className="space-y-1.5">
                 {dev.slice(0, 10).map((d) => (
                   <li key={d.club} className="flex items-center gap-3">
+                    <ClubLogo name={d.club} size="sm" />
                     <span className={`min-w-0 flex-1 truncate text-[13px] ${d.club === clubDev?.club ? 'font-semibold text-emerald-300' : 'text-zinc-300'}`}>{d.club}</span>
                     <MeterBar value={d.sharePct} label={`${d.sharePct}%`} tone={d.club === clubDev?.club ? 'emerald' : 'amber'} />
                   </li>

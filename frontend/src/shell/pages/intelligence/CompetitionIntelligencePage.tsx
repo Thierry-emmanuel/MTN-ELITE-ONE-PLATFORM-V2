@@ -16,7 +16,7 @@ import {
   bootProjection, fairPlayTable, goalsByRound, matchTrends, nameOf,
   refereeInsights, relegationBattle, titleRace,
 } from '@/features/intelligence/engine';
-import { IntelCard, MeterBar, SeasonPicker, EmptyIntel, FormChips, useSeasonParam, KpiStat } from './IntelShared';
+import { IntelCard, MeterBar, SeasonPicker, EmptyIntel, FormChips, useSeasonParam, KpiStat, ClubLogo, PlayerAvatar } from './IntelShared';
 
 const chartConfig = { avg: { label: 'Buts / match', color: 'var(--chart-1, #10b981)' } } satisfies ChartConfig;
 
@@ -76,6 +76,7 @@ export default function CompetitionIntelligencePage() {
               {race.contenders.slice(0, 6).map((c) => (
                 <li key={c.clubId} className="flex items-center gap-3">
                   <span className="w-5 text-right font-sans text-[12px] font-bold tabular-nums text-zinc-500">{c.position}</span>
+                  <ClubLogo url={c.club?.logoUrl} name={c.club?.name} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">{c.club?.name ?? `Club ${c.clubId}`}</span>
                   <FormChips guide={c.formGuide} />
                   <span className="w-14 text-right text-[12px] text-zinc-500">{c.gap === 0 ? 'leader' : `−${c.gap} pts`}</span>
@@ -95,6 +96,7 @@ export default function CompetitionIntelligencePage() {
                 return (
                   <li key={c.clubId} className="flex items-center gap-3">
                     <span className={`w-5 text-right font-sans text-[12px] font-bold tabular-nums ${inZone ? 'text-red-500' : 'text-amber-500'}`}>{c.position}</span>
+                    <ClubLogo url={c.club?.logoUrl} name={c.club?.name} size="sm" />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">{c.club?.name ?? `Club ${c.clubId}`}</span>
                     <FormChips guide={c.formGuide} />
                     <span className="w-14 text-right font-sans text-[12px] font-bold tabular-nums text-zinc-300">{c.points} pts</span>
@@ -111,6 +113,7 @@ export default function CompetitionIntelligencePage() {
               {scorers.map((s, i) => (
                 <li key={i} className="flex items-center gap-3">
                   <span className="w-5 text-right font-sans text-[12px] font-bold tabular-nums text-zinc-500">{i + 1}</span>
+                  <PlayerAvatar name={nameOf(s)} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">
                     {nameOf(s)} <span className="text-zinc-600">· {s.clubName ?? s.club?.name ?? ''}</span>
                   </span>
@@ -127,6 +130,7 @@ export default function CompetitionIntelligencePage() {
             <ul className="space-y-2">
               {gks.map((g) => (
                 <li key={g.playerId} className="flex items-center gap-3">
+                  <PlayerAvatar name={nameOf(g)} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">
                     {nameOf(g)} <span className="text-zinc-600">· {g.clubName ?? ''}</span>
                   </span>
@@ -158,6 +162,7 @@ export default function CompetitionIntelligencePage() {
             <ul className="space-y-2">
               {fair.map((c) => (
                 <li key={c.club} className="flex items-center gap-3">
+                  <ClubLogo name={c.club} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">{c.club}</span>
                   <span className="text-[11px] text-amber-400">{c.yellows} 🟨</span>
                   <span className="text-[11px] text-red-400">{c.reds} 🟥</span>

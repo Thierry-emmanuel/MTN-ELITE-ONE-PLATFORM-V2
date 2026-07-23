@@ -8,9 +8,8 @@ import { BrainCircuit, Shield, Trophy, UserRound } from 'lucide-react';
 import { AnalyticsLayout } from '../layouts/AnalyticsLayout';
 import { useShellPage } from '../stores/page.store';
 import { SHELL_BASE } from '../navigation/domains';
-import { useSeasonSummary, useStandings } from '@/features/intelligence/intelligence.api';
+import { useSeasonSummary, useStandings, useSeasonMatches, useTopScorers } from '@/features/intelligence/intelligence.api';
 import { matchTrends } from '@/features/intelligence/engine';
-import { useSeasonMatches } from '@/features/intelligence/intelligence.api';
 import { KpiStat, SeasonPicker, useSeasonParam } from './intelligence/IntelShared';
 
 const SURFACES = [

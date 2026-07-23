@@ -78,6 +78,34 @@ export function EmptyIntel({ what }: { what: string }) {
   );
 }
 
+export function ClubLogo({ url, name, size = 'sm' }: { url?: string; name?: string; size?: 'sm' | 'md' | 'lg' }) {
+  const dim = size === 'sm' ? 'size-6 text-[10px]' : size === 'md' ? 'size-8 text-[11px]' : 'size-10 text-[13px]';
+  const initials = String(name ?? '?').slice(0, 2).toUpperCase();
+  return (
+    <div className={`${dim} shrink-0 rounded-lg border border-emerald-900/60 bg-gradient-to-br from-emerald-950 to-zinc-900 overflow-hidden flex items-center justify-center p-0.5 shadow-sm text-emerald-400 font-black tracking-tight`}>
+      {url ? (
+        <img src={url} alt="" className="size-full object-contain" />
+      ) : (
+        <span>{initials}</span>
+      )}
+    </div>
+  );
+}
+
+export function PlayerAvatar({ url, name, size = 'sm' }: { url?: string; name?: string; size?: 'sm' | 'md' | 'lg' }) {
+  const dim = size === 'sm' ? 'size-6 text-[10px]' : size === 'md' ? 'size-8 text-[11px]' : 'size-10 text-[13px]';
+  const initials = String(name ?? '?').slice(0, 2).toUpperCase();
+  return (
+    <div className={`${dim} shrink-0 rounded-full border border-amber-900/60 bg-gradient-to-br from-amber-950 to-zinc-900 overflow-hidden flex items-center justify-center p-0.5 shadow-sm text-amber-400 font-black tracking-tight`}>
+      {url ? (
+        <img src={url} alt="" className="size-full object-cover rounded-full" />
+      ) : (
+        <span>{initials}</span>
+      )}
+    </div>
+  );
+}
+
 export function KpiStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
