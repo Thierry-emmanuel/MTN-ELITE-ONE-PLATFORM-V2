@@ -5,7 +5,7 @@ import { FileEdit, PanelLeftClose, PanelLeftOpen, Star, Clock } from 'lucide-rea
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { DOMAINS } from '../navigation/domains';
+import { DOMAINS, SHELL_BASE } from '../navigation/domains';
 import { getModulesByDomain } from '../registry/module.registry';
 import { useNavigationStore } from '../stores/navigation.store';
 import { useFavorites } from '../stores/favorites.store';
@@ -73,18 +73,26 @@ function DomainItem({ id, collapsed }: { id: (typeof DOMAINS)[number]['id']; col
       {/* registered modules of this domain, shown when the domain is active */}
       {!collapsed && active && modules.length > 0 && (
         <div className="ml-4 mt-0.5 space-y-0.5 border-l border-zinc-800/70 pl-2.5">
-          {modules.map((m) => (
-            <NavLink
-              key={m.slug}
-              to={`${d.route}/${m.slug}`}
-              className={({ isActive }) =>
-                cn('flex h-7 items-center gap-2 rounded-md px-2 text-[12px]',
-                  isActive ? 'bg-zinc-900 text-zinc-100' : 'text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-300')}
-            >
-              <m.icon className="size-3.5" />
-              <span className="truncate">{m.label}</span>
-            </NavLink>
-          ))}
+          {modules.map((m) => {
+            // Modules with entities are true builders → route to /builders/:slug
+            // so BuilderModulePage receives :module param correctly.
+            // Pure operational modules (no entities) stay in /operations/:slug.
+            const to = (m.entities?.length ?? 0) > 0
+              ? `${SHELL_BASE}/builders/${m.slug}`
+              : `${d.route}/${m.slug}`;
+            return (
+              <NavLink
+                key={m.slug}
+                to={to}
+                className={({ isActive }) =>
+                  cn('flex h-7 items-center gap-2 rounded-md px-2 text-[12px]',
+                    isActive ? 'bg-zinc-900 text-zinc-100' : 'text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-300')}
+              >
+                <m.icon className="size-3.5" />
+                <span className="truncate">{m.label}</span>
+              </NavLink>
+            );
+          })}
         </div>
       )}
     </div>
