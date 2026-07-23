@@ -14,6 +14,7 @@ const BuildersIndexPage = lazy(() => import('./pages/BuildersIndexPage'));
 const BuilderModulePage = lazy(() => import('./pages/BuilderModulePage'));
 const BuilderShellPage = lazy(() => import('./pages/BuilderShellPage'));
 const OperationsPage = lazy(() => import('./pages/OperationsPage'));
+const OperationsMatchdayPage = lazy(() => import('./pages/OperationsMatchdayPage'));
 const PresentationStudioPage = lazy(() => import('./pages/PresentationStudioPage'));
 const AutomationStudioPage = lazy(() => import('./pages/AutomationStudioPage'));
 const IntelligencePage = lazy(() => import('./pages/IntelligencePage'));
@@ -39,6 +40,7 @@ export default function ShellApp() {
         <Route path="builders/:module" element={<S><BuilderModulePage /></S>} />
         <Route path="builders/:module/:type/:id" element={<S><BuilderShellPage /></S>} />
         <Route path="operations" element={<S><OperationsPage /></S>} />
+        <Route path="operations/matchday" element={<S><OperationsMatchdayPage /></S>} />
         <Route path="operations/presentation" element={<S><PresentationStudioPage /></S>} />
         <Route path="operations/automation" element={<S><AutomationStudioPage /></S>} />
         <Route path="intelligence" element={<S><IntelligencePage /></S>} />

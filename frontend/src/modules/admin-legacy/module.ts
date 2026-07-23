@@ -27,6 +27,7 @@ import type { Stadium } from '@/features/admin/configs/stadiums.config';
 import type { Match } from '@/features/admin/configs/matches.config';
 import { MatchBuilderCanvas } from '@/shell/builder-framework/match/MatchBuilderCanvas';
 import { StoryCanvas } from '@/shell/builder-framework/story/StoryCanvas';
+import { ClubCanvas } from '@/shell/builder-framework/club/ClubCanvas';
 import { CompetitionCanvas } from '@/shell/builder-framework/competition/CompetitionCanvas';
 import { SeasonCanvas } from '@/shell/builder-framework/season/SeasonCanvas';
 import { StadiumCanvas } from '@/shell/builder-framework/stadium/StadiumCanvas';
@@ -108,6 +109,17 @@ const CURATED: Record<string, BuilderOptions<any>> = {
   } satisfies BuilderOptions<Season>,
   clubs: {
     titleOf: (d: Partial<Club>) => d.name ?? '',
+    Canvas: ClubCanvas,
+    sections: (d: Partial<Club>) => [
+      { id: 'identity',     label: 'Identité',           complete: !!(d.name && d.city && d.foundedYear) },
+      { id: 'visuals',      label: 'Identité Visuelle',  complete: !!d.logoUrl },
+      { id: 'stadium',      label: '🏟️ Stade & Terrain',    complete: !!d.stadium },
+      { id: 'equipments',   label: '👕 Équipements',         complete: false },
+      { id: 'narrative',    label: 'Histoire & Direction', complete: !!(d.description || d.history) },
+      { id: 'achievements', label: 'Palmarès chiffré',   complete: d.achievements?.league != null },
+      { id: 'socials',      label: 'Communauté',         complete: !!(d.socialMedia?.instagram || d.socialMedia?.facebook) },
+      { id: 'review',       label: 'Relecture',           complete: !!(d.name && d.city && d.foundedYear && d.stadium) },
+    ],
     preview: { imageKey: 'logoUrl', titleKeys: ['name'], subtitleKeys: ['city', 'stadium'], badgeKeys: ['nickname'] },
   } satisfies BuilderOptions<Club>,
   players: {
