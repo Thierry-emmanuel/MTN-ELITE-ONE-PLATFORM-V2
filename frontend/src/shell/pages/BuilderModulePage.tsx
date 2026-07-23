@@ -45,35 +45,54 @@ function rowSubtitle(row: Row): string | undefined {
 }
 
 function RowIcon({ row, typeDef }: { row: Row; typeDef: EntityTypeDefinition }) {
-  const homeLogo = (row.homeClub as any)?.logoUrl;
-  const awayLogo = (row.awayClub as any)?.logoUrl;
+  const homeLogo = (row.homeClub as any)?.logoUrl ?? (row.homeClub as any)?.logo_url;
+  const awayLogo = (row.awayClub as any)?.logoUrl ?? (row.awayClub as any)?.logo_url;
 
-  if (typeDef.type === 'matches' && (homeLogo || awayLogo)) {
+  if (typeDef.type === 'matches') {
     return (
-      <div className="flex items-center -space-x-1 shrink-0">
-        <div className="size-7 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center p-0.5 shadow">
-          {homeLogo ? <img src={homeLogo} alt="" className="size-full object-contain" /> : <span className="text-[8px] text-zinc-500 font-bold">H</span>}
+      <div className="flex items-center -space-x-1.5 shrink-0">
+        <div className="size-8 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center p-0.5 shadow shrink-0">
+          {homeLogo ? <img src={homeLogo} alt="" className="size-full object-contain" /> : <span className="text-[8px] text-emerald-400 font-bold">H</span>}
         </div>
-        <div className="size-7 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center p-0.5 shadow z-10">
-          {awayLogo ? <img src={awayLogo} alt="" className="size-full object-contain" /> : <span className="text-[8px] text-zinc-500 font-bold">A</span>}
+        <div className="size-8 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center p-0.5 shadow z-10 shrink-0">
+          {awayLogo ? <img src={awayLogo} alt="" className="size-full object-contain" /> : <span className="text-[8px] text-amber-400 font-bold">A</span>}
         </div>
       </div>
     );
   }
 
-  const singleImg = (row.photoUrl || row.photo_url || row.logoUrl || row.logo_url) as string | undefined;
+  const singleImg = (
+    row.photoUrl || row.photo_url ||
+    row.logoUrl || row.logo_url ||
+    row.imageUrl || row.image_url ||
+    row.stadiumPhotoUrl || row.stadium_photo_url ||
+    (row.config as any)?.branding?.logoUrl ||
+    (row.config as any)?.identity?.officialLogo
+  ) as string | undefined;
+
+  const isRoundAvatar = typeDef.type === 'players' || typeDef.type === 'coaches' || typeDef.type === 'referees' || typeDef.type === 'users';
+
   if (singleImg) {
     return (
-      <div className="size-7 shrink-0 rounded-md border border-zinc-800 bg-zinc-900 overflow-hidden flex items-center justify-center p-0.5">
-        <img src={singleImg} alt="" className="size-full object-cover rounded-sm" />
+      <div className={cn(
+        'size-8 shrink-0 border border-zinc-800 bg-zinc-900 overflow-hidden flex items-center justify-center p-0.5 shadow-sm',
+        isRoundAvatar ? 'rounded-full' : 'rounded-lg'
+      )}>
+        <img src={singleImg} alt="" className={cn('size-full', isRoundAvatar ? 'object-cover rounded-full' : 'object-contain rounded-md')} />
       </div>
     );
   }
 
+  // Fallback initial or icon
+  const initials = String(row.name ?? row.firstName ?? row.title ?? '?').slice(0, 2).toUpperCase();
+
   return (
-    <span className="grid size-7 shrink-0 place-items-center rounded-md border border-zinc-800 bg-zinc-900 text-zinc-400">
-      <typeDef.icon className="size-3.5" />
-    </span>
+    <div className={cn(
+      'size-8 shrink-0 border border-zinc-800 bg-zinc-900 flex items-center justify-center text-[10px] font-bold text-zinc-400',
+      isRoundAvatar ? 'rounded-full' : 'rounded-lg'
+    )}>
+      {initials && initials !== '?' ? initials : <typeDef.icon className="size-4 text-zinc-500" />}
+    </div>
   );
 }
 

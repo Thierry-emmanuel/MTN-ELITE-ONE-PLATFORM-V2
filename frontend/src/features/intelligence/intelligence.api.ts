@@ -58,7 +58,7 @@ export const useCompetitionMeta = (competitionId?: number | null) => useQuery({
 
 export const useStandings = (seasonId?: number) => useQuery({
   queryKey: ['intel', 'standings', seasonId],
-  queryFn: async () => list<StandingRow>((await apiClient.get(`/standings/season/${seasonId}`)).data),
+  queryFn: async () => list<StandingRow>((await apiClient.get(`/standings/${seasonId}`)).data),
   enabled: !!seasonId, staleTime: 30_000,
 });
 
@@ -87,7 +87,7 @@ export const usePlayerStats = (seasonId?: number, extra?: Record<string, unknown
 export const useSeasonMatches = (seasonId?: number) => useQuery({
   queryKey: ['intel', 'matches', seasonId],
   queryFn: async () => {
-    const { data } = await apiClient.get('/matches', { params: { seasonId, limit: 400 } });
+    const { data } = await apiClient.get('/matches', { params: { seasonId, limit: 100 } });
     return list<MatchRow>(data);
   },
   enabled: !!seasonId, staleTime: 30_000,

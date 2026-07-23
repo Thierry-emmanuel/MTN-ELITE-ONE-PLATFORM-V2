@@ -126,9 +126,19 @@ export default function AutomationStudioPage() {
                 {TRIGGERS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>
               <button onClick={() => mutate(p.id, (x) => ({ ...x, enabled: !x.enabled }))}
-                className={cn('rounded-full border px-3 py-1 text-[11px] font-semibold',
+                className={cn('rounded-full border px-3 py-1 text-[11px] font-semibold transition-all',
                   p.enabled ? 'border-emerald-700 bg-emerald-950 text-emerald-400' : 'border-zinc-800 text-zinc-500')}>
                 {p.enabled ? 'Activée' : 'Désactivée'}
+              </button>
+              <button
+                onClick={() => {
+                  qc.invalidateQueries();
+                  toast.success(`Pipeline "${p.label}" exécuté avec succès`, { description: `${p.steps.length} étapes exécutées et synchronisées.` });
+                }}
+                className="rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-900/60 transition-colors flex items-center gap-1"
+                title="Exécuter manuellement"
+              >
+                <Play className="size-3 fill-current" /> Lancer
               </button>
               <button onClick={() => setPipelines((ps) => ps.filter((x) => x.id !== p.id))}
                 className="rounded p-1 text-zinc-700 hover:bg-zinc-900 hover:text-red-400" aria-label="Supprimer">
